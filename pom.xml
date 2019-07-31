@@ -26,6 +26,7 @@
             <artifactId>rtp</artifactId>
             <version>1.0-0-gfde2add</version>
         </dependency>
+-->
 <!--
         <dependency>
             <groupId>org.jitsi</groupId>
@@ -51,6 +52,7 @@
             <artifactId>bcprov-jdk15on</artifactId>
             <version>${bouncycastle.version}</version>
         </dependency>
+-->
 <!--
         <dependency>
             <groupId>org.bouncycastle</groupId>
@@ -108,7 +110,6 @@
     </dependencies>
 
     <build>
-        <!--<sourceDirectory>${project.basedir}/src/main/kotlin</sourceDirectory>-->
         <plugins>
             <plugin>
                 <artifactId>kotlin-maven-plugin</artifactId>
