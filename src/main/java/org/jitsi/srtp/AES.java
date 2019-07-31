@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.jitsi.impl.neomedia.transform.srtp;
+package org.jitsi.srtp;
 
 import java.lang.reflect.*;
 import java.security.*;
@@ -694,7 +694,7 @@ public class AES
                         if (pkg != null)
                             name = pkg.getName();
                         if (name == null || name.length() == 0)
-                            name = "org.jitsi.impl.neomedia.transform.srtp";
+                            name = "org.jitsi.srtp";
 
                         provider
                             = (Provider)

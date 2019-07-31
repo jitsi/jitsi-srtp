@@ -13,7 +13,7 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package org.jitsi.impl.neomedia.transform.srtp;
+package org.jitsi.srtp;
 
 import org.jitsi.util.*;
 import org.jitsi.utils.logging.*;
