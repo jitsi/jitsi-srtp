@@ -21,20 +21,16 @@
             <artifactId>kotlin-stdlib-jdk8</artifactId>
             <version>${kotlin.version}</version>
         </dependency>
-<!--
         <dependency>
             <groupId>org.jitsi</groupId>
             <artifactId>rtp</artifactId>
             <version>1.0-0-gfde2add</version>
         </dependency>
--->
-<!--
         <dependency>
             <groupId>org.jitsi</groupId>
             <artifactId>jitsi-utils</artifactId>
             <version>1.0-20190723.110846-12</version>
         </dependency>
--->
         <dependency>
             <groupId>org.jetbrains.kotlin</groupId>
             <artifactId>kotlin-reflect</artifactId>
@@ -47,13 +43,11 @@
             <version>${bouncycastle.version}</version>
         </dependency>
 -->
-<!--
         <dependency>
             <groupId>org.bouncycastle</groupId>
             <artifactId>bcprov-jdk15on</artifactId>
             <version>${bouncycastle.version}</version>
         </dependency>
--->
 <!--
         <dependency>
             <groupId>org.bouncycastle</groupId>
@@ -82,6 +76,11 @@
             <version>1.0-20190723.113238-389</version>
         </dependency>
 -->
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>bccontrib</artifactId>
+      <version>1.0</version>
+    </dependency>
 
         <!-- test -->
         <dependency>
