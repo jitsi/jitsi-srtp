@@ -22,9 +22,6 @@ import java.util.*;
 import org.bouncycastle.crypto.*;
 import org.bouncycastle.crypto.engines.*;
 import org.bouncycastle.crypto.params.*;
-import org.jitsi.service.configuration.*;
-import org.jitsi.service.libjitsi.*;
-import org.jitsi.util.*;
 import org.jitsi.utils.logging.*;
 
 /**
@@ -72,7 +69,7 @@ public class AES
      * implementation to be used by the class <tt>AES</tt> to initialize
      * <tt>BlockCipher</tt>s.
      */
-    private static final String FACTORY_CLASS_NAME;
+    private static final String FACTORY_CLASS_NAME = null;
 
     /**
      * The name of the <tt>ConfigurationService</tt> and/or <tt>System</tt>
@@ -140,10 +137,14 @@ public class AES
 
     static
     {
+        // TODO: API to set this
+/*
+
         ConfigurationService cfg = LibJitsi.getConfigurationService();
 
         FACTORY_CLASS_NAME
             = ConfigUtils.getString(cfg, FACTORY_CLASS_NAME_PNAME, null);
+*/
     }
 
     /**
