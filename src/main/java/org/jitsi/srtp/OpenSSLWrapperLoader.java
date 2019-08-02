@@ -15,7 +15,7 @@
  */
 package org.jitsi.srtp;
 
-import org.jitsi.util.*;
+import org.jitsi.utils.JNIUtils;
 import org.jitsi.utils.logging.*;
 
 public class OpenSSLWrapperLoader
