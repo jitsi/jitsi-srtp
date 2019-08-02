@@ -74,10 +74,10 @@ public class SRTCPCryptoContext
      * Construct a normal SRTPCryptoContext based on the given parameters.
      *
      * @param ssrc the RTP SSRC that this SRTP cryptographic context protects.
-     * @param masterKey byte array holding the master key for this SRTP
+     * @param masterK byte array holding the master key for this SRTP
      * cryptographic context. Refer to chapter 3.2.1 of the RFC about the role
      * of the master key.
-     * @param masterSalt byte array holding the master salt for this SRTP
+     * @param masterS byte array holding the master salt for this SRTP
      * cryptographic context. It is used to computer the initialization vector
      * that in turn is input to compute the session key, session authentication
      * key and the session salt.
