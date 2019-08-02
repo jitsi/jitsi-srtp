@@ -619,7 +619,7 @@ public class AES
         {
             // The value of keySize can be ignored for BouncyCastle, it
             // determines the AES algorithm to be used with the KeyParameter.
-            return new AESFastEngine();
+            return new AESEngine();
         }
     }
 
