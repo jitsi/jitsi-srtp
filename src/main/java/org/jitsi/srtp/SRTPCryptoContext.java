@@ -38,9 +38,7 @@ import java.util.*;
 
 import org.bouncycastle.crypto.params.*;
 import org.jitsi.bccontrib.params.*;
-import org.jitsi.service.configuration.*;
-import org.jitsi.service.libjitsi.*;
-import org.jitsi.service.neomedia.*;
+import org.jitsi.rtp.rtp.RtpHeader;
 import org.jitsi.utils.*;
 import org.jitsi.utils.logging.*;
 
@@ -113,10 +111,13 @@ public class SRTPCryptoContext
         else
             return;
 
+        // TODO: API to set this
+/*
         ConfigurationService cfg = LibJitsi.getConfigurationService();
 
         if (cfg != null)
             checkReplay = cfg.getBoolean(CHECK_REPLAY_PNAME, checkReplay);
+*/
     }
 
     /**
@@ -472,8 +473,8 @@ public class SRTPCryptoContext
      */
     public void processPacketAESCM(ByteArrayBuffer pkt)
     {
-        int ssrc = RawPacket.getSSRC(pkt);
-        int seqNo = RawPacket.getSequenceNumber(pkt);
+        long ssrc = RtpHeader.Companion.getSsrc(pkt.getBuffer(), pkt.getOffset());
+        int seqNo = RtpHeader.Companion.getSequenceNumber(pkt.getBuffer(), pkt.getOffset());
         long index = (((long) guessedROC) << 16) | seqNo;
 
         // byte[] iv = new byte[16];
@@ -507,8 +508,8 @@ public class SRTPCryptoContext
         ivStore[14] = ivStore[15] = 0;
 
         int rtpHeaderLength
-                = RawPacket.getHeaderLength(
-                        pkt.getBuffer(), pkt.getOffset(), pkt.getLength());
+                = RtpHeader.Companion.getTotalLength(
+                        pkt.getBuffer(), pkt.getOffset());
 
         cipherCtr.process(
                 pkt.getBuffer(),
@@ -538,8 +539,8 @@ public class SRTPCryptoContext
         ivStore[15] = (byte) roc;
 
         int rtpHeaderLength
-                = RawPacket.getHeaderLength(
-                        pkt.getBuffer(), pkt.getOffset(), pkt.getLength());
+                = RtpHeader.Companion.getTotalLength(
+                        pkt.getBuffer(), pkt.getOffset());
 
         cipherF8.process(
                 pkt.getBuffer(),
@@ -567,7 +568,7 @@ public class SRTPCryptoContext
      */
     synchronized public boolean reverseTransformPacket(ByteArrayBuffer pkt, boolean skipDecryption)
     {
-        int seqNo = RawPacket.getSequenceNumber(pkt);
+        int seqNo = RtpHeader.Companion.getSequenceNumber(pkt.getBuffer(), pkt.getOffset());
 
         if (logger.isDebugEnabled())
         {
@@ -659,7 +660,7 @@ public class SRTPCryptoContext
      */
     synchronized public boolean transformPacket(ByteArrayBuffer pkt)
     {
-        int seqNo = RawPacket.getSequenceNumber(pkt);
+        int seqNo = RtpHeader.Companion.getSequenceNumber(pkt.getBuffer(), pkt.getOffset());
 
         if (!seqNumSet)
         {
