@@ -6,6 +6,7 @@
 
     <groupId>org.jitsi</groupId>
     <artifactId>jitsi-srtp</artifactId>
+    <name>Jitsi Secure RTP implementation</name>
     <version>1.0-SNAPSHOT</version>
 
     <properties>
@@ -13,6 +14,97 @@
         <junit.version>5.2.0</junit.version>
         <bouncycastle.version>1.61</bouncycastle.version>
     </properties>
+
+    <profiles>
+        <profile>
+            <id>build-native-lib-mac</id>
+            <activation>
+                <os>
+                    <family>mac</family>
+                </os>
+                <property>
+                    <name>buildNativeLib</name>
+                </property>
+            </activation>
+            <properties>
+                <libextension>jnilib</libextension>
+                <linkStartOpts>
+                    -shared
+                    -L/usr/local/opt/openssl@1.1/lib
+		    -lcrypto
+                </linkStartOpts>
+                <linkEndOpts></linkEndOpts>
+            </properties>
+	</profile>
+
+        <profile>
+            <id>build-native-lib</id>
+            <activation>
+                <property>
+                    <name>buildNativeLib</name>
+                </property>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>native-maven-plugin</artifactId>
+                        <version>1.0-alpha-9</version>
+                        <extensions>true</extensions>
+                        <executions>
+                            <execution>
+                                <id>native-compile</id>
+                                <phase>compile</phase>
+                                <goals>
+                                    <goal>javah</goal>
+                                    <goal>compile</goal>
+                                    <goal>link</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                        <configuration>
+                            <compilerProvider>generic</compilerProvider>
+                            <compilerStartOptions>
+                                <compilerStartOption>
+                                    -g -fPIC -std=c99 -O2 -Wall
+                                </compilerStartOption>
+                            </compilerStartOptions>
+
+                            <javahClassNames>
+			      <javahClassName>org.jitsi.srtp.OpenSSLHMAC</javahClassName>
+			      <javahClassName>org.jitsi.srtp.SRTPCipherCTROpenSSL</javahClassName>
+			      <javahClassName>org.jitsi.srtp.OpenSSLWrapperLoader</javahClassName>
+                            </javahClassNames>
+                            <javahOS>${os}</javahOS>
+
+                             <sources>
+                                <source>
+                                    <directory>src/main/native</directory>
+                                    <fileNames>
+                                        <fileName>HMAC.c</fileName>
+                                        <fileName>OpenSSLWrapperLoader.c</fileName>
+                                        <fileName>SRTPCipherCTROpenSSL.c</fileName>
+                                    </fileNames>
+                                </source>
+                            </sources>
+
+                            <linkerStartOptions>
+                                <linkerStartOption>${linkStartOpts}</linkerStartOption>
+                            </linkerStartOptions>
+                            <linkerEndOptions>
+                                <linkerEndOption>${linkEndOpts}</linkerEndOption>
+                            </linkerEndOptions>
+                            <linkerFinalName>libjitsisrtp-${os}-${os.arch}</linkerFinalName>
+                            <linkerFinalNameExt>${libextension}</linkerFinalNameExt>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+	
+
+    </profiles>
+
     <dependencies>
         <dependency>
             <groupId>org.jitsi</groupId>
@@ -22,7 +114,7 @@
         <dependency>
             <groupId>org.jitsi</groupId>
             <artifactId>jitsi-utils</artifactId>
-            <version>1.0-20190723.110846-12</version>
+            <version>1.0-SNAPSHOT</version>
         </dependency>
 <!-- 
         <dependency>
@@ -147,14 +239,6 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-antrun-plugin</artifactId>
                 <version>1.8</version>
-                <dependencies>
-                    <dependency>
-                        <groupId>com.github.shyiko</groupId>
-                        <artifactId>ktlint</artifactId>
-                        <version>0.31.0</version>
-                    </dependency>
-                    <!-- additional 3rd party ruleset(s) can be specified here -->
-                </dependencies>
             </plugin>
         </plugins>
     </build>
