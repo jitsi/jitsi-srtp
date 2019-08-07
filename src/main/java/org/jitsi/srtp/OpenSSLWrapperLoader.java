@@ -39,11 +39,11 @@ public class OpenSSLWrapperLoader
     {
         try
         {
-            JNIUtils.loadLibrary("jnopenssl",
+            JNIUtils.loadLibrary("jitsisrtp",
                 OpenSSLWrapperLoader.class.getClassLoader());
             if (OpenSSL_Init())
             {
-                logger.info("jnopenssl successfully loaded");
+                logger.info("jitsisrtp successfully loaded");
                 libraryLoaded = true;
             }
             else
@@ -53,7 +53,7 @@ public class OpenSSLWrapperLoader
         }
         catch (Throwable t)
         {
-            logger.warn("Unable to load jnopenssl: " + t.toString());
+            logger.warn("Unable to load jitsisrtp: " + t.toString());
         }
     }
 
