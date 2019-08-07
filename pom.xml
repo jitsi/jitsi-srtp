@@ -27,13 +27,18 @@
                 </property>
             </activation>
             <properties>
+	        <ssldir>/usr/local/opt/openssl@1.0</ssldir>
                 <libextension>jnilib</libextension>
+		<compilerStartOpts>
+		    -I${ssldir}/include
+		</compilerStartOpts>
                 <linkStartOpts>
                     -shared
-                    -L/usr/local/opt/openssl@1.1/lib
+                    -L${ssldir}/lib
 		    -lcrypto
                 </linkStartOpts>
                 <linkEndOpts></linkEndOpts>
+		<os>darwin</os>
             </properties>
 	</profile>
 
@@ -68,6 +73,7 @@
                                 <compilerStartOption>
                                     -g -fPIC -std=c99 -O2 -Wall
                                 </compilerStartOption>
+				<compilerStartOption>${compilerStartOpts}</compilerStartOption>
                             </compilerStartOptions>
 
                             <javahClassNames>
@@ -94,9 +100,48 @@
                             <linkerEndOptions>
                                 <linkerEndOption>${linkEndOpts}</linkerEndOption>
                             </linkerEndOptions>
-                            <linkerFinalName>libjitsisrtp-${os}-${os.arch}</linkerFinalName>
+                            <linkerFinalName>libjitsisrtp</linkerFinalName>
                             <linkerFinalNameExt>${libextension}</linkerFinalNameExt>
                         </configuration>
+                    </plugin>
+                    <plugin>
+                        <artifactId>maven-resources-plugin</artifactId>
+                        <version>3.1.0</version>
+                        <executions>
+                            <execution>
+                                <id>deploy-jnilib</id>
+				<!-- "process-classes" doesn't make sense as a name for this step's phase, but the phase's
+				     description - "post-process the generated files from compilation" - kind of does.
+				     The natural phase for this would be either "process-resources" or "prepare-package", but we need it to be
+				     after "compile" and before "test". -->
+                                <phase>process-classes</phase>
+                                <goals><goal>copy-resources</goal></goals>
+                                <configuration>
+                                    <outputDirectory>${project.basedir}/src/main/resources/${os}/</outputDirectory>
+				    <resources>
+				      <resource>
+					<directory>${project.build.directory}</directory>
+					<include>libjitsisrtp.${libextension}</include>
+				      </resource>
+                                    </resources>
+                                </configuration>
+                            </execution>
+			    <!-- If we built the jnilib, we need to make sure the newly-built version is deployed to the target dir also -->
+                            <execution>
+                                <id>update-jnilib</id>
+                                <phase>process-classes</phase>
+                                <goals><goal>copy-resources</goal></goals>
+                                <configuration>
+                                    <outputDirectory>${project.basedir}/target/classes/${os}/</outputDirectory>
+				    <resources>
+				      <resource>
+                                      <directory>${project.build.directory}</directory>
+                                      <include>libjitsisrtp.${libextension}</include>
+				      </resource>
+                                    </resources>
+                                </configuration>
+                            </execution>
+                        </executions>
                     </plugin>
                 </plugins>
             </build>
@@ -228,18 +273,24 @@
             <plugin>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>2.22.0</version>
-                <configuration>
-                    <excludes>
-                        <!-- init() currently throws an exception -->
-                        <exclude>DtlsStackTest.*</exclude>
-                    </excludes>
-                </configuration>
             </plugin>
             <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-antrun-plugin</artifactId>
-                <version>1.8</version>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <configuration>
+                    <descriptorRefs>
+                        <descriptorRef>jar-with-dependencies</descriptorRef>
+                    </descriptorRefs>
+                </configuration>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
+
         </plugins>
     </build>
 
