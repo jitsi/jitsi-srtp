@@ -124,7 +124,7 @@ public class SRTPCryptoContext
      * For the receiver only, the rollover counter guessed from the sequence
      * number of the received packet that is currently being processed (i.e. the
      * value is valid during the execution of
-     * {@link #reverseTransformPacket(RawPacket)} only.) RFC 3711 refers to it
+     * {@link #reverseTransformPacket(ByteArrayBuffer, boolean)} only.) RFC 3711 refers to it
      * by the name <tt>v</tt>.
      */
     private int guessedROC;
