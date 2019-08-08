@@ -50,12 +50,14 @@ public class SRTPCipherCTRTest
     @Test
     public void testOpenSSLCTRAES()
     {
-/*
-        if (!OSUtils.IS_LINUX)
-        {
-            return;
+        boolean haveOpenSSL = OpenSSLWrapperLoader.isLoaded();
+
+        if (System.getProperty("os.name").toLowerCase().contains("linux")) {
+            assertTrue("should always have OpenSSL on Linux", haveOpenSSL);
         }
-*/
+
+        if (!haveOpenSSL)
+            return;
 
         SRTPCipherCTR cipher = new SRTPCipherCTROpenSSL();
         cipher.init(TV_Key);
