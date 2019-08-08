@@ -69,16 +69,7 @@ public class AES
      * implementation to be used by the class <tt>AES</tt> to initialize
      * <tt>BlockCipher</tt>s.
      */
-    private static final String FACTORY_CLASS_NAME = null;
-
-    /**
-     * The name of the <tt>ConfigurationService</tt> and/or <tt>System</tt>
-     * property which specifies the name of the class to instantiate as a
-     * <tt>BlockCipherFactory</tt> implementation to be used by the class
-     * <tt>AES</tt> to initialize <tt>BlockCipher</tt>s.
-     */
-    private static final String FACTORY_CLASS_NAME_PNAME
-        = AES.class.getName() + ".factoryClassName";
+    private static String FACTORY_CLASS_NAME = null;
 
     /**
      * The <tt>Class</tt>es of the well-known <tt>BlockCipherFactory</tt>
@@ -135,16 +126,13 @@ public class AES
      */
     private static final Random random = new Random();
 
-    static
+    /** Set the class to use as the factory class for AES cryptography.
+     * @param name the name of the class
+     */
+    public static synchronized void setFactoryClassName(String name)
     {
-        // TODO: API to set this
-/*
-
-        ConfigurationService cfg = LibJitsi.getConfigurationService();
-
-        FACTORY_CLASS_NAME
-            = ConfigUtils.getString(cfg, FACTORY_CLASS_NAME_PNAME, null);
-*/
+        FACTORY_CLASS_NAME = name;
+        factoryClass = null;
     }
 
     /**
@@ -338,8 +326,7 @@ public class AES
     private static BlockCipherFactory[] createBlockCipherFactories()
     {
         // The user may have specified a specific BlockCipherFactory class
-        // (name) through the FACTORY_CLASS_NAME_PNAME ConfigurationService
-        // and/or System property, Practically, the specified FACTORY_CLASS_NAME
+        // (name) through setFactoryClassName(String). Practically, the specified FACTORY_CLASS_NAME
         // will override all other FACTORY_CLASSES and, consequently, it does
         // not seem necessary to try FACTORY_CLASSES at all. Technically though,
         // the specified BlockCipherFactory may malfunction. That is why all
@@ -526,8 +513,7 @@ public class AES
         BlockCipherFactory minFactory = benchmark(factories, keySize);
 
         // The user may have specified a specific BlockCipherFactory class
-        // (name) through the FACTORY_CLASS_NAME_PNAME ConfigurationService
-        // and/or System property, Practically, FACTORY_CLASS_NAME may override
+        // (name) through setFactoryClassName(String), Practically, FACTORY_CLASS_NAME may override
         // minFactory and, consequently, it may appear that the benchmark is
         // unnecessary. Technically though, the specified BlockCipherFactory may
         // malfunction. That is why FACTORY_CLASS_NAME is selected after it has
