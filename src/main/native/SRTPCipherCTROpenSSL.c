@@ -29,9 +29,7 @@ JNIEXPORT jlong JNICALL
 Java_org_jitsi_srtp_SRTPCipherCTROpenSSL_AES128CTR_1CTX_1create
   (JNIEnv *env, jclass clazz)
 {
-    EVP_CIPHER_CTX *ctx = malloc(sizeof(EVP_CIPHER_CTX));
-    if (ctx)
-        EVP_CIPHER_CTX_init(ctx);
+    EVP_CIPHER_CTX *ctx = EVP_CIPHER_CTX_new();
 
     return (jlong) (intptr_t) ctx;
 }
@@ -47,8 +45,7 @@ Java_org_jitsi_srtp_SRTPCipherCTROpenSSL_AES128CTR_1CTX_1destroy
 {
     if (ctx) {
         EVP_CIPHER_CTX *ctx_ = (EVP_CIPHER_CTX *) (intptr_t) ctx;
-        EVP_CIPHER_CTX_cleanup(ctx_);
-        free(ctx_);
+        EVP_CIPHER_CTX_free(ctx_);
     }
 }
 
