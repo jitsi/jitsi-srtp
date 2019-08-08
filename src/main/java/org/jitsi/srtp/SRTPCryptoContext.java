@@ -70,55 +70,11 @@ public class SRTPCryptoContext
     extends BaseSRTPCryptoContext
 {
     /**
-     * The name of the <tt>boolean</tt> <tt>ConfigurationService</tt> property
-     * which indicates whether protection against replay attacks is to be
-     * activated. The default value is <tt>true</tt>.
-     */
-    public static final String CHECK_REPLAY_PNAME
-        = SRTPCryptoContext.class.getName() + ".checkReplay";
-
-    /**
-     * The indicator which determines whether protection against replay attacks
-     * is to be activated. The default value is <tt>true</tt>.
-     */
-    private static boolean checkReplay = true;
-
-    /**
      * The <tt>Logger</tt> used by the <tt>SRTPCryptoContext</tt> class and its
      * instances to print out debug information.
      */
     private static final Logger logger
         = Logger.getLogger(SRTPCryptoContext.class);
-
-    /**
-     * The indicator which determines whether the method
-     * {@link #readConfigurationServicePropertiesOnce()} is to read the values
-     * of certain <tt>ConfigurationService</tt> properties of concern to
-     * <tt>SRTPCryptoContext</tt> once during the initialization of the first
-     * instance.
-     */
-    private static boolean readConfigurationServicePropertiesOnce = true;
-
-    /**
-     * Reads the values of certain <tt>ConfigurationService</tt> properties of
-     * concern to <tt>SRTPCryptoContext</tt> once during the initialization of
-     * the first instance.
-     */
-    private static synchronized void readConfigurationServicePropertiesOnce()
-    {
-        if (readConfigurationServicePropertiesOnce)
-            readConfigurationServicePropertiesOnce = false;
-        else
-            return;
-
-        // TODO: API to set this
-/*
-        ConfigurationService cfg = LibJitsi.getConfigurationService();
-
-        if (cfg != null)
-            checkReplay = cfg.getBoolean(CHECK_REPLAY_PNAME, checkReplay);
-*/
-    }
 
     /**
      * For the receiver only, the rollover counter guessed from the sequence
@@ -219,8 +175,6 @@ public class SRTPCryptoContext
         this.sender = sender;
         this.roc = roc;
         this.keyDerivationRate = keyDerivationRate;
-
-        readConfigurationServicePropertiesOnce();
     }
 
     /**
@@ -276,9 +230,6 @@ public class SRTPCryptoContext
      */
     boolean checkReplay(int seqNo, long guessedIndex)
     {
-        if (!checkReplay)
-            return true;
-
         // Compute the index of the previously received packet and its delta to
         // the newly received packet.
         long localIndex = (((long) roc) << 16) | s_l;
