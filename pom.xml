@@ -27,7 +27,7 @@
                 </property>
             </activation>
             <properties>
-	        <ssldir>/usr/local/opt/openssl@1.0</ssldir>
+	        <ssldir>/usr/local/opt/openssl@1.1</ssldir>
                 <libextension>jnilib</libextension>
 		<compilerStartOpts>
 		    -I${ssldir}/include
