@@ -335,11 +335,13 @@ public class SRTPCryptoContext
     }
 
     /**
-     * Derives the srtp session keys from the master key
+     * Internal code to derive the srtp session keys from the master key,
+     * without zeroing the keys after passing them to the cipher/hmac.
+     * For unit testing.
      *
      * @param index the 48 bit SRTP packet index
      */
-    synchronized public void deriveSrtpKeys(long index)
+    void deriveSrtpKeysInternal(long index)
     {
         // compute the session encryption key
         computeIv(0x00, index);
@@ -359,21 +361,19 @@ public class SRTPCryptoContext
 
             switch (policy.getAuthType())
             {
-            case SRTPPolicy.HMACSHA1_AUTHENTICATION:
-                mac.init(new KeyParameter(authKey));
-                break;
+                case SRTPPolicy.HMACSHA1_AUTHENTICATION:
+                    mac.init(new KeyParameter(authKey));
+                    break;
 
-            case SRTPPolicy.SKEIN_AUTHENTICATION:
-                // Skein MAC uses number of bits as MAC size, not just bytes
-                mac.init(
-                        new ParametersForSkein(
-                                new KeyParameter(authKey),
-                                ParametersForSkein.Skein512,
-                                tagStore.length * 8));
-                break;
+                case SRTPPolicy.SKEIN_AUTHENTICATION:
+                    // Skein MAC uses number of bits as MAC size, not just bytes
+                    mac.init(
+                            new ParametersForSkein(
+                                    new KeyParameter(authKey),
+                                    ParametersForSkein.Skein512,
+                                    tagStore.length * 8));
+                    break;
             }
-
-            Arrays.fill(authKey, (byte) 0);
         }
 
         // compute the session salt
@@ -386,7 +386,24 @@ public class SRTPCryptoContext
         if (cipherF8 != null)
             cipherF8.init(encKey, saltKey);
         cipherCtr.init(encKey);
-        Arrays.fill(encKey, (byte) 0);
+    }
+
+    /**
+     * Derives the srtp session keys from the master key
+     *
+     * @param index the 48 bit SRTP packet index
+     */
+    synchronized public void deriveSrtpKeys(long index)
+    {
+        try {
+            deriveSrtpKeysInternal(index);
+        }
+        finally {
+            if (encKey != null)
+                Arrays.fill(encKey, (byte) 0);
+            if (authKey != null)
+                Arrays.fill(authKey, (byte) 0);
+        }
     }
 
     /**
