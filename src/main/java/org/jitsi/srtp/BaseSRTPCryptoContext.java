@@ -181,10 +181,16 @@ public class BaseSRTPCryptoContext
 
         int encKeyLength = policy.getEncKeyLength();
 
+        if (masterK.length != encKeyLength)
+            throw new IllegalArgumentException("masterK.length != encKeyLength");
+
         masterKey = new byte[encKeyLength];
         System.arraycopy(masterK, 0, masterKey, 0, encKeyLength);
 
         int saltKeyLength = policy.getSaltKeyLength();
+
+        if (masterS.length != saltKeyLength)
+            throw new IllegalArgumentException("masterS.length != saltKeyLength");
 
         masterSalt = new byte[saltKeyLength];
         System.arraycopy(masterS, 0, masterSalt, 0, saltKeyLength);
