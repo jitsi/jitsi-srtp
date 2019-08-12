@@ -3,7 +3,7 @@ package org.jitsi.srtp;
 import static org.junit.Assert.*;
 import java.util.Arrays;
 import javax.xml.bind.DatatypeConverter;
-import org.bouncycastle.crypto.engines.AESFastEngine;
+import org.bouncycastle.crypto.engines.AESEngine;
 //import org.jitsi.util.OSUtils;
 import org.junit.Test;
 
@@ -32,7 +32,7 @@ public class SRTPCipherCTRTest
     @Test
     public void testJavaCTRAES()
     {
-        SRTPCipherCTR cipher = new SRTPCipherCTRJava(new AESFastEngine());
+        SRTPCipherCTR cipher = new SRTPCipherCTRJava(new AESEngine());
         cipher.init(TV_Key);
         byte[] data = new byte[TV_Cipher_AES_1.length];
 
