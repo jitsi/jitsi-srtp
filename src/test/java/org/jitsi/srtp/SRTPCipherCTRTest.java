@@ -10,21 +10,21 @@ import org.junit.Test;
 public class SRTPCipherCTRTest
 {
     // RFC 3711 AES CTR Tests vectors
-    public static final byte[] TV_Key =
+    private static final byte[] TV_Key =
         DatatypeConverter.parseHexBinary("2B7E151628AED2A6ABF7158809CF4F3C");
 
-    public static final byte[] TV_IV_1 =
+    private static final byte[] TV_IV_1 =
         DatatypeConverter.parseHexBinary("F0F1F2F3F4F5F6F7F8F9FAFBFCFD0000");
 
-    public static final byte[] TV_Cipher_AES_1 =
+    private static final byte[] TV_Cipher_AES_1 =
         DatatypeConverter.parseHexBinary("E03EAD0935C95E80E166B16DD92B4EB4"
             + "D23513162B02D0F72A43A2FE4A5F97AB"
             + "41E95B3BB0A2E8DD477901E4FCA894C0");
 
-    public static final byte[] TV_IV_2 =
+    private static final byte[] TV_IV_2 =
         DatatypeConverter.parseHexBinary("F0F1F2F3F4F5F6F7F8F9FAFBFCFDFEFF");
 
-    public static final byte[] TV_Cipher_AES_2 =
+    private static final byte[] TV_Cipher_AES_2 =
         DatatypeConverter.parseHexBinary("EC8CDF7398607CB0F2D21675EA9EA1E4"
             + "362B7C3C6773516318A077D7FC5073AE"
             + "6A2CC3787889374FBEB4C81B17BA6C44");

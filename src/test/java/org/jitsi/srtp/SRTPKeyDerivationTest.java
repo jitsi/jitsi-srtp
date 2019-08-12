@@ -9,16 +9,16 @@ import javax.xml.bind.DatatypeConverter;
 public class SRTPKeyDerivationTest {
 
     /* Key derivation test vectors from RFC 3711. */
-    public static final byte[] masterKey128 =
+    private static final byte[] masterKey128 =
             DatatypeConverter.parseHexBinary("E1F97A0D3E018BE0D64FA32C06DE4139");
-    public static final byte[] masterSalt128 =
+    private static final byte[] masterSalt128 =
             DatatypeConverter.parseHexBinary("0EC675AD498AFEEBB6960B3AABE6");
 
-    public static final byte[] cipherKey128 =
+    private static final byte[] cipherKey128 =
             DatatypeConverter.parseHexBinary("C61E7A93744F39EE10734AFE3FF7A087");
-    public static final byte[] cipherSalt128 =
+    private static final byte[] cipherSalt128 =
             DatatypeConverter.parseHexBinary("30CBBC08863D8C85D49DB34A9AE1");
-    public static final byte[] authKey128 =
+    private static final byte[] authKey128 =
             DatatypeConverter.parseHexBinary("CEBE321F6FF7716B6FD4AB49AF256A156D38BAA4");
 
     @Test
@@ -41,18 +41,18 @@ public class SRTPKeyDerivationTest {
     }
 
     /* Key derivation test vectors from RFC 6188. */
-    public static final byte[] masterKey256 =
+    private static final byte[] masterKey256 =
             DatatypeConverter.parseHexBinary("f0f04914b513f2763a1b1fa130f10e29" +
                     "98f6f6e43e4309d1e622a0e332b9f1b6");
-    public static final byte[] masterSalt256 =
+    private static final byte[] masterSalt256 =
             DatatypeConverter.parseHexBinary("3b04803de51ee7c96423ab5b78d2");
 
-    public static final byte[] cipherKey256 =
+    private static final byte[] cipherKey256 =
             DatatypeConverter.parseHexBinary("5ba1064e30ec51613cad926c5a28ef73" +
                     "1ec7fb397f70a960653caf06554cd8c4");
-    public static final byte[] cipherSalt256 =
+    private static final byte[] cipherSalt256 =
             DatatypeConverter.parseHexBinary("fa31791685ca444a9e07c6c64e93");
-    public static final byte[] authKey256 =
+    private static final byte[] authKey256 =
             DatatypeConverter.parseHexBinary("fd9c32d39ed5fbb5a9dc96b30818454d1313dc05");
 
     @Test
