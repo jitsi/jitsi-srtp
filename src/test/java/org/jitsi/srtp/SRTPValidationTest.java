@@ -11,39 +11,39 @@ import java.util.Arrays;
 
 public class SRTPValidationTest {
     /* Test cases from libsrtp's srtp_driver.c. */
-    public static final byte[] test_key =
+    private static final byte[] test_key =
             DatatypeConverter.parseHexBinary("e1f97a0d3e018be0d64fa32c06de4139");
-    public static final byte[] test_key_salt = 
+    private static final byte[] test_key_salt =
             DatatypeConverter.parseHexBinary("0ec675ad498afeebb6960b3aabe6");
 
-    public static final byte[] srtp_plaintext_ref =
+    private static final byte[] srtp_plaintext_ref =
             DatatypeConverter.parseHexBinary("800f1234decafbad" +
 					     "cafebabeabababab" +
 					     "abababababababab" +
 					     "abababab");
-    public static final byte[] srtp_plaintext =
+    private static final byte[] srtp_plaintext =
             DatatypeConverter.parseHexBinary("800f1234decafbad" +
 					     "cafebabeabababab" +
 					     "abababababababab" +
 					     "abababab00000000" +
 					     "000000000000");
-    public static final byte[] srtp_ciphertext =
+    private static final byte[] srtp_ciphertext =
             DatatypeConverter.parseHexBinary("800f1234decafbad" +
 					     "cafebabe4e55dc4c" +
 					     "e79978d88ca4d215" +
 					     "949d2402b78d6acc" +
 					     "99ea179b8dbb");
-    public static final byte[] rtcp_plaintext_ref =
+    private static final byte[] rtcp_plaintext_ref =
             DatatypeConverter.parseHexBinary("81c8000bcafebabe" +
 					     "abababababababab" +
 					     "abababababababab");
-    public static final byte[] rtcp_plaintext =
+    private static final byte[] rtcp_plaintext =
             DatatypeConverter.parseHexBinary("81c8000bcafebabe" +
 					     "abababababababab" +
 					     "abababababababab" +
 					     "0000000000000000" +
 					     "000000000000");
-    public static final byte[] srtcp_ciphertext =
+    private static final byte[] srtcp_ciphertext =
             DatatypeConverter.parseHexBinary("81c8000bcafebabe" +
 					     "7128035be487b9bd" +
 					     "bef89041f977a5a8" +
