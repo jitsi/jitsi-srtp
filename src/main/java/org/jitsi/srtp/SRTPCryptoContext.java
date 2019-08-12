@@ -536,6 +536,13 @@ public class SRTPCryptoContext
      */
     synchronized public boolean reverseTransformPacket(ByteArrayBuffer pkt, boolean skipDecryption)
     {
+
+        if (pkt.getLength() <
+                RtpHeader.Companion.getTotalLength(pkt.getBuffer(), pkt.getOffset()) +
+                        policy.getAuthTagLength())
+            /* Too short to be a valid SRTP packet */
+            return false;
+
         int seqNo = RtpHeader.Companion.getSequenceNumber(pkt.getBuffer(), pkt.getOffset());
 
         if (logger.isDebugEnabled())

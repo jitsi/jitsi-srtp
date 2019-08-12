@@ -110,4 +110,52 @@ public class SRTPValidationTest {
         receiverFactory.close();
     }
 
+    @Test
+    public void rejectInvalid()
+    {
+        for (int len = srtp_ciphertext.length; len > 0; len--) {
+            SRTPPolicy policy =
+                new SRTPPolicy(SRTPPolicy.AESCM_ENCRYPTION, 128/8,
+                        SRTPPolicy.HMACSHA1_AUTHENTICATION, 160/8,
+                        80/8, 112/8 );
+
+            SRTPContextFactory receiverFactory = new SRTPContextFactory(false, test_key, test_key_salt, policy, policy);
+            SRTPCryptoContext rtpRecv = receiverFactory.getDefaultContext().deriveContext(0xcafebabe, 0, 0);
+            rtpRecv.deriveSrtpKeys(0);
+
+            ByteArrayBuffer rtpPkt = new ByteArrayBufferImpl(Arrays.copyOf(srtp_ciphertext, len), 0, len);
+
+            boolean accept = rtpRecv.reverseTransformPacket(rtpPkt, false);
+
+            if (len == srtp_ciphertext.length) {
+                assertTrue("Rejected valid SRTP packet", accept);
+            }
+            else {
+                assertFalse("Accepted truncated SRTP packet", accept);
+            }
+        }
+
+        for (int len = srtcp_ciphertext.length; len > 0; len--) {
+            SRTPPolicy policy =
+                    new SRTPPolicy(SRTPPolicy.AESCM_ENCRYPTION, 128/8,
+                            SRTPPolicy.HMACSHA1_AUTHENTICATION, 160/8,
+                            80/8, 112/8 );
+
+            SRTPContextFactory receiverFactory = new SRTPContextFactory(false, test_key, test_key_salt, policy, policy);
+            SRTCPCryptoContext rtcpRecv = receiverFactory.getDefaultContextControl().deriveContext(0xcafebabe);
+            rtcpRecv.deriveSrtcpKeys();
+
+            ByteArrayBuffer rtpPkt = new ByteArrayBufferImpl(Arrays.copyOf(srtcp_ciphertext, len), 0, len);
+
+            boolean accept = rtcpRecv.reverseTransformPacket(rtpPkt);
+
+            if (len == srtcp_ciphertext.length) {
+                assertTrue("Rejected valid SRTCP packet", accept);
+            }
+            else {
+                assertFalse("Accepted truncated SRTCP packet", accept);
+            }
+        }
+    }
+
 }

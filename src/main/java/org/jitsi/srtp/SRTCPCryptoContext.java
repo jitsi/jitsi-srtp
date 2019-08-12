@@ -309,6 +309,11 @@ public class SRTCPCryptoContext
     {
         boolean decrypt = false;
         int tagLength = policy.getAuthTagLength();
+
+        if (pkt.getLength() < 8 /* RTCP header and ssrc */ + 4 /* index */ + tagLength)
+            /* Too short to be a valid SRTCP packet */
+            return false;
+
         int indexEflag = SrtpUtils.Companion.getSrtcpIndex(pkt, tagLength);
 
         if ((indexEflag & 0x80000000) == 0x80000000)
