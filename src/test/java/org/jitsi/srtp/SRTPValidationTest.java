@@ -66,7 +66,7 @@ public class SRTPValidationTest {
 
         ByteArrayBuffer rtpPkt = new ByteArrayBufferImpl(srtp_plaintext, 0, srtp_plaintext_ref.length);
 
-        rtpSend.transformPacket(rtpPkt);
+        assertTrue(rtpSend.transformPacket(rtpPkt));
         assertEquals(rtpPkt.getLength(), srtp_ciphertext.length);
         assertArrayEquals(rtpPkt.getBuffer(), srtp_ciphertext);
 
@@ -91,14 +91,14 @@ public class SRTPValidationTest {
         SRTPCryptoContext rtpRecv = receiverFactory.getDefaultContext().deriveContext(0xcafebabe, 0, 0);
         rtpRecv.deriveSrtpKeys(0);
 
-        rtpRecv.reverseTransformPacket(rtpPkt, false);
+        assertTrue(rtpRecv.reverseTransformPacket(rtpPkt, false));
         assertEquals(rtpPkt.getLength(), srtp_plaintext_ref.length);
         assertArrayEquals(Arrays.copyOf(rtpPkt.getBuffer(), rtpPkt.getLength()), srtp_plaintext_ref);
 
         SRTCPCryptoContext rtcpRecv = receiverFactory.getDefaultContextControl().deriveContext(0xcafebabe);
         rtcpRecv.deriveSrtcpKeys();
 
-        rtcpRecv.reverseTransformPacket(rtcpPkt);
+        assertTrue(rtcpRecv.reverseTransformPacket(rtcpPkt));
         assertEquals(rtcpPkt.getLength(), rtcp_plaintext_ref.length);
         assertArrayEquals(Arrays.copyOf(rtcpPkt.getBuffer(), rtcpPkt.getLength()), rtcp_plaintext_ref);
 
