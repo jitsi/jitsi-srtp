@@ -239,7 +239,7 @@ public class SRTPCryptoContext
         {
             return true; // Packet not received yet.
         }
-        else if (-delta > REPLAY_WINDOW_SIZE)
+        else if (-delta >= REPLAY_WINDOW_SIZE)
         {
             if (sender)
             {
@@ -252,7 +252,7 @@ public class SRTPCryptoContext
             }
             return false; // Packet too old.
         }
-        else if (((replayWindow >> (-delta)) & 0x1) != 0)
+        else if (((replayWindow >>> (-delta)) & 0x1) != 0)
         {
             if (sender)
             {
@@ -676,6 +676,25 @@ public class SRTPCryptoContext
     }
 
     /**
+     * Prints the current state of the replay window, for debugging purposes.
+     */
+    private void printReplayWindow(long newIdx)
+    {
+        long maxIdx = roc << 16 | s_l;
+        System.out.printf("Updated replay window with %d. maxIdx=%d, window=0x%016x: [", newIdx, maxIdx, replayWindow);
+        boolean printedSomething = false;
+        for (long i = REPLAY_WINDOW_SIZE - 1; i >= 0; i--) {
+            if (((replayWindow >> i) & 0x1) != 0) {
+                if (printedSomething)
+                    System.out.print(", ");
+                printedSomething = true;
+                System.out.print(maxIdx - i);
+            }
+        }
+        System.out.println("]");
+   }
+
+    /**
      * For the receiver only, updates the rollover counter (i.e. {@link #roc})
      * and highest sequence number (i.e. {@link #s_l}) in this cryptographic
      * context using the SRTP/packet index calculated by
@@ -692,14 +711,18 @@ public class SRTPCryptoContext
         long delta = guessedIndex - ((((long) roc) << 16) | s_l);
 
         /* Update the replay bit mask. */
-        if (delta > 0)
+        if (delta >= REPLAY_WINDOW_SIZE)
+        {
+            replayWindow = 1;
+        }
+        else if (delta > 0)
         {
             replayWindow <<= delta;
             replayWindow |= 1;
         }
         else
         {
-            replayWindow |= (1 << -delta);
+            replayWindow |= (1L << -delta);
         }
 
         if (guessedROC == roc)
@@ -712,5 +735,7 @@ public class SRTPCryptoContext
             s_l = seqNo & 0xffff;
             roc = guessedROC;
         }
+
+        //printReplayWindow(guessedIndex);
     }
 }

@@ -113,9 +113,9 @@ public class SRTCPCryptoContext
 
         if (delta > 0)
             return true; // Packet not yet received
-        else if (-delta > REPLAY_WINDOW_SIZE)
+        else if (-delta >= REPLAY_WINDOW_SIZE)
             return false; // Packet too old
-        else if (((this.replayWindow >> (-delta)) & 0x1) != 0)
+        else if (((replayWindow >>> (-delta)) & 0x1) != 0)
             return false; // Packet already received!
         else
             return true; // Packet not yet received
@@ -421,6 +421,24 @@ public class SRTCPCryptoContext
     }
 
     /**
+     * Prints the current state of the replay window, for debugging purposes.
+     */
+    private void printReplayWindow(long newIdx)
+    {
+        System.out.printf("Updated replay window with %d. maxIdx=%d, window=0x%016x: [", newIdx, receivedIndex, replayWindow);
+        boolean printedSomething = false;
+        for (long i = REPLAY_WINDOW_SIZE - 1; i >= 0; i--) {
+            if (((replayWindow >> i) & 0x1) != 0) {
+                if (printedSomething)
+                    System.out.print(", ");
+                printedSomething = true;
+                System.out.print(receivedIndex - i);
+            }
+        }
+        System.out.println("]");
+    }
+
+    /**
      * Updates the SRTP packet index. The method is called after all checks were
      * successful.
      *
@@ -428,19 +446,25 @@ public class SRTCPCryptoContext
      */
     private void update(int index)
     {
-        int delta = receivedIndex - index;
+        int delta = index - receivedIndex;
 
         /* update the replay bit mask */
-        if (delta > 0)
+        if (delta >= REPLAY_WINDOW_SIZE)
         {
-            replayWindow = replayWindow << delta;
+            replayWindow = 1;
+            receivedIndex = index;
+        }
+        else if (delta > 0)
+        {
+            replayWindow <<= delta;
             replayWindow |= 1;
+            receivedIndex = index;
         }
         else
         {
-            replayWindow |= ( 1 << delta );
+            replayWindow |= ( 1L << -delta );
         }
 
-        receivedIndex = index;
+        // printReplayWindow(index);
     }
 }
