@@ -1,6 +1,8 @@
 package org.jitsi.srtp;
 
+import gnu.getopt.Getopt;
 import org.jitsi.utils.ByteArrayBuffer;
+import org.junit.Test;
 
 import javax.xml.bind.DatatypeConverter;
 import java.time.Clock;
@@ -90,22 +92,87 @@ public class SRTPPerfTest {
         Duration elapsed = Duration.between(startTime, endTime);
         Duration average = elapsed.dividedBy(num);
 
-        System.out.printf("Executed %d SRTP enc/auth in %s: %.3f µs/pkt\n",
-                num, elapsed.toString(), average.toNanos() / 1000.0);
+        System.out.printf("Executed %d SRTP enc/auth (%d byte payload) in %s: %.3f µs/pkt\n",
+                num, payloadSize, elapsed.toString(), average.toNanos() / 1000.0);
     }
 
     private static final int DEFAULT_NUM_TESTS = 100000;
     private static final int DEFAULT_PAYLOAD_SIZE = 1250;
 
+    @Test
+    public void srtpPerf()
+    {
+        doPerfTest(DEFAULT_NUM_TESTS, DEFAULT_PAYLOAD_SIZE);
+    }
+
+    private static final String progName = "SRTPPerfTest";
+
+    private static void usage()
+    {
+        System.err.println ("Usage: " + progName + " [-f AES factory] [-p payloadSize] [numTests]");
+        System.exit(2);
+    }
+
     public static void main(String[] args)
     {
         int numTests = DEFAULT_NUM_TESTS;
         int payloadSize = DEFAULT_PAYLOAD_SIZE;
+        String factoryClassName = null;
 
-        if (args.length > 0)
-            numTests = Integer.parseInt(args[0]);
-        if (args.length > 1)
-            payloadSize = Integer.parseInt(args[1]);
+        Getopt g = new Getopt(progName, args, "f:p:");
+
+        int c;
+        String arg;
+        while ((c = g.getopt()) != -1)
+        {
+            switch(c)
+            {
+                case 'f':
+                    arg = g.getOptarg();
+                    AES.setFactoryClassName(arg);
+                    break;
+                case 'p':
+                    arg = g.getOptarg();
+                    try {
+                        payloadSize = Integer.parseInt(arg);
+                    }
+                    catch (NumberFormatException e) {
+                        System.err.println("Invalid payload size " + arg);
+                        usage();
+                    }
+                    if (payloadSize < 0) {
+                        System.err.println("Invalid payload size " + arg);
+                        usage();
+                    }
+                    break;
+                case '?':
+                    // getopt() already printed an error
+                    usage();
+                    break;
+                default:
+                    /* Shouldn't happen */
+                    assert(false);
+                    /* In case asserts are off */
+                    usage();
+                    break;
+            }
+        }
+
+        int optind = g.getOptind();
+
+        if (g.getOptind() < args.length) {
+            try {
+                numTests = Integer.parseInt(args[optind]);
+            }
+            catch (NumberFormatException e) {
+                System.err.println("Invalid number of tests " + args[optind]);
+                usage();
+            }
+            if (numTests < 0) {
+                System.err.println("Invalid number of tests " + args[optind]);
+                usage();
+            }
+        }
 
         SRTPPerfTest test = new SRTPPerfTest();
         test.doPerfTest(numTests, payloadSize);
