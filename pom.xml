@@ -254,12 +254,6 @@
 
         <!-- test -->
         <dependency>
-            <groupId>io.pkts</groupId>
-            <artifactId>pkts-core</artifactId>
-            <version>3.0.3</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-api</artifactId>
             <version>${junit.version}</version>
