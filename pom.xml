@@ -206,46 +206,11 @@
             <artifactId>jitsi-utils</artifactId>
             <version>1.0-SNAPSHOT</version>
         </dependency>
-<!-- 
-        <dependency>
-            <groupId>org.bouncycastle</groupId>
-            <artifactId>bctls-jdk15on</artifactId>
-            <version>${bouncycastle.version}</version>
-        </dependency>
--->
         <dependency>
             <groupId>org.bouncycastle</groupId>
             <artifactId>bcprov-jdk15on</artifactId>
             <version>${bouncycastle.version}</version>
         </dependency>
-<!--
-        <dependency>
-            <groupId>org.bouncycastle</groupId>
-            <artifactId>bcpkix-jdk15on</artifactId>
-            <version>${bouncycastle.version}</version>
-        </dependency>
--->
-<!--
-        <dependency>
-            <groupId>org.pcap4j</groupId>
-            <artifactId>pcap4j-core</artifactId>
-            <version>[1.0, 2.0)</version>
-        </dependency>
--->
-<!--
-        <dependency>
-            <groupId>org.pcap4j</groupId>
-            <artifactId>pcap4j-packetfactory-static</artifactId>
-            <version>[1.0, 2.0)</version>
-        </dependency>
--->
-<!--
-        <dependency>
-            <groupId>org.jitsi</groupId>
-            <artifactId>libjitsi</artifactId>
-            <version>1.0-20190723.113238-389</version>
-        </dependency>
--->
     <dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>bccontrib</artifactId>
