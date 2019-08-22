@@ -531,7 +531,7 @@ public class SRTPCryptoContext
      */
     synchronized public boolean reverseTransformPacket(ByteArrayBuffer pkt, boolean skipDecryption)
     {
-        if (!SRTPPacket.validateHeader(pkt, policy.getAuthTagLength()))
+        if (!SRTPPacket.validatePacketLength(pkt, policy.getAuthTagLength()))
             /* Too short to be a valid SRTP packet */
             return false;
 

@@ -57,7 +57,7 @@ public class SRTCPPacket
      * @param authTagLen The length of the packet's authentication tag.
      * @return true if the packet is syntactically valid (i.e., long enough); false if not.
      */
-    public static boolean validatePacket(ByteArrayBuffer buf, int authTagLen)
+    public static boolean validatePacketLength(ByteArrayBuffer buf, int authTagLen)
     {
         int length = buf.getLength();
         int neededLength = 8 /* sender SSRC */ + 4 /* index */ + authTagLen;
@@ -65,5 +65,12 @@ public class SRTCPPacket
         if (length < neededLength)
             return false;
         return true;
+    }
+
+    /**
+     * Prevents the initialization of new <tt>SRTCPPacket</tt> instances.
+     */
+    private SRTCPPacket()
+    {
     }
 }
