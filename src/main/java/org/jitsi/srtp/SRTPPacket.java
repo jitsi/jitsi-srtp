@@ -73,7 +73,7 @@ public class SRTPPacket
      * enough for the header extension specified.
      *
      * @param buf The SRTP packet.
-     * @return the length of the extensions currently added to this packet.
+     * @return the length of the extensions present in this packet.
      */
     public static int getExtensionLength(ByteArrayBuffer buf)
     {
@@ -111,7 +111,7 @@ public class SRTPPacket
     }
 
     /**
-     * Validate that the contents of a ByteArrayBuffer could contain a valid SRTP packet header.
+     * Validate that the contents of a ByteArrayBuffer could contain a valid SRTP packet.
      *
      * This validates that the packet is long enough to be a valid packet, i.e. attempts to read
      * fields of the packet will not fail.
@@ -120,7 +120,7 @@ public class SRTPPacket
      * @param authTagLen The length of the packet's authentication tag.
      * @return true if the packet is syntactically valid (i.e., long enough); false if not.
      */
-    public static boolean validateHeader(ByteArrayBuffer buf, int authTagLen)
+    public static boolean validatePacketLength(ByteArrayBuffer buf, int authTagLen)
     {
         int length = buf.getLength();
         int neededLength = FIXED_HEADER_SIZE + authTagLen;
@@ -194,5 +194,12 @@ public class SRTPPacket
         int b2 = (0xFF & (buf[off + 1]));
         int val = b1 << 8 | b2;
         return val;
+    }
+
+    /**
+     * Prevents the initialization of new <tt>SRTPPacket</tt> instances.
+     */
+    private SRTPPacket()
+    {
     }
 }

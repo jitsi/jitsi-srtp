@@ -308,7 +308,7 @@ public class SRTCPCryptoContext
         boolean decrypt = false;
         int tagLength = policy.getAuthTagLength();
 
-        if (!SRTCPPacket.validatePacket(pkt, tagLength))
+        if (!SRTCPPacket.validatePacketLength(pkt, tagLength))
             /* Too short to be a valid SRTCP packet */
             return false;
 
