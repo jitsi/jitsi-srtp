@@ -1,9 +1,9 @@
 package org.jitsi.srtp;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 import org.jitsi.utils.ByteArrayBuffer;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import javax.xml.bind.DatatypeConverter;
 import java.util.Arrays;
@@ -128,10 +128,10 @@ public class SRTPValidationTest {
             boolean accept = rtpRecv.reverseTransformPacket(rtpPkt, false);
 
             if (len == srtp_ciphertext.length) {
-                assertTrue("Rejected valid SRTP packet", accept);
+                assertTrue(accept, "Rejected valid SRTP packet");
             }
             else {
-                assertFalse("Accepted truncated SRTP packet", accept);
+                assertFalse(accept, "Accepted truncated SRTP packet");
             }
         }
 
@@ -150,10 +150,10 @@ public class SRTPValidationTest {
             boolean accept = rtcpRecv.reverseTransformPacket(rtpPkt);
 
             if (len == srtcp_ciphertext.length) {
-                assertTrue("Rejected valid SRTCP packet", accept);
+                assertTrue(accept, "Rejected valid SRTCP packet");
             }
             else {
-                assertFalse("Accepted truncated SRTCP packet", accept);
+                assertFalse(accept, "Accepted truncated SRTCP packet");
             }
         }
     }
