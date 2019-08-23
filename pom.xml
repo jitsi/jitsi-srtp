@@ -60,35 +60,35 @@
                     -shared
                 </linkStartOpts>
                 <linkEndOpts>
-		  -lcrypto
+		    -lcrypto
 		</linkEndOpts>
 		<os>linux</os>
 		<nativeLibDir>${os}-${canonArch}</nativeLibDir>
             </properties>
 
 	    <build>
-	      <plugins>
-		<plugin>
-		  <groupId>org.codehaus.mojo</groupId>
-		  <artifactId>build-helper-maven-plugin</artifactId>
-		  <version>3.0.0</version>
-		  <executions>
-		    <execution>
-		      <id>set-canon-arch</id>
-		      <goals>
-			<goal>regex-property</goal>
-		      </goals>
-		      <configuration>
-			<name>canonArch</name>
-			<value>${os.arch}</value>
-			<regex>amd64|x86_64</regex>
-			<replacement>x86-64</replacement>
-			<failIfNoMatch>false</failIfNoMatch>
-		      </configuration>
-		    </execution>
-		  </executions>
-		</plugin>
-	      </plugins>
+		<plugins>
+		    <plugin>
+			<groupId>org.codehaus.mojo</groupId>
+			<artifactId>build-helper-maven-plugin</artifactId>
+			<version>3.0.0</version>
+			<executions>
+			    <execution>
+				<id>set-canon-arch</id>
+				<goals>
+				    <goal>regex-property</goal>
+				</goals>
+				<configuration>
+				    <name>canonArch</name>
+				    <value>${os.arch}</value>
+				    <regex>amd64|x86_64</regex>
+				    <replacement>x86-64</replacement>
+				    <failIfNoMatch>false</failIfNoMatch>
+				</configuration>
+			    </execution>
+			</executions>
+		    </plugin>
+		</plugins>
 	    </build>
 	</profile>
 
@@ -127,13 +127,13 @@
                             </compilerStartOptions>
 
                             <javahClassNames>
-			      <javahClassName>org.jitsi.srtp.OpenSSLHMAC</javahClassName>
-			      <javahClassName>org.jitsi.srtp.SRTPCipherCTROpenSSL</javahClassName>
-			      <javahClassName>org.jitsi.srtp.OpenSSLWrapperLoader</javahClassName>
+				<javahClassName>org.jitsi.srtp.OpenSSLHMAC</javahClassName>
+				<javahClassName>org.jitsi.srtp.SRTPCipherCTROpenSSL</javahClassName>
+				<javahClassName>org.jitsi.srtp.OpenSSLWrapperLoader</javahClassName>
                             </javahClassNames>
                             <javahOS>${os}</javahOS>
 
-                             <sources>
+                            <sources>
                                 <source>
                                     <directory>src/main/native</directory>
                                     <fileNames>
@@ -169,10 +169,10 @@
                                 <configuration>
                                     <outputDirectory>${project.basedir}/src/main/resources/${nativeLibDir}/</outputDirectory>
 				    <resources>
-				      <resource>
-					<directory>${project.build.directory}</directory>
-					<include>libjitsisrtp.${libextension}</include>
-				      </resource>
+					<resource>
+					    <directory>${project.build.directory}</directory>
+					    <include>libjitsisrtp.${libextension}</include>
+					</resource>
                                     </resources>
                                 </configuration>
                             </execution>
@@ -184,10 +184,10 @@
                                 <configuration>
                                     <outputDirectory>${project.basedir}/target/classes/${nativeLibDir}/</outputDirectory>
 				    <resources>
-				      <resource>
-                                      <directory>${project.build.directory}</directory>
-                                      <include>libjitsisrtp.${libextension}</include>
-				      </resource>
+					<resource>
+					    <directory>${project.build.directory}</directory>
+					    <include>libjitsisrtp.${libextension}</include>
+					</resource>
                                     </resources>
                                 </configuration>
                             </execution>
@@ -211,11 +211,11 @@
             <artifactId>bcprov-jdk15on</artifactId>
             <version>${bouncycastle.version}</version>
         </dependency>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>bccontrib</artifactId>
-      <version>1.0</version>
-    </dependency>
+	<dependency>
+	    <groupId>${project.groupId}</groupId>
+	    <artifactId>bccontrib</artifactId>
+	    <version>1.0</version>
+	</dependency>
 
         <!-- test -->
         <dependency>
@@ -234,25 +234,25 @@
 
     <build>
         <plugins>
-		<plugin>
-		  <groupId>org.codehaus.mojo</groupId>
-		  <artifactId>build-helper-maven-plugin</artifactId>
-		  <version>3.0.0</version>
-		  <executions>
+	    <plugin>
+		<groupId>org.codehaus.mojo</groupId>
+		<artifactId>build-helper-maven-plugin</artifactId>
+		<version>3.0.0</version>
+		<executions>
 		    <execution>
-		      <id>attach-native-sources</id>
-		      <phase>package</phase>
-		      <goals>
-			<goal>add-source</goal>
-		      </goals>
-		      <configuration>
-			<sources>
-			  <source>src/main/native</source>
-			</sources>
-		      </configuration>
+			<id>attach-native-sources</id>
+			<phase>package</phase>
+			<goals>
+			    <goal>add-source</goal>
+			</goals>
+			<configuration>
+			    <sources>
+				<source>src/main/native</source>
+			    </sources>
+			</configuration>
 		    </execution>
-		  </executions>
-		</plugin>
+		</executions>
+	    </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-source-plugin</artifactId>
