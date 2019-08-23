@@ -4,7 +4,6 @@ import static org.junit.jupiter.api.Assertions.*;
 import java.util.Arrays;
 import javax.xml.bind.DatatypeConverter;
 import org.bouncycastle.crypto.engines.AESEngine;
-//import org.jitsi.util.OSUtils;
 import org.junit.jupiter.api.Test;
 
 public class SRTPCipherCTRTest
