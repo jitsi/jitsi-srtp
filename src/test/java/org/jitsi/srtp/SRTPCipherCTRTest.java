@@ -1,11 +1,11 @@
 package org.jitsi.srtp;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import java.util.Arrays;
 import javax.xml.bind.DatatypeConverter;
 import org.bouncycastle.crypto.engines.AESEngine;
 //import org.jitsi.util.OSUtils;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class SRTPCipherCTRTest
 {
@@ -53,7 +53,7 @@ public class SRTPCipherCTRTest
         boolean haveOpenSSL = OpenSSLWrapperLoader.isLoaded();
 
         if (System.getProperty("os.name").toLowerCase().contains("linux")) {
-            assertTrue("should always have OpenSSL on Linux", haveOpenSSL);
+            assertTrue(haveOpenSSL, "should always have OpenSSL on Linux");
         }
 
         if (!haveOpenSSL)

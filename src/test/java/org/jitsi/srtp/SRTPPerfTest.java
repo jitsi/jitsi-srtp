@@ -2,7 +2,7 @@ package org.jitsi.srtp;
 
 import gnu.getopt.Getopt;
 import org.jitsi.utils.ByteArrayBuffer;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import javax.xml.bind.DatatypeConverter;
 import java.time.Clock;

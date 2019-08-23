@@ -1,9 +1,9 @@
 package org.jitsi.srtp;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 import org.jitsi.utils.ByteArrayBuffer;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import javax.xml.bind.DatatypeConverter;
 
@@ -46,13 +46,13 @@ public class SRTPReplayTest {
             boolean accepted = receiver.reverseTransformPacket(rtpPacket, false);
             int delta = latestSeq - seq;
             if (delta >= REPLAY_WINDOW_SIZE)
-                assertFalse("packet outside RTP replay window accepted", accepted);
+                assertFalse(accepted, "packet outside RTP replay window accepted");
             else
-                assertTrue("packet inside RTP replay window rejected", accepted);
+                assertTrue(accepted, "packet inside RTP replay window rejected");
 
             /* Should always reject packet when it's replayed. */
-            assertFalse("replayed RTP packet accepted",
-                    receiver.reverseTransformPacket(rtpPacket, false));
+            assertFalse(receiver.reverseTransformPacket(rtpPacket, false),
+                    "replayed RTP packet accepted");
         }
     }
 
@@ -94,13 +94,13 @@ public class SRTPReplayTest {
             boolean accepted = receiver.reverseTransformPacket(rtcpPacket);
             int delta = latestSeq - seq;
             if (delta >= REPLAY_WINDOW_SIZE)
-                assertFalse("packet outside RTCP replay window accepted", accepted);
+                assertFalse(accepted, "packet outside RTCP replay window accepted");
             else
-                assertTrue("packet inside RTCP replay window rejected", accepted);
+                assertTrue(accepted, "packet inside RTCP replay window rejected");
 
             /* Should always reject packet when it's replayed. */
-            assertFalse("replayed RTCP packet accepted",
-                    receiver.reverseTransformPacket(rtcpPacket));
+            assertFalse( receiver.reverseTransformPacket(rtcpPacket),
+                    "replayed RTCP packet accepted");
         }
     }
 }
