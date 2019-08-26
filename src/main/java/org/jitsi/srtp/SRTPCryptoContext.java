@@ -563,7 +563,7 @@ public class SRTPCryptoContext
         boolean b = false;
 
         // Replay control
-        if (checkReplay(seqNo, guessedIndex))
+        if (!policy.isReceiveReplayEnabled() || checkReplay(seqNo, guessedIndex))
         {
             // Authenticate the packet.
             if (authenticatePacket(pkt))
@@ -643,7 +643,7 @@ public class SRTPCryptoContext
          * XXX The invocation of the checkReplay method here is not meant as
          * replay protection but as a consistency check of our implementation.
          */
-        if (!checkReplay(seqNo, guessedIndex))
+        if (policy.isSendReplayEnabled() && !checkReplay(seqNo, guessedIndex))
             return false;
 
         switch (policy.getEncType())
