@@ -210,7 +210,7 @@ public class SrtcpCryptoContext
      *
      * @param pkt the RTP packet to be encrypted/decrypted
      */
-    public void processPacketAesCm(ByteArrayBuffer pkt, int index)
+    private void processPacketAesCm(ByteArrayBuffer pkt, int index)
     {
         int ssrc = SrtcpPacketUtils.getSenderSsrc(pkt);
 
@@ -258,7 +258,7 @@ public class SrtcpCryptoContext
      *
      * @param pkt the RTP packet to be encrypted/decrypted
      */
-    public void processPacketAesF8(ByteArrayBuffer pkt, int index)
+    private void processPacketAesF8(ByteArrayBuffer pkt, int index)
     {
         // 4 bytes of the iv are zero
         // the first byte of the RTP header is not used.

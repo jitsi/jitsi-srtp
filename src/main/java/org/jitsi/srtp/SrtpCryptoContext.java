@@ -441,7 +441,7 @@ public class SrtpCryptoContext
      *
      * @param pkt the RTP packet to be encrypted/decrypted
      */
-    public void processPacketAesCm(ByteArrayBuffer pkt)
+    private void processPacketAesCm(ByteArrayBuffer pkt)
     {
         int ssrc = SrtpPacketUtils.getSsrc(pkt);
         int seqNo = SrtpPacketUtils.getSequenceNumber(pkt);
@@ -491,7 +491,7 @@ public class SrtpCryptoContext
      *
      * @param pkt the RTP packet to be encrypted/decrypted
      */
-    public void processPacketAesF8(ByteArrayBuffer pkt)
+    private void processPacketAesF8(ByteArrayBuffer pkt)
     {
         // 11 bytes of the RTP header are the 11 bytes of the iv
         // the first byte of the RTP header is not used.
