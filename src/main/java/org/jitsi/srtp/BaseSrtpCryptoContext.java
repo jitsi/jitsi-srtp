@@ -42,12 +42,12 @@ import org.jitsi.bccontrib.macs.*;
 import org.jitsi.utils.*;
 
 /**
- * SRTPCryptoContext class is the core class of SRTP implementation. There can
+ * SrtpCryptoContext class is the core class of SRTP implementation. There can
  * be multiple SRTP sources in one SRTP session. And each SRTP stream has a
- * corresponding SRTPCryptoContext object, identified by SSRC. In this way,
+ * corresponding SrtpCryptoContext object, identified by SSRC. In this way,
  * different sources can be protected independently.
  *
- * SRTPCryptoContext class acts as a manager class and maintains all the
+ * SrtpCryptoContext class acts as a manager class and maintains all the
  * information used in SRTP transformation. It is responsible for deriving
  * encryption/salting/authentication keys from master keys. And it will invoke
  * certain class to encrypt/decrypt (transform/reverse transform) RTP packets.
@@ -65,7 +65,7 @@ import org.jitsi.utils.*;
  * @author Bing SU (nova.su@gmail.com)
  * @author Lyubomir Marinov
  */
-public class BaseSRTPCryptoContext
+public class BaseSrtpCryptoContext
 {
     /**
      * The replay check windows size.
@@ -80,12 +80,12 @@ public class BaseSRTPCryptoContext
     /**
      * implements the counter cipher mode for RTP according to RFC 3711
      */
-    protected final SRTPCipherCTR cipherCtr;
+    protected final SrtpCipherCtr cipherCtr;
 
     /**
      * F8 mode cipher
      */
-    protected final SRTPCipherF8 cipherF8;
+    protected final SrtpCipherF8 cipherF8;
 
     /**
      * Derived session encryption key
@@ -120,7 +120,7 @@ public class BaseSRTPCryptoContext
     /**
      * Encryption / Authentication policy for this session
      */
-    protected final SRTPPolicy policy;
+    protected final SrtpPolicy policy;
 
     /**
      * Temp store.
@@ -153,7 +153,7 @@ public class BaseSRTPCryptoContext
      */
     protected final byte[] tempStore = new byte[100];
 
-    protected BaseSRTPCryptoContext(int ssrc)
+    protected BaseSrtpCryptoContext(int ssrc)
     {
         this.ssrc = ssrc;
 
@@ -170,11 +170,11 @@ public class BaseSRTPCryptoContext
     }
 
     @SuppressWarnings("fallthrough")
-    protected BaseSRTPCryptoContext(
+    protected BaseSrtpCryptoContext(
             int ssrc,
             byte[] masterK,
             byte[] masterS,
-            SRTPPolicy policy)
+            SrtpPolicy policy)
     {
         this.ssrc = ssrc;
         this.policy = policy;
@@ -209,42 +209,42 @@ public class BaseSRTPCryptoContext
             masterSalt = new byte[0];
         }
 
-        SRTPCipherCTR cipherCtr = null;
-        SRTPCipherF8 cipherF8 = null;
+        SrtpCipherCtr cipherCtr = null;
+        SrtpCipherF8 cipherF8 = null;
         byte[] encKey = null;
         byte[] saltKey = null;
 
         switch (policy.getEncType())
         {
-        case SRTPPolicy.NULL_ENCRYPTION:
+        case SrtpPolicy.NULL_ENCRYPTION:
             break;
 
-        case SRTPPolicy.AESF8_ENCRYPTION:
-            cipherF8 = new SRTPCipherF8(AES.createBlockCipher(encKeyLength));
+        case SrtpPolicy.AESF8_ENCRYPTION:
+            cipherF8 = new SrtpCipherF8(Aes.createBlockCipher(encKeyLength));
             //$FALL-THROUGH$
 
-        case SRTPPolicy.AESCM_ENCRYPTION:
+        case SrtpPolicy.AESCM_ENCRYPTION:
             // use OpenSSL if available and AES128 is in use
-            if (OpenSSLWrapperLoader.isLoaded() && encKeyLength == 16)
+            if (OpenSslWrapperLoader.isLoaded() && encKeyLength == 16)
             {
-                cipherCtr = new SRTPCipherCTROpenSSL();
+                cipherCtr = new SrtpCipherCtrOpenSsl();
             }
             else
             {
                 cipherCtr
-                    = new SRTPCipherCTRJava(
-                            AES.createBlockCipher(encKeyLength));
+                    = new SrtpCipherCtrJava(
+                            Aes.createBlockCipher(encKeyLength));
             }
             encKey = new byte[encKeyLength];
             saltKey = new byte[saltKeyLength];
             break;
 
-        case SRTPPolicy.TWOFISHF8_ENCRYPTION:
-            cipherF8 = new SRTPCipherF8(new TwofishEngine());
+        case SrtpPolicy.TWOFISHF8_ENCRYPTION:
+            cipherF8 = new SrtpCipherF8(new TwofishEngine());
             //$FALL-THROUGH$
 
-        case SRTPPolicy.TWOFISH_ENCRYPTION:
-            cipherCtr = new SRTPCipherCTRJava(new TwofishEngine());
+        case SrtpPolicy.TWOFISH_ENCRYPTION:
+            cipherCtr = new SrtpCipherCtrJava(new TwofishEngine());
             encKey = new byte[encKeyLength];
             saltKey = new byte[saltKeyLength];
             break;
@@ -260,19 +260,19 @@ public class BaseSRTPCryptoContext
 
         switch (policy.getAuthType())
         {
-        case SRTPPolicy.HMACSHA1_AUTHENTICATION:
+        case SrtpPolicy.HMACSHA1_AUTHENTICATION:
             authKey = new byte[policy.getAuthKeyLength()];
-            mac = HMACSHA1.createMac();
+            mac = HmacSha1.createMac();
             tagStore = new byte[mac.getMacSize()];
             break;
 
-        case SRTPPolicy.SKEIN_AUTHENTICATION:
+        case SrtpPolicy.SKEIN_AUTHENTICATION:
             authKey = new byte[policy.getAuthKeyLength()];
             mac = new SkeinMac();
             tagStore = new byte[policy.getAuthTagLength()];
             break;
 
-        case SRTPPolicy.NULL_AUTHENTICATION:
+        case SrtpPolicy.NULL_AUTHENTICATION:
         default:
             authKey = null;
             mac = null;
@@ -291,7 +291,7 @@ public class BaseSRTPCryptoContext
      * @param pkt the RTP packet to be authenticated
      * @param rocIn Roll-Over-Counter
      */
-    synchronized protected void authenticatePacketHMAC(ByteArrayBuffer pkt, int rocIn)
+    synchronized protected void authenticatePacketHmac(ByteArrayBuffer pkt, int rocIn)
     {
         mac.update(pkt.getBuffer(), pkt.getOffset(), pkt.getLength());
         rbStore[0] = (byte) (rocIn >> 24);
@@ -329,7 +329,7 @@ public class BaseSRTPCryptoContext
      *
      * @return the MKI length of this SRTP cryptographic context
      */
-    public int getMKILength()
+    public int getMkiLength()
     {
         return (mki == null) ? 0 : mki.length;
     }
@@ -339,7 +339,7 @@ public class BaseSRTPCryptoContext
      *
      * @return the SSRC of this SRTP cryptographic context
      */
-    public int getSSRC()
+    public int getSsrc()
     {
         return ssrc;
     }

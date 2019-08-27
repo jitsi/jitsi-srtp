@@ -24,7 +24,7 @@ import org.bouncycastle.crypto.params.*;
  *
  * @author Lyubomir Marinov
  */
-public class OpenSSLHMAC
+public class OpenSslHmac
     implements Mac
 {
     private static native int EVP_MD_size(long md);
@@ -83,19 +83,19 @@ public class OpenSSLHMAC
     public static final int SHA1 = 1;
 
     /**
-     * Initializes a new <tt>OpenSSLHMAC</tt> instance with a specific digest
+     * Initializes a new <tt>OpenSslHmac</tt> instance with a specific digest
      * algorithm.
      *
      * @param digestAlgorithm the algorithm of the digest to initialize the new
      * instance with
-     * @see OpenSSLHMAC#SHA1
+     * @see OpenSslHmac#SHA1
      */
-    public OpenSSLHMAC(int digestAlgorithm)
+    public OpenSslHmac(int digestAlgorithm)
     {
-        if (!OpenSSLWrapperLoader.isLoaded())
+        if (!OpenSslWrapperLoader.isLoaded())
             throw new RuntimeException("OpenSSL wrapper not loaded");
 
-        if (digestAlgorithm != OpenSSLHMAC.SHA1)
+        if (digestAlgorithm != OpenSslHmac.SHA1)
             throw new IllegalArgumentException(
                     "digestAlgorithm " + digestAlgorithm);
 

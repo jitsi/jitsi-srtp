@@ -127,9 +127,9 @@
                             </compilerStartOptions>
 
                             <javahClassNames>
-				<javahClassName>org.jitsi.srtp.OpenSSLHMAC</javahClassName>
-				<javahClassName>org.jitsi.srtp.SRTPCipherCTROpenSSL</javahClassName>
-				<javahClassName>org.jitsi.srtp.OpenSSLWrapperLoader</javahClassName>
+				<javahClassName>org.jitsi.srtp.OpenSslHmac</javahClassName>
+				<javahClassName>org.jitsi.srtp.SrtpCipherCtrOpenSsl</javahClassName>
+				<javahClassName>org.jitsi.srtp.OpenSslWrapperLoader</javahClassName>
                             </javahClassNames>
                             <javahOS>${os}</javahOS>
 
@@ -137,9 +137,9 @@
                                 <source>
                                     <directory>src/main/native</directory>
                                     <fileNames>
-                                        <fileName>HMAC.c</fileName>
-                                        <fileName>OpenSSLWrapperLoader.c</fileName>
-                                        <fileName>SRTPCipherCTROpenSSL.c</fileName>
+                                        <fileName>Hmac.c</fileName>
+                                        <fileName>OpenSslWrapperLoader.c</fileName>
+                                        <fileName>SrtpCipherCtrOpenSsl.c</fileName>
                                     </fileNames>
                                 </source>
                             </sources>

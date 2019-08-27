@@ -14,17 +14,17 @@
  * limitations under the License.
  */
 
-#include "org_jitsi_srtp_OpenSSLWrapperLoader.h"
+#include "org_jitsi_srtp_OpenSslWrapperLoader.h"
 #include <openssl/evp.h>
 #include <openssl/err.h>
 
 /*
- * Class:     org_jitsi_srtp_OpenSSLWrapperLoader
- * Method:    OpenSSL_Init
+ * Class:     org_jitsi_srtp_OpenSslWrapperLoader
+ * Method:    OpenSsl_Init
  * Signature: ()Z
  */
 JNIEXPORT jboolean JNICALL
-Java_org_jitsi_srtp_OpenSSLWrapperLoader_OpenSSL_1Init
+Java_org_jitsi_srtp_OpenSslWrapperLoader_OpenSSL_1Init
   (JNIEnv *env, jclass clazz)
 {
     OpenSSL_add_all_algorithms();

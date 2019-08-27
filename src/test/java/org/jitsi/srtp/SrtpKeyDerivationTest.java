@@ -21,7 +21,7 @@ import org.junit.jupiter.api.Test;
 
 import javax.xml.bind.DatatypeConverter;
 
-public class SRTPKeyDerivationTest {
+public class SrtpKeyDerivationTest {
 
     /* Key derivation test vectors from RFC 3711. */
     private static final byte[] masterKey128 =
@@ -38,14 +38,14 @@ public class SRTPKeyDerivationTest {
 
     @Test
     public void srtpKdf128Test() {
-        SRTPPolicy policy =
-                new SRTPPolicy(SRTPPolicy.AESCM_ENCRYPTION, 128/8,
-                        SRTPPolicy.HMACSHA1_AUTHENTICATION, 160/8,
+        SrtpPolicy policy =
+                new SrtpPolicy(SrtpPolicy.AESCM_ENCRYPTION, 128/8,
+                        SrtpPolicy.HMACSHA1_AUTHENTICATION, 160/8,
                         80/8, 112/8 );
-        SRTPContextFactory factory = new SRTPContextFactory(true, masterKey128, masterSalt128, policy, policy);
+        SrtpContextFactory factory = new SrtpContextFactory(true, masterKey128, masterSalt128, policy, policy);
 
-        SRTPCryptoContext srtpContext = factory.getDefaultContext();
-        SRTCPCryptoContext srtcpContext = factory.getDefaultContextControl();
+        SrtpCryptoContext srtpContext = factory.getDefaultContext();
+        SrtcpCryptoContext srtcpContext = factory.getDefaultContextControl();
 
         srtpContext.deriveSrtpKeysInternal(0);
         srtcpContext.deriveSrtcpKeys();
@@ -72,14 +72,14 @@ public class SRTPKeyDerivationTest {
 
     @Test
     public void srtpKdf256Test() {
-        SRTPPolicy policy =
-                new SRTPPolicy(SRTPPolicy.AESCM_ENCRYPTION, 256/8,
-                        SRTPPolicy.HMACSHA1_AUTHENTICATION, 160/8,
+        SrtpPolicy policy =
+                new SrtpPolicy(SrtpPolicy.AESCM_ENCRYPTION, 256/8,
+                        SrtpPolicy.HMACSHA1_AUTHENTICATION, 160/8,
                         80/8, 112/8 );
-        SRTPContextFactory factory = new SRTPContextFactory(true, masterKey256, masterSalt256, policy, policy);
+        SrtpContextFactory factory = new SrtpContextFactory(true, masterKey256, masterSalt256, policy, policy);
 
-        SRTPCryptoContext srtpContext = factory.getDefaultContext();
-        SRTCPCryptoContext srtcpContext = factory.getDefaultContextControl();
+        SrtpCryptoContext srtpContext = factory.getDefaultContext();
+        SrtcpCryptoContext srtcpContext = factory.getDefaultContextControl();
 
         srtpContext.deriveSrtpKeysInternal(0);
         srtcpContext.deriveSrtcpKeys();

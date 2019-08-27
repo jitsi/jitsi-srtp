@@ -19,18 +19,18 @@ import org.bouncycastle.crypto.*;
 import org.bouncycastle.crypto.params.*;
 
 /**
- * @see SRTPCipherCTR
- * SRTPCipherCTR implementation using Java and a <tt>BlockCipher</tt>.
+ * @see SrtpCipherCtr
+ * SrtpCipherCtr implementation using Java and a <tt>BlockCipher</tt>.
  *
  * You can use any <tt>BlockCipher</tt> with <tt>BLKLEN</tt> bytes key and
  * block size like TwofishEngine instead of AES.
  */
-public class SRTPCipherCTRJava extends SRTPCipherCTR
+public class SrtpCipherCtrJava extends SrtpCipherCtr
 {
     private final byte[] tmpCipherBlock = new byte[BLKLEN];
     private final BlockCipher cipher;
 
-    public SRTPCipherCTRJava(BlockCipher cipher)
+    public SrtpCipherCtrJava(BlockCipher cipher)
     {
         this.cipher = cipher;
     }

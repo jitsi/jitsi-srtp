@@ -22,7 +22,7 @@ import org.junit.jupiter.api.Test;
 
 import javax.xml.bind.DatatypeConverter;
 
-public class SRTPReplayTest {
+public class SrtpReplayTest {
     private static final byte[] rtpPacketData =
             DatatypeConverter.parseHexBinary("800f1234decafbad" +
                     "cafebabeabababab" +
@@ -46,9 +46,9 @@ public class SRTPReplayTest {
     @Test
     public void TestRTPReplay()
     {
-        SRTPPolicy nullPolicy = new SRTPPolicy(SRTPPolicy.NULL_ENCRYPTION, 0, SRTPPolicy.NULL_AUTHENTICATION, 0, 0, 0);
+        SrtpPolicy nullPolicy = new SrtpPolicy(SrtpPolicy.NULL_ENCRYPTION, 0, SrtpPolicy.NULL_AUTHENTICATION, 0, 0, 0);
 
-        SRTPCryptoContext receiver = new SRTPCryptoContext(false, 0xcafebabe, 0, 0, null, null, nullPolicy);
+        SrtpCryptoContext receiver = new SrtpCryptoContext(false, 0xcafebabe, 0, 0, null, null, nullPolicy);
 
         int latestSeq = -1;
         UtSim utSim = new UtSim();
@@ -94,9 +94,9 @@ public class SRTPReplayTest {
     @Test
     public void TestRTCPReplay()
     {
-        SRTPPolicy nullPolicy = new SRTPPolicy(SRTPPolicy.NULL_ENCRYPTION, 0, SRTPPolicy.NULL_AUTHENTICATION, 0, 0, 0);
+        SrtpPolicy nullPolicy = new SrtpPolicy(SrtpPolicy.NULL_ENCRYPTION, 0, SrtpPolicy.NULL_AUTHENTICATION, 0, 0, 0);
 
-        SRTCPCryptoContext receiver = new SRTCPCryptoContext(0xcafebabe, null, null, nullPolicy);
+        SrtcpCryptoContext receiver = new SrtcpCryptoContext(0xcafebabe, null, null, nullPolicy);
 
         int latestSeq = -1;
         UtSim utSim = new UtSim();

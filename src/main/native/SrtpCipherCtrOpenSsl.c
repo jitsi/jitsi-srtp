@@ -14,19 +14,19 @@
  * limitations under the License.
  */
 
-#include "org_jitsi_srtp_SRTPCipherCTROpenSSL.h"
+#include "org_jitsi_srtp_SrtpCipherCtrOpenSsl.h"
 
 #include <openssl/evp.h>
 #include <stdint.h>
 #include <stdlib.h>
 
 /*
- * Class:     org_jitsi_srtp_SRTPCipherCTROpenSSL
+ * Class:     org_jitsi_srtp_SrtpCipherCtrOpenSsl
  * Method:    AES128CTR_CTX_create
  * Signature: ()J
  */
 JNIEXPORT jlong JNICALL
-Java_org_jitsi_srtp_SRTPCipherCTROpenSSL_AES128CTR_1CTX_1create
+Java_org_jitsi_srtp_SrtpCipherCtrOpenSsl_AES128CTR_1CTX_1create
   (JNIEnv *env, jclass clazz)
 {
     EVP_CIPHER_CTX *ctx = EVP_CIPHER_CTX_new();
@@ -35,12 +35,12 @@ Java_org_jitsi_srtp_SRTPCipherCTROpenSSL_AES128CTR_1CTX_1create
 }
 
 /*
- * Class:     org_jitsi_srtp_SRTPCipherCTROpenSSL
+ * Class:     org_jitsi_srtp_SrtpCipherCtrOpenSsl
  * Method:    AES128CTR_CTX_destroy
  * Signature: (J)V
  */
 JNIEXPORT void JNICALL
-Java_org_jitsi_srtp_SRTPCipherCTROpenSSL_AES128CTR_1CTX_1destroy
+Java_org_jitsi_srtp_SrtpCipherCtrOpenSsl_AES128CTR_1CTX_1destroy
   (JNIEnv *env, jclass clazz, jlong ctx)
 {
     if (ctx) {
@@ -50,12 +50,12 @@ Java_org_jitsi_srtp_SRTPCipherCTROpenSSL_AES128CTR_1CTX_1destroy
 }
 
 /*
- * Class:     org_jitsi_srtp_SRTPCipherCTROpenSSL
+ * Class:     org_jitsi_srtp_SrtpCipherCtrOpenSsl
  * Method:    AES128CTR_CTX_init
  * Signature: (J[B)Z
  */
 JNIEXPORT jboolean JNICALL
-Java_org_jitsi_srtp_SRTPCipherCTROpenSSL_AES128CTR_1CTX_1init
+Java_org_jitsi_srtp_SrtpCipherCtrOpenSsl_AES128CTR_1CTX_1init
   (JNIEnv *env, jclass clazz, jlong ctx, jbyteArray key)
 {
     unsigned char key_[16];
@@ -64,12 +64,12 @@ Java_org_jitsi_srtp_SRTPCipherCTROpenSSL_AES128CTR_1CTX_1init
 }
 
 /*
- * Class:     org_jitsi_srtp_SRTPCipherCTROpenSSL
+ * Class:     org_jitsi_srtp_SrtpCipherCtrOpenSsl
  * Method:    AES128CTR_CTX_process
  * Signature: (J[B[BII)Z
  */
 JNIEXPORT jboolean JNICALL
-Java_org_jitsi_srtp_SRTPCipherCTROpenSSL_AES128CTR_1CTX_1process
+Java_org_jitsi_srtp_SrtpCipherCtrOpenSsl_AES128CTR_1CTX_1process
   (JNIEnv *env, jclass clazz, jlong ctx, jbyteArray iv, jbyteArray inOut, jint offset, jint len)
 {
     int ok = 0;

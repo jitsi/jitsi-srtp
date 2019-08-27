@@ -21,7 +21,7 @@ import javax.xml.bind.DatatypeConverter;
 import org.bouncycastle.crypto.engines.AESEngine;
 import org.junit.jupiter.api.Test;
 
-public class SRTPCipherCTRTest
+public class SrtpCipherCtrTest
 {
     // RFC 3711 AES CTR Tests vectors
     private static final byte[] TV_Key =
@@ -44,9 +44,9 @@ public class SRTPCipherCTRTest
             + "6A2CC3787889374FBEB4C81B17BA6C44");
 
     @Test
-    public void testJavaCTRAES()
+    public void testJavaCtrAes()
     {
-        SRTPCipherCTR cipher = new SRTPCipherCTRJava(new AESEngine());
+        SrtpCipherCtr cipher = new SrtpCipherCtrJava(new AESEngine());
         cipher.init(TV_Key);
         byte[] data = new byte[TV_Cipher_AES_1.length];
 
@@ -62,18 +62,18 @@ public class SRTPCipherCTRTest
     }
 
     @Test
-    public void testOpenSSLCTRAES()
+    public void testOpenSslCtrAes()
     {
-        boolean haveOpenSSL = OpenSSLWrapperLoader.isLoaded();
+        boolean haveOpenSsl = OpenSslWrapperLoader.isLoaded();
 
         if (System.getProperty("os.name").toLowerCase().contains("linux")) {
-            assertTrue(haveOpenSSL, "should always have OpenSSL on Linux");
+            assertTrue(haveOpenSsl, "should always have OpenSSL on Linux");
         }
 
-        if (!haveOpenSSL)
+        if (!haveOpenSsl)
             return;
 
-        SRTPCipherCTR cipher = new SRTPCipherCTROpenSSL();
+        SrtpCipherCtr cipher = new SrtpCipherCtrOpenSsl();
         cipher.init(TV_Key);
         byte[] data = new byte[TV_Cipher_AES_1.length];
 

@@ -21,7 +21,7 @@ import org.bouncycastle.crypto.*;
 import org.bouncycastle.crypto.params.*;
 
 /**
- * SRTPCipherF8 implements SRTP F8 Mode Encryption for 128 bits block cipher.
+ * SrtpCipherF8 implements Srtp F8 Mode Encryption for 128 bits block cipher.
  * F8 Mode AES Encryption algorithm is defined in RFC3711, section 4.1.2.
  *
  * Other than Null Cipher, RFC3711 defined two two encryption algorithms:
@@ -46,7 +46,7 @@ import org.bouncycastle.crypto.params.*;
  * @author Bing SU (nova.su@gmail.com)
  * @author Werner Dittmann <werner.dittmann@t-online.de>
  */
-public class SRTPCipherF8
+public class SrtpCipherF8
 {
     /**
      * block size, just a short name.
@@ -81,7 +81,7 @@ public class SRTPCipherF8
      */
     private BlockCipher cipher;
 
-    public SRTPCipherF8(BlockCipher cipher)
+    public SrtpCipherF8(BlockCipher cipher)
     {
         this.cipher = cipher;
     }

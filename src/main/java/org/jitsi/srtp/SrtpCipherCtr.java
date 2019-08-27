@@ -16,7 +16,7 @@
 package org.jitsi.srtp;
 
 /**
- * SRTPCipherCTR implementations implement SRTP Counter Mode Encryption.
+ * SrtpCipherCtr implementations implement SRTP Counter Mode Encryption.
  *
  * SRTP Counter Mode is standard block cipher counter mode with special key and
  * special counter initial value (iv). We only increment last 16 bits of the
@@ -25,7 +25,7 @@ package org.jitsi.srtp;
  * SRTP Counter Mode AES Encryption algorithm is defined in RFC3711, section
  * 4.1.1.
  */
-public abstract class SRTPCipherCTR
+public abstract class SrtpCipherCtr
 {
     protected static final int BLKLEN = 16;
 
