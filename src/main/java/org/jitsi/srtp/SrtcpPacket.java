@@ -68,11 +68,4 @@ public class SrtcpPacket
         }
         return true;
     }
-
-    /**
-     * Prevents the initialization of new <tt>SrtcpPacket</tt> instances.
-     */
-    private SrtcpPacket()
-    {
-    }
 }

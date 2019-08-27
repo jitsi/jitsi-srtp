@@ -204,11 +204,4 @@ public class SrtpPacket
         int val = b1 << 8 | b2;
         return val;
     }
-
-    /**
-     * Prevents the initialization of new <tt>SrtpPacket</tt> instances.
-     */
-    private SrtpPacket()
-    {
-    }
 }
