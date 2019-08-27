@@ -568,7 +568,7 @@ public class SrtpCryptoContext
         boolean b = false;
 
         // Replay control
-        if (!policy.isReceiveReplayEnabled() || checkReplay(seqNo, guessedIndex))
+        if (policy.isReceiveReplayDisabled() || checkReplay(seqNo, guessedIndex))
         {
             // Authenticate the packet.
             if (authenticatePacket(pkt))
