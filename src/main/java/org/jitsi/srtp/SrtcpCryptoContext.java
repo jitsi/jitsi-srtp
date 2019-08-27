@@ -19,6 +19,7 @@ import java.util.*;
 
 import org.bouncycastle.crypto.params.*;
 import org.jitsi.bccontrib.params.*;
+import org.jitsi.srtp.utils.*;
 import org.jitsi.utils.*;
 
 /**

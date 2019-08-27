@@ -16,6 +16,7 @@
 package org.jitsi.srtp;
 
 import gnu.getopt.*;
+import org.jitsi.srtp.crypto.*;
 import org.jitsi.utils.*;
 import org.junit.jupiter.api.*;
 

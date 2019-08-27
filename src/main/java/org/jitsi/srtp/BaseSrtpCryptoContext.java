@@ -39,6 +39,7 @@ import java.util.*;
 import org.bouncycastle.crypto.*;
 import org.bouncycastle.crypto.engines.*;
 import org.jitsi.bccontrib.macs.*;
+import org.jitsi.srtp.crypto.*;
 import org.jitsi.utils.*;
 
 /**
