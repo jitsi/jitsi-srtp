@@ -125,22 +125,31 @@ public class SrtpPacket
         int length = buf.getLength();
         int neededLength = FIXED_HEADER_SIZE + authTagLen;
         if (length < neededLength)
+        {
             return false;
+        }
 
         int cc = getCsrcCount(buf);
         neededLength += cc*4;
         if (length < neededLength)
+        {
             return false;
+        }
 
-        if (getExtensionBit(buf)) {
+        if (getExtensionBit(buf))
+        {
             neededLength += EXT_HEADER_SIZE;
             if (length < neededLength)
+            {
                 return false;
+            }
 
             int extLen = getExtensionLength(buf);
             neededLength += extLen;
             if (length < neededLength)
+            {
                 return false;
+            }
         }
         return true;
     }

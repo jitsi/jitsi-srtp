@@ -66,12 +66,15 @@ public class SrtpCipherCtrTest
     {
         boolean haveOpenSsl = OpenSslWrapperLoader.isLoaded();
 
-        if (System.getProperty("os.name").toLowerCase().contains("linux")) {
+        if (System.getProperty("os.name").toLowerCase().contains("linux"))
+        {
             assertTrue(haveOpenSsl, "should always have OpenSSL on Linux");
         }
 
         if (!haveOpenSsl)
+        {
             return;
+        }
 
         SrtpCipherCtr cipher = new SrtpCipherCtrOpenSsl();
         cipher.init(TV_Key);

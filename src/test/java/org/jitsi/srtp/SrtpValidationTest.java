@@ -128,7 +128,8 @@ public class SrtpValidationTest {
     @Test
     public void rejectInvalid()
     {
-        for (int len = srtp_ciphertext.length; len > 0; len--) {
+        for (int len = srtp_ciphertext.length; len > 0; len--)
+        {
             SrtpPolicy policy =
                 new SrtpPolicy(SrtpPolicy.AESCM_ENCRYPTION, 128/8,
                         SrtpPolicy.HMACSHA1_AUTHENTICATION, 160/8,
@@ -142,10 +143,12 @@ public class SrtpValidationTest {
 
             boolean accept = rtpRecv.reverseTransformPacket(rtpPkt, false);
 
-            if (len == srtp_ciphertext.length) {
+            if (len == srtp_ciphertext.length)
+            {
                 assertTrue(accept, "Rejected valid SRTP packet");
             }
-            else {
+            else
+            {
                 assertFalse(accept, "Accepted truncated SRTP packet");
             }
         }
@@ -164,10 +167,12 @@ public class SrtpValidationTest {
 
             boolean accept = rtcpRecv.reverseTransformPacket(rtpPkt);
 
-            if (len == srtcp_ciphertext.length) {
+            if (len == srtcp_ciphertext.length)
+            {
                 assertTrue(accept, "Rejected valid SRTCP packet");
             }
-            else {
+            else
+            {
                 assertFalse(accept, "Accepted truncated SRTCP packet");
             }
         }

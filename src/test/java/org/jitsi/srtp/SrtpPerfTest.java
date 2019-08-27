@@ -174,14 +174,17 @@ public class SrtpPerfTest {
         int optind = g.getOptind();
 
         if (g.getOptind() < args.length) {
-            try {
+            try
+            {
                 numTests = Integer.parseInt(args[optind]);
             }
-            catch (NumberFormatException e) {
+            catch (NumberFormatException e)
+            {
                 System.err.println("Invalid number of tests " + args[optind]);
                 usage();
             }
-            if (numTests < 0) {
+            if (numTests < 0)
+            {
                 System.err.println("Invalid number of tests " + args[optind]);
                 usage();
             }
