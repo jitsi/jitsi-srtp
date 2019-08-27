@@ -19,6 +19,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import java.util.*;
 import javax.xml.bind.*;
 import org.bouncycastle.crypto.engines.*;
+import org.jitsi.srtp.crypto.*;
 import org.junit.jupiter.api.*;
 
 public class SrtpCipherCtrTest

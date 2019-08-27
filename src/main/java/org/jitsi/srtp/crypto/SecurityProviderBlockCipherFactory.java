@@ -13,13 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.jitsi.srtp;
+package org.jitsi.srtp.crypto;
 
 import java.security.*;
 
 import javax.crypto.*;
 
 import org.bouncycastle.crypto.*;
+import org.jitsi.srtp.crypto.*;
 
 /**
  * Implements a <tt>BlockCipherFactory</tt> which initializes
