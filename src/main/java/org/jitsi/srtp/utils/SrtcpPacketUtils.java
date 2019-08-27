@@ -20,7 +20,7 @@ import org.jitsi.utils.*;
 /**
  * SrtcpPacket is the low-level utilities to get the data fields needed by SRTCP.
  */
-public class SrtcpPacket
+public class SrtcpPacketUtils
 {
     /**
      * Get the sender SSRC of an SRTCP packet.
@@ -31,7 +31,7 @@ public class SrtcpPacket
      */
     public static int getSenderSsrc(ByteArrayBuffer buf)
     {
-        return SrtpPacket.readInt(buf, 4);
+        return SrtpPacketUtils.readInt(buf, 4);
     }
 
     /**
@@ -44,7 +44,7 @@ public class SrtcpPacket
     public static int getIndex(ByteArrayBuffer buf, int authTagLen)
     {
         int authTagOffset = buf.getLength() - (4 + authTagLen);
-        return SrtpPacket.readInt(buf, authTagOffset);
+        return SrtpPacketUtils.readInt(buf, authTagOffset);
     }
 
     /**

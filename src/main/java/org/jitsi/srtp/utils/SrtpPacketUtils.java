@@ -20,7 +20,7 @@ import org.jitsi.utils.*;
 /**
  * SrtpPacket is the low-level utilities to get the data fields needed by SRTP.
  */
-public class SrtpPacket
+public class SrtpPacketUtils
 {
     /**
      * The size of the fixed part of the RTP header as defined by RFC 3550.
