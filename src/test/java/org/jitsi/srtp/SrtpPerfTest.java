@@ -15,15 +15,13 @@
  */
 package org.jitsi.srtp;
 
-import gnu.getopt.Getopt;
-import org.jitsi.utils.ByteArrayBuffer;
-import org.junit.jupiter.api.Test;
+import gnu.getopt.*;
+import org.jitsi.utils.*;
+import org.junit.jupiter.api.*;
 
-import javax.xml.bind.DatatypeConverter;
-import java.time.Clock;
-import java.time.Duration;
-import java.time.Instant;
-import java.util.Arrays;
+import javax.xml.bind.*;
+import java.time.*;
+import java.util.*;
 
 public class SrtpPerfTest {
     private static final byte[] test_key =

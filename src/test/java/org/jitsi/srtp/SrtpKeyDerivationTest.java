@@ -17,9 +17,9 @@ package org.jitsi.srtp;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
-import javax.xml.bind.DatatypeConverter;
+import javax.xml.bind.*;
 
 public class SrtpKeyDerivationTest {
 
