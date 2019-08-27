@@ -262,8 +262,17 @@ public class SrtpPolicy
 
     /**
      * Get whether send-side RTP replay protection is enabled.
+     *
+     * @see #isSendReplayDisabled
      */
     public boolean isSendReplayEnabled() { return sendReplayEnabled; }
+
+    /**
+     * Get whether send-side RTP replay protection is disabled.
+     *
+     * @see #isSendReplayEnabled
+     */
+    public boolean isSendReplayDisabled() { return !sendReplayEnabled; }
 
     /**
      * Set whether receive-side RTP replay protection is to be enabled.
@@ -278,6 +287,16 @@ public class SrtpPolicy
 
     /**
      * Get whether receive-side RTP replay protection is enabled.
+     *
+     * @see #isReceiveReplayDisabled
      */
     public boolean isReceiveReplayEnabled() { return receiveReplayEnabled; }
+
+    /**
+     * Get whether receive-side RTP replay protection is enabled.
+     *
+     * @see #isReceiveReplayEnabled
+     */
+    public boolean isReceiveReplayDisabled() { return !receiveReplayEnabled; }
+
 }
