@@ -16,28 +16,28 @@
 package org.jitsi.srtp;
 
 /**
- * The <tt>SRTPContextFactory</tt> creates the initial crypto contexts for RTP
+ * The <tt>SrtpContextFactory</tt> creates the initial crypto contexts for RTP
  * and RTCP encryption using the supplied key material.
  *
  * @author Bing SU (nova.su@gmail.com)
  */
-public class SRTPContextFactory
+public class SrtpContextFactory
 {
     /**
-     * The default SRTPCryptoContext, which will be used to derive other
+     * The default SrtpCryptoContext, which will be used to derive other
      * contexts.
      */
-    private SRTPCryptoContext defaultContext;
+    private SrtpCryptoContext defaultContext;
 
     /**
-     * The default SRTPCryptoContext, which will be used to derive other
+     * The default SrtpCryptoContext, which will be used to derive other
      * contexts.
      */
-    private SRTCPCryptoContext defaultContextControl;
+    private SrtcpCryptoContext defaultContextControl;
 
     /**
-     * Construct a SRTPTransformEngine based on given master encryption key,
-     * master salt key and SRTP/SRTCP policy.
+     * Construct a SrtpTransformEngine based on given master encryption key,
+     * master salt key and Srtp/Srtcp policy.
      *
      * @param sender <tt>true</tt> if the new instance is to be used by an SRTP
      * sender; <tt>false</tt> if the new instance is to be used by an SRTP
@@ -47,15 +47,15 @@ public class SRTPContextFactory
      * @param srtpPolicy SRTP policy
      * @param srtcpPolicy SRTCP policy
      */
-    public SRTPContextFactory(
+    public SrtpContextFactory(
             boolean sender,
             byte[] masterKey,
             byte[] masterSalt,
-            SRTPPolicy srtpPolicy,
-            SRTPPolicy srtcpPolicy)
+            SrtpPolicy srtpPolicy,
+            SrtpPolicy srtcpPolicy)
     {
         defaultContext
-            = new SRTPCryptoContext(
+            = new SrtpCryptoContext(
                     sender,
                     0,
                     0,
@@ -64,7 +64,7 @@ public class SRTPContextFactory
                     masterSalt,
                     srtpPolicy);
         defaultContextControl
-            = new SRTCPCryptoContext(0, masterKey, masterSalt, srtcpPolicy);
+            = new SrtcpCryptoContext(0, masterKey, masterSalt, srtcpPolicy);
     }
 
     /**
@@ -88,21 +88,21 @@ public class SRTPContextFactory
     }
 
     /**
-     * Get the default SRTPCryptoContext
+     * Get the default SrtpCryptoContext
      *
-     * @return the default SRTPCryptoContext
+     * @return the default SrtpCryptoContext
      */
-    public SRTPCryptoContext getDefaultContext()
+    public SrtpCryptoContext getDefaultContext()
     {
         return defaultContext;
     }
 
     /**
-     * Get the default SRTPCryptoContext
+     * Get the default SrtpCryptoContext
      *
-     * @return the default SRTPCryptoContext
+     * @return the default SrtpCryptoContext
      */
-    public SRTCPCryptoContext getDefaultContextControl()
+    public SrtcpCryptoContext getDefaultContextControl()
     {
         return defaultContextControl;
     }

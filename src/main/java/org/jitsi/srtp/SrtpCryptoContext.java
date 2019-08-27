@@ -42,12 +42,12 @@ import org.jitsi.utils.*;
 import org.jitsi.utils.logging.*;
 
 /**
- * SRTPCryptoContext class is the core class of SRTP implementation. There can
+ * SrtpCryptoContext class is the core class of SRTP implementation. There can
  * be multiple SRTP sources in one SRTP session. And each SRTP stream has a
- * corresponding SRTPCryptoContext object, identified by SSRC. In this way,
+ * corresponding SrtpCryptoContext object, identified by SSRC. In this way,
  * different sources can be protected independently.
  *
- * SRTPCryptoContext class acts as a manager class and maintains all the
+ * SrtpCryptoContext class acts as a manager class and maintains all the
  * information used in SRTP transformation. It is responsible for deriving
  * encryption/salting/authentication keys from master keys. And it will invoke
  * certain class to encrypt/decrypt (transform/reverse transform) RTP packets.
@@ -65,15 +65,15 @@ import org.jitsi.utils.logging.*;
  * @author Bing SU (nova.su@gmail.com)
  * @author Lyubomir Marinov
  */
-public class SRTPCryptoContext
-    extends BaseSRTPCryptoContext
+public class SrtpCryptoContext
+    extends BaseSrtpCryptoContext
 {
     /**
-     * The <tt>Logger</tt> used by the <tt>SRTPCryptoContext</tt> class and its
+     * The <tt>Logger</tt> used by the <tt>SrtpCryptoContext</tt> class and its
      * instances to print out debug information.
      */
     private static final Logger logger
-        = Logger.getLogger(SRTPCryptoContext.class);
+        = Logger.getLogger(SrtpCryptoContext.class);
 
     /**
      * For the receiver only, the rollover counter guessed from the sequence
@@ -119,15 +119,15 @@ public class SRTPCryptoContext
     private boolean seqNumSet = false;
 
     /**
-     * Constructs an empty SRTPCryptoContext using ssrc. The other parameters
+     * Constructs an empty SrtpCryptoContext using ssrc. The other parameters
      * are set to default null value.
      *
      * @param sender <tt>true</tt> if the new instance is to be used by an SRTP
      * sender; <tt>false</tt> if the new instance is to be used by an SRTP
      * receiver
-     * @param ssrc SSRC of this SRTPCryptoContext
+     * @param ssrc SSRC of this SrtpCryptoContext
      */
-    public SRTPCryptoContext(boolean sender, int ssrc)
+    public SrtpCryptoContext(boolean sender, int ssrc)
     {
         super(ssrc);
 
@@ -138,7 +138,7 @@ public class SRTPCryptoContext
     }
 
     /**
-     * Constructs a normal SRTPCryptoContext based on the given parameters.
+     * Constructs a normal SrtpCryptoContext based on the given parameters.
      *
      * @param sender <tt>true</tt> if the new instance is to be used by an SRTP
      * sender; <tt>false</tt> if the new instance is to be used by an SRTP
@@ -160,14 +160,14 @@ public class SRTPCryptoContext
      * the encryption algorithm, the authentication algorithm, etc
      */
     @SuppressWarnings("fallthrough")
-    public SRTPCryptoContext(
+    public SrtpCryptoContext(
             boolean sender,
             int ssrc,
             int roc,
             long keyDerivationRate,
             byte[] masterK,
             byte[] masterS,
-            SRTPPolicy policy)
+            SrtpPolicy policy)
     {
         super(ssrc, masterK, masterS, policy);
 
@@ -178,18 +178,18 @@ public class SRTPCryptoContext
 
     /**
      * Authenticates a specific <tt>RawPacket</tt> if the <tt>policy</tt> of
-     * this <tt>SRTPCryptoContext</tt> specifies that authentication is to be
+     * this <tt>SrtpCryptoContext</tt> specifies that authentication is to be
      * performed.
      *
      * @param pkt the <tt>RawPacket</tt> to authenticate
      * @return <tt>true</tt> if the <tt>policy</tt> of this
-     * <tt>SRTPCryptoContext</tt> specifies that authentication is to not be
+     * <tt>SrtpCryptoContext</tt> specifies that authentication is to not be
      * performed or <tt>pkt</tt> was successfully authenticated; otherwise,
      * <tt>false</tt>
      */
     private boolean authenticatePacket(ByteArrayBuffer pkt)
     {
-        if (policy.getAuthType() != SRTPPolicy.NULL_AUTHENTICATION)
+        if (policy.getAuthType() != SrtpPolicy.NULL_AUTHENTICATION)
         {
             int tagLength = policy.getAuthTagLength();
 
@@ -202,7 +202,7 @@ public class SRTPCryptoContext
             pkt.shrink(tagLength);
 
             // save computed authentication in tagStore
-            authenticatePacketHMAC(pkt, guessedROC);
+            authenticatePacketHmac(pkt, guessedROC);
 
             // compare authentication tags using constant time comparison
             int nonEqual = 0;
@@ -307,23 +307,23 @@ public class SRTPCryptoContext
     }
 
     /**
-     * Derives a new SRTPCryptoContext for use with a new SSRC. The method
-     * returns a new SRTPCryptoContext initialized with the data of this
-     * SRTPCryptoContext. Replacing the SSRC, Roll-over-Counter, and the key
-     * derivation rate the application cab use this SRTPCryptoContext to
+     * Derives a new SrtpCryptoContext for use with a new SSRC. The method
+     * returns a new SrtpCryptoContext initialized with the data of this
+     * SrtpCryptoContext. Replacing the SSRC, Roll-over-Counter, and the key
+     * derivation rate the application cab use this SrtpCryptoContext to
      * encrypt/decrypt a new stream (Synchronization source) inside one RTP
-     * session. Before the application can use this SRTPCryptoContext it must
+     * session. Before the application can use this SrtpCryptoContext it must
      * call the deriveSrtpKeys method.
      *
      * @param ssrc The SSRC for this context
      * @param roc The Roll-Over-Counter for this context
      * @param deriveRate The key derivation rate for this context
-     * @return a new SRTPCryptoContext with all relevant data set.
+     * @return a new SrtpCryptoContext with all relevant data set.
      */
-    public SRTPCryptoContext deriveContext(int ssrc, int roc, long deriveRate)
+    public SrtpCryptoContext deriveContext(int ssrc, int roc, long deriveRate)
     {
         return
-            new SRTPCryptoContext(
+            new SrtpCryptoContext(
                     sender,
                     ssrc,
                     roc,
@@ -360,11 +360,11 @@ public class SRTPCryptoContext
 
             switch (policy.getAuthType())
             {
-                case SRTPPolicy.HMACSHA1_AUTHENTICATION:
+                case SrtpPolicy.HMACSHA1_AUTHENTICATION:
                     mac.init(new KeyParameter(authKey));
                     break;
 
-                case SRTPPolicy.SKEIN_AUTHENTICATION:
+                case SrtpPolicy.SKEIN_AUTHENTICATION:
                     // Skein MAC uses number of bits as MAC size, not just bytes
                     mac.init(
                             new ParametersForSkein(
@@ -390,7 +390,7 @@ public class SRTPCryptoContext
     /**
      * Derives the srtp session keys from the master key
      *
-     * @param index the 48 bit SRTP packet index
+     * @param index the 48 bit Srtp packet index
      */
     synchronized public void deriveSrtpKeys(long index)
     {
@@ -438,10 +438,10 @@ public class SRTPCryptoContext
      *
      * @param pkt the RTP packet to be encrypted/decrypted
      */
-    public void processPacketAESCM(ByteArrayBuffer pkt)
+    public void processPacketAesCm(ByteArrayBuffer pkt)
     {
-        int ssrc = SRTPPacket.getSsrc(pkt);
-        int seqNo = SRTPPacket.getSequenceNumber(pkt);
+        int ssrc = SrtpPacket.getSsrc(pkt);
+        int seqNo = SrtpPacket.getSequenceNumber(pkt);
         long index = (((long) guessedROC) << 16) | seqNo;
 
         // byte[] iv = new byte[16];
@@ -474,7 +474,7 @@ public class SRTPCryptoContext
 
         ivStore[14] = ivStore[15] = 0;
 
-        int rtpHeaderLength = SRTPPacket.getTotalHeaderLength(pkt);
+        int rtpHeaderLength = SrtpPacket.getTotalHeaderLength(pkt);
 
         cipherCtr.process(
                 pkt.getBuffer(),
@@ -488,7 +488,7 @@ public class SRTPCryptoContext
      *
      * @param pkt the RTP packet to be encrypted/decrypted
      */
-    public void processPacketAESF8(ByteArrayBuffer pkt)
+    public void processPacketAesF8(ByteArrayBuffer pkt)
     {
         // 11 bytes of the RTP header are the 11 bytes of the iv
         // the first byte of the RTP header is not used.
@@ -503,7 +503,7 @@ public class SRTPCryptoContext
         ivStore[14] = (byte) (roc >> 8);
         ivStore[15] = (byte) roc;
 
-        int rtpHeaderLength = SRTPPacket.getTotalHeaderLength(pkt);
+        int rtpHeaderLength = SrtpPacket.getTotalHeaderLength(pkt);
 
         cipherF8.process(
                 pkt.getBuffer(),
@@ -517,7 +517,7 @@ public class SRTPCryptoContext
      * an SRTP packet is received. Operations done by the this operation
      * include: authentication check, packet replay check and decryption. Both
      * encryption and authentication functionality can be turned off as long as
-     * the SRTPPolicy used in this SRTPCryptoContext is requires no encryption
+     * the SrtpPolicy used in this SrtpCryptoContext is requires no encryption
      * and no authentication. Then the packet will be sent out untouched.
      * However, this is not encouraged. If no SRTP feature is enabled, then we
      * shall not use SRTP TransformConnector. We should use the original method
@@ -531,11 +531,11 @@ public class SRTPCryptoContext
      */
     synchronized public boolean reverseTransformPacket(ByteArrayBuffer pkt, boolean skipDecryption)
     {
-        if (!SRTPPacket.validatePacketLength(pkt, policy.getAuthTagLength()))
+        if (!SrtpPacket.validatePacketLength(pkt, policy.getAuthTagLength()))
             /* Too short to be a valid SRTP packet */
             return false;
 
-        int seqNo = SRTPPacket.getSequenceNumber(pkt);
+        int seqNo = SrtpPacket.getSequenceNumber(pkt);
 
         if (logger.isDebugEnabled())
         {
@@ -573,15 +573,15 @@ public class SRTPCryptoContext
                     switch (policy.getEncType())
                     {
                     // Decrypt the packet using Counter Mode encryption.
-                    case SRTPPolicy.AESCM_ENCRYPTION:
-                    case SRTPPolicy.TWOFISH_ENCRYPTION:
-                        processPacketAESCM(pkt);
+                    case SrtpPolicy.AESCM_ENCRYPTION:
+                    case SrtpPolicy.TWOFISH_ENCRYPTION:
+                        processPacketAesCm(pkt);
                         break;
 
                     // Decrypt the packet using F8 Mode encryption.
-                    case SRTPPolicy.AESF8_ENCRYPTION:
-                    case SRTPPolicy.TWOFISHF8_ENCRYPTION:
-                        processPacketAESF8(pkt);
+                    case SrtpPolicy.AESF8_ENCRYPTION:
+                    case SrtpPolicy.TWOFISHF8_ENCRYPTION:
+                        processPacketAesF8(pkt);
                         break;
                     }
                 }
@@ -617,7 +617,7 @@ public class SRTPCryptoContext
      * may include: encryption, using either Counter Mode encryption, or F8 Mode
      * encryption, adding authentication tag, currently HMC SHA1 method. Both
      * encryption and authentication functionality can be turned off as long as
-     * the SRTPPolicy used in this SRTPCryptoContext is requires no encryption
+     * the SrtpPolicy used in this SrtpCryptoContext is requires no encryption
      * and no authentication. Then the packet will be sent out untouched.
      * However, this is not encouraged. If no SRTP feature is enabled, then we
      * shall not use SRTP TransformConnector. We should use the original method
@@ -627,7 +627,7 @@ public class SRTPCryptoContext
      */
     synchronized public boolean transformPacket(ByteArrayBuffer pkt)
     {
-        int seqNo = SRTPPacket.getSequenceNumber(pkt);
+        int seqNo = SrtpPacket.getSequenceNumber(pkt);
 
         if (!seqNumSet)
         {
@@ -649,22 +649,22 @@ public class SRTPCryptoContext
         switch (policy.getEncType())
         {
         // Encrypt the packet using Counter Mode encryption.
-        case SRTPPolicy.AESCM_ENCRYPTION:
-        case SRTPPolicy.TWOFISH_ENCRYPTION:
-            processPacketAESCM(pkt);
+        case SrtpPolicy.AESCM_ENCRYPTION:
+        case SrtpPolicy.TWOFISH_ENCRYPTION:
+            processPacketAesCm(pkt);
             break;
 
         // Encrypt the packet using F8 Mode encryption.
-        case SRTPPolicy.AESF8_ENCRYPTION:
-        case SRTPPolicy.TWOFISHF8_ENCRYPTION:   
-            processPacketAESF8(pkt);
+        case SrtpPolicy.AESF8_ENCRYPTION:
+        case SrtpPolicy.TWOFISHF8_ENCRYPTION:   
+            processPacketAesF8(pkt);
             break;
         }
 
         /* Authenticate the packet. */
-        if (policy.getAuthType() != SRTPPolicy.NULL_AUTHENTICATION)
+        if (policy.getAuthType() != SrtpPolicy.NULL_AUTHENTICATION)
         {
-            authenticatePacketHMAC(pkt, guessedROC);
+            authenticatePacketHmac(pkt, guessedROC);
             pkt.append(tagStore, policy.getAuthTagLength());
         }
 

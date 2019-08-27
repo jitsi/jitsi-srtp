@@ -18,17 +18,17 @@ package org.jitsi.srtp;
 import org.jitsi.utils.logging.*;
 
 /**
- * @see SRTPCipherCTR
- * SRTPCipherCTR implementation using OpenSSL via JNI.
+ * @see SrtpCipherCtr
+ * SrtpCipherCtr implementation using OpenSSL via JNI.
  */
-public class SRTPCipherCTROpenSSL extends SRTPCipherCTR
+public class SrtpCipherCtrOpenSsl extends SrtpCipherCtr
 {
     /**
-     * The <tt>Logger</tt> used by the <tt>SRTPCipherCTROpenSSL</tt> class to
+     * The <tt>Logger</tt> used by the <tt>SrtpCipherCtrOpenSsl</tt> class to
      * print out debug information.
      */
     private static final Logger logger =
-        Logger.getLogger(SRTPCipherCTROpenSSL.class);
+        Logger.getLogger(SrtpCipherCtrOpenSsl.class);
 
     private static native long AES128CTR_CTX_create();
 
@@ -44,9 +44,9 @@ public class SRTPCipherCTROpenSSL extends SRTPCipherCTR
      */
     private long ctx;
 
-    public SRTPCipherCTROpenSSL()
+    public SrtpCipherCtrOpenSsl()
     {
-        if (!OpenSSLWrapperLoader.isLoaded())
+        if (!OpenSslWrapperLoader.isLoaded())
             throw new RuntimeException("OpenSSL wrapper not loaded");
 
         ctx = AES128CTR_CTX_create();

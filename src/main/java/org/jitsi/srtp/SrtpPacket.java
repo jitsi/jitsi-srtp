@@ -18,9 +18,9 @@ package org.jitsi.srtp;
 import org.jitsi.utils.ByteArrayBuffer;
 
 /**
- * SRTPPacket is the low-level utilities to get the data fields needed by SRTP.
+ * SrtpPacket is the low-level utilities to get the data fields needed by SRTP.
  */
-public class SRTPPacket
+public class SrtpPacket
 {
     /**
      * The size of the fixed part of the RTP header as defined by RFC 3550.
@@ -197,9 +197,9 @@ public class SRTPPacket
     }
 
     /**
-     * Prevents the initialization of new <tt>SRTPPacket</tt> instances.
+     * Prevents the initialization of new <tt>SrtpPacket</tt> instances.
      */
-    private SRTPPacket()
+    private SrtpPacket()
     {
     }
 }

@@ -18,14 +18,14 @@ package org.jitsi.srtp;
 import org.jitsi.utils.JNIUtils;
 import org.jitsi.utils.logging.*;
 
-public class OpenSSLWrapperLoader
+public class OpenSslWrapperLoader
 {
     /**
-     * The <tt>Logger</tt> used by the <tt>OpenSSLWrapperLoader</tt> class to
+     * The <tt>Logger</tt> used by the <tt>OpenSslWrapperLoader</tt> class to
      * print out debug information.
      */
     private static final Logger logger =
-        Logger.getLogger(OpenSSLWrapperLoader.class);
+        Logger.getLogger(OpenSslWrapperLoader.class);
 
     /**
      * The indicator which determines whether OpenSSL (Crypto) library wrapper
@@ -40,7 +40,7 @@ public class OpenSSLWrapperLoader
         try
         {
             JNIUtils.loadLibrary("jitsisrtp",
-                OpenSSLWrapperLoader.class.getClassLoader());
+                OpenSslWrapperLoader.class.getClassLoader());
             if (OpenSSL_Init())
             {
                 logger.info("jitsisrtp successfully loaded");
@@ -57,7 +57,7 @@ public class OpenSSLWrapperLoader
         }
     }
 
-    private OpenSSLWrapperLoader() {}
+    private OpenSslWrapperLoader() {}
 
     public static boolean isLoaded()
     {

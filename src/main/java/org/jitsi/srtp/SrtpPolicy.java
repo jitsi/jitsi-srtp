@@ -16,12 +16,12 @@
 package org.jitsi.srtp;
 
 /**
- * SRTPPolicy holds the SRTP encryption / authentication policy of a SRTP
+ * SrtpPolicy holds the SRTP encryption / authentication policy of a SRTP
  * session.
  *
  * @author Bing SU (nova.su@gmail.com)
  */
-public class SRTPPolicy
+public class SrtpPolicy
 {
     /**
      * Null Cipher, does not change the content of RTP payload
@@ -103,7 +103,7 @@ public class SRTPPolicy
     private boolean receiveReplayEnabled = true;
 
     /**
-     * Construct a SRTPPolicy object based on given parameters.
+     * Construct a SrtpPolicy object based on given parameters.
      * This class acts as a storage class, so all the parameters are passed in
      * through this constructor.
      *
@@ -114,7 +114,7 @@ public class SRTPPolicy
      * @param authTagLength SRTP authentication tag length
      * @param saltKeyLength SRTP salt key length
      */
-    public SRTPPolicy(int encType,
+    public SrtpPolicy(int encType,
                       int encKeyLength,
                       int authType,
                       int authKeyLength,

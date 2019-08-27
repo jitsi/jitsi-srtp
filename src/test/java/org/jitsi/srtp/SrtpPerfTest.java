@@ -25,7 +25,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
 
-public class SRTPPerfTest {
+public class SrtpPerfTest {
     private static final byte[] test_key =
             DatatypeConverter.parseHexBinary("e1f97a0d3e018be0d64fa32c06de4139");
     private static final byte[] test_key_salt =
@@ -53,7 +53,7 @@ public class SRTPPerfTest {
         packet.setLength(rtp_header.length + payloadSize);
     }
 
-    private void setupPacket(int payloadSize, SRTPPolicy policy)
+    private void setupPacket(int payloadSize, SrtpPolicy policy)
     {
         int srtpPacketSize = rtp_header.length + payloadSize + policy.getAuthTagLength();
         if (packet == null || packet.getBuffer().length < srtpPacketSize)
@@ -65,12 +65,12 @@ public class SRTPPerfTest {
         packet.grow(payloadSize);
     }
 
-    private SRTPContextFactory factory;
-    private SRTPCryptoContext context;
+    private SrtpContextFactory factory;
+    private SrtpCryptoContext context;
 
-    private void createContext(SRTPPolicy policy)
+    private void createContext(SrtpPolicy policy)
     {
-        factory = new SRTPContextFactory(true, test_key, test_key_salt, policy, policy);
+        factory = new SrtpContextFactory(true, test_key, test_key_salt, policy, policy);
         context = factory.getDefaultContext().deriveContext(0xcafebabe, 0, 0);
         context.deriveSrtpKeys(0);
     }
@@ -86,9 +86,9 @@ public class SRTPPerfTest {
 
     public void doPerfTest(int num, int payloadSize)
     {
-        SRTPPolicy policy =
-                new SRTPPolicy(SRTPPolicy.AESCM_ENCRYPTION, 128/8,
-                        SRTPPolicy.HMACSHA1_AUTHENTICATION, 160/8,
+        SrtpPolicy policy =
+                new SrtpPolicy(SrtpPolicy.AESCM_ENCRYPTION, 128/8,
+                        SrtpPolicy.HMACSHA1_AUTHENTICATION, 160/8,
                         80/8, 112/8 );
 
         createContext(policy);
@@ -120,7 +120,7 @@ public class SRTPPerfTest {
         doPerfTest(DEFAULT_NUM_TESTS, DEFAULT_PAYLOAD_SIZE);
     }
 
-    private static final String progName = "SRTPPerfTest";
+    private static final String progName = "SrtpPerfTest";
 
     private static void usage()
     {
@@ -144,7 +144,7 @@ public class SRTPPerfTest {
             {
                 case 'f':
                     arg = g.getOptarg();
-                    AES.setFactoryClassName(arg);
+                    Aes.setFactoryClassName(arg);
                     break;
                 case 'p':
                     arg = g.getOptarg();
@@ -189,7 +189,7 @@ public class SRTPPerfTest {
             }
         }
 
-        SRTPPerfTest test = new SRTPPerfTest();
+        SrtpPerfTest test = new SrtpPerfTest();
         test.doPerfTest(numTests, payloadSize);
     }
 }

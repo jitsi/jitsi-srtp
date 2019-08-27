@@ -29,11 +29,11 @@ import org.jitsi.utils.logging.*;
  *
  * @author Lyubomir Marinov
  */
-public class AES
+public class Aes
 {
     /**
      * The block size in bytes of the AES algorithm (implemented by the
-     * <tt>BlockCipher</tt>s initialized by the <tt>AES</tt> class).
+     * <tt>BlockCipher</tt>s initialized by the <tt>Aes</tt> class).
      */
     private static final int BLOCK_SIZE = 16;
 
@@ -53,20 +53,20 @@ public class AES
         = new BouncyCastleBlockCipherFactory();
 
     /**
-     * The <tt>BlockCipherFactory</tt> implementations known to the <tt>AES</tt>
+     * The <tt>BlockCipherFactory</tt> implementations known to the <tt>Aes</tt>
      * class among which the fastest is to be elected as {@link #factory}.
      */
     private static BlockCipherFactory[] factories;
 
     /**
      * The <tt>BlockCipherFactory</tt> implementation which is (to be) used by
-     * the class <tt>AES</tt> to initialize <tt>BlockCipher</tt>s.
+     * the class <tt>Aes</tt> to initialize <tt>BlockCipher</tt>s.
      */
     private static BlockCipherFactory factory;
 
     /**
      * The name of the class to instantiate as a <tt>BlockCipherFactory</tt>
-     * implementation to be used by the class <tt>AES</tt> to initialize
+     * implementation to be used by the class <tt>Aes</tt> to initialize
      * <tt>BlockCipher</tt>s.
      */
     private static String FACTORY_CLASS_NAME = null;
@@ -110,10 +110,10 @@ public class AES
     private static final byte[] in = new byte[BLOCK_SIZE * 1024];
 
     /**
-     * The <tt>Logger</tt> used by the <tt>AES</tt> class to print out debug
+     * The <tt>Logger</tt> used by the <tt>Aes</tt> class to print out debug
      * information.
      */
-    private static final Logger logger = Logger.getLogger(AES.class);
+    private static final Logger logger = Logger.getLogger(Aes.class);
 
     /**
      * The output buffer to be used for the benchmarking of {@link #factories}.
@@ -148,9 +148,9 @@ public class AES
             BlockCipherFactory[] factories,
             int keySize)
     {
-        Random random = AES.random;
+        Random random = Aes.random;
         byte[] key = new byte[keySize];
-        byte[] in = AES.in;
+        byte[] in = Aes.in;
 
         random.nextBytes(key);
         random.nextBytes(in);
@@ -158,7 +158,7 @@ public class AES
         CipherParameters params = new KeyParameter(key);
         int blockSize = BLOCK_SIZE;
         int inEnd = in.length - blockSize + 1;
-        byte[] out = AES.out;
+        byte[] out = Aes.out;
         long minTime = Long.MAX_VALUE;
         BlockCipherFactory minFactory = null;
 
@@ -246,11 +246,11 @@ public class AES
     {
         BlockCipherFactory factory;
 
-        synchronized (AES.class)
+        synchronized (Aes.class)
         {
             long now = System.currentTimeMillis();
 
-            factory = AES.factory;
+            factory = Aes.factory;
             if ((factory != null) && (now > factoryTimestamp + FACTORY_TIMEOUT))
                 factory = null;
             if (factory == null)
@@ -281,15 +281,15 @@ public class AES
                 {
                     if (factory == null)
                     {
-                        factory = AES.factory;
+                        factory = Aes.factory;
                         if (factory == null)
                             factory = BOUNCYCASTLE_FACTORY;
                     }
 
-                    AES.factoryTimestamp = now;
-                    if (AES.factory != factory)
+                    Aes.factoryTimestamp = now;
+                    if (Aes.factory != factory)
                     {
-                        AES.factory = factory;
+                        Aes.factory = factory;
                         // Simplify the name of the BlockCipherFactory class to
                         // be employed for the purposes of brevity and ease.
                         logger.info(
@@ -315,11 +315,11 @@ public class AES
 
     /**
      * Initializes the <tt>BlockCipherFactory</tt> instances to be benchmarked
-     * by the class <tt>AES</tt> and among which the fastest-performing one is
+     * by the class <tt>Aes</tt> and among which the fastest-performing one is
      * to be selected.
      * 
      * @return the <tt>BlockCipherFactory</tt> instances to be benchmarked by
-     * the class <tt>AES</tt> and among which the fastest-performing one is to
+     * the class <tt>Aes</tt> and among which the fastest-performing one is to
      * be selected
      */
     @SuppressWarnings("unchecked")
@@ -332,7 +332,7 @@ public class AES
         // the specified BlockCipherFactory may malfunction. That is why all
         // FACTORY_CLASSES are tried as well and FACTORY_CLASS_NAME is selected
         // later on after it has proven itself functional.
-        Class<? extends BlockCipherFactory> factoryClass = AES.factoryClass;
+        Class<? extends BlockCipherFactory> factoryClass = Aes.factoryClass;
         Class<?>[] factoryClasses = FACTORY_CLASSES;
         boolean add = true;
 
@@ -351,7 +351,7 @@ public class AES
                                 BLOCK_CIPHER_FACTORY_SIMPLE_CLASS_NAME))
                 {
                     factoryClassName
-                        = AES.class.getName() + "$" + factoryClassName
+                        = Aes.class.getName() + "$" + factoryClassName
                             + BLOCK_CIPHER_FACTORY_SIMPLE_CLASS_NAME;
                 }
 
@@ -365,7 +365,7 @@ public class AES
                             && clazz.getName().equals(factoryClassName)
                             && BlockCipherFactory.class.isAssignableFrom(clazz))
                     {
-                        AES.factoryClass
+                        Aes.factoryClass
                             = factoryClass
                                 = (Class<? extends BlockCipherFactory>)
                                     clazz;
@@ -384,7 +384,7 @@ public class AES
     
                         if (BlockCipherFactory.class.isAssignableFrom(clazz))
                         {
-                            AES.factoryClass
+                            Aes.factoryClass
                                 = factoryClass
                                     = (Class<? extends BlockCipherFactory>)
                                         clazz;
@@ -484,7 +484,7 @@ public class AES
 
     /**
      * Gets a <tt>BlockCipherFactory</tt> instance to be used by the
-     * <tt>AES</tt> class to initialize <tt>BlockCipher</tt>s.
+     * <tt>Aes</tt> class to initialize <tt>BlockCipher</tt>s.
      *
      * <p>
      * Benchmarks the well-known <tt>BlockCipherFactory</tt> implementations and
@@ -493,18 +493,18 @@ public class AES
      * @param keySize AES key size (16, 24, 32 bytes)
      *
      * @return a <tt>BlockCipherFactory</tt> instance to be used by the
-     * <tt>AES</tt> class to initialize <tt>BlockCipher</tt>s
+     * <tt>Aes</tt> class to initialize <tt>BlockCipher</tt>s
      */
     private static BlockCipherFactory getBlockCipherFactory(int keySize)
     {
-        BlockCipherFactory[] factories = AES.factories;
+        BlockCipherFactory[] factories = Aes.factories;
 
         if (factories == null)
         {
             // A single instance of each well-known BlockCipherFactory
             // implementation will be initialized i.e. the attempt to initialize
             // BlockCipherFactory instances will be made once only.
-            AES.factories = factories = createBlockCipherFactories();
+            Aes.factories = factories = createBlockCipherFactories();
         }
 
         // Benchmark the BlockCiphers provided by the available
@@ -519,7 +519,7 @@ public class AES
         // malfunction. That is why FACTORY_CLASS_NAME is selected after it has
         // proven itself functional.
         {
-            Class<? extends BlockCipherFactory> factoryClass = AES.factoryClass;
+            Class<? extends BlockCipherFactory> factoryClass = Aes.factoryClass;
 
             if (factoryClass != null)
             {
@@ -563,7 +563,7 @@ public class AES
         {
             String simpleClassName
                 = className.substring(0, className.length() - suffix.length());
-            String prefix = AES.class.getName() + "$";
+            String prefix = Aes.class.getName() + "$";
 
             if (simpleClassName.startsWith(prefix))
             {
@@ -571,7 +571,7 @@ public class AES
             }
             else if (simpleClassName.contains("."))
             {
-                Package pkg = AES.class.getPackage();
+                Package pkg = Aes.class.getPackage();
 
                 if (pkg != null)
                 {
@@ -676,7 +676,7 @@ public class AES
                         // The SunPKCS11 Config name should be unique in order
                         // to avoid repeated initialization exceptions.
                         String name = null;
-                        Package pkg = AES.class.getPackage();
+                        Package pkg = Aes.class.getPackage();
 
                         if (pkg != null)
                             name = pkg.getName();

@@ -24,7 +24,7 @@ import org.bouncycastle.crypto.macs.*;
  *
  * @author Lyubomir Marinov
  */
-public class HMACSHA1
+public class HmacSha1
 {
     /**
      * Initializes a new <tt>org.bouncycastle.crypto.Mac</tt> instance which
@@ -35,9 +35,9 @@ public class HMACSHA1
      */
     public static Mac createMac()
     {
-        if (OpenSSLWrapperLoader.isLoaded())
+        if (OpenSslWrapperLoader.isLoaded())
         {
-            return new OpenSSLHMAC(OpenSSLHMAC.SHA1);
+            return new OpenSslHmac(OpenSslHmac.SHA1);
         }
         else
         {
