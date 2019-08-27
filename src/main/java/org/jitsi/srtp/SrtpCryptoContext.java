@@ -680,24 +680,18 @@ public class SrtpCryptoContext
     }
 
     /**
-     * Prints the current state of the replay window, for debugging purposes.
+     * Logs the current state of the replay window, for debugging purposes.
      */
-    private void printReplayWindow(long newIdx)
+    private void logReplayWindow(long newIdx)
     {
-        long maxIdx = roc << 16 | s_l;
-        System.out.printf("Updated replay window with %d. maxIdx=%d, window=0x%016x: [", newIdx, maxIdx, replayWindow);
-        boolean printedSomething = false;
-        for (long i = REPLAY_WINDOW_SIZE - 1; i >= 0; i--)
+        if (!logger.isDebugEnabled())
         {
-            if (((replayWindow >> i) & 0x1) != 0)
-            {
-                if (printedSomething)
-                    System.out.print(", ");
-                printedSomething = true;
-                System.out.print(maxIdx - i);
-            }
+            return;
         }
-        System.out.println("]");
+        long maxIdx = roc << 16 | s_l;
+
+        logger.debug("Updated replay window with " + newIdx + ". " +
+            SrtpPacketUtils.formatReplayWindow(maxIdx, replayWindow, REPLAY_WINDOW_SIZE));
    }
 
     /**
@@ -742,6 +736,6 @@ public class SrtpCryptoContext
             roc = guessedROC;
         }
 
-        //printReplayWindow(guessedIndex);
+       logReplayWindow(guessedIndex);
     }
 }
