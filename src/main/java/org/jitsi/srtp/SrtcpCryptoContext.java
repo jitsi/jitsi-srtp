@@ -21,6 +21,7 @@ import org.bouncycastle.crypto.params.*;
 import org.jitsi.bccontrib.params.*;
 import org.jitsi.srtp.utils.*;
 import org.jitsi.utils.*;
+import org.jitsi.utils.logging.*;
 
 /**
  * SrtpCryptoContext class is the core class of SRTP implementation. There can
@@ -49,6 +50,13 @@ import org.jitsi.utils.*;
 public class SrtcpCryptoContext
     extends BaseSrtpCryptoContext
 {
+    /**
+     * The <tt>Logger</tt> used by the <tt>SrtcpCryptoContext</tt> class and its
+     * instances to print out debug information.
+     */
+    private static final Logger logger
+        = Logger.getLogger(SrtcpCryptoContext.class);
+
     /**
      * Index received so far
      */
@@ -425,23 +433,17 @@ public class SrtcpCryptoContext
     }
 
     /**
-     * Prints the current state of the replay window, for debugging purposes.
+     * Logs the current state of the replay window, for debugging purposes.
      */
-    private void printReplayWindow(long newIdx)
+    private void logReplayWindow(long newIdx)
     {
-        System.out.printf("Updated replay window with %d. maxIdx=%d, window=0x%016x: [", newIdx, receivedIndex, replayWindow);
-        boolean printedSomething = false;
-        for (long i = REPLAY_WINDOW_SIZE - 1; i >= 0; i--)
+        if (!logger.isDebugEnabled())
         {
-            if (((replayWindow >> i) & 0x1) != 0)
-            {
-                if (printedSomething)
-                    System.out.print(", ");
-                printedSomething = true;
-                System.out.print(receivedIndex - i);
-            }
+            return;
         }
-        System.out.println("]");
+
+        logger.debug("Updated replay window with " + newIdx + ". " +
+            SrtpPacketUtils.formatReplayWindow(receivedIndex, replayWindow, REPLAY_WINDOW_SIZE));
     }
 
     /**
@@ -471,6 +473,6 @@ public class SrtcpCryptoContext
             replayWindow |= ( 1L << -delta );
         }
 
-        // printReplayWindow(index);
+        logReplayWindow(index);
     }
 }

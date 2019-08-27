@@ -17,6 +17,8 @@ package org.jitsi.srtp.utils;
 
 import org.jitsi.utils.*;
 
+import java.util.*;
+
 /**
  * SrtpPacket is the low-level utilities to get the data fields needed by SRTP.
  */
@@ -203,5 +205,33 @@ public class SrtpPacketUtils
         int b2 = (0xFF & (buf[off + 1]));
         int val = b1 << 8 | b2;
         return val;
+    }
+
+    /**
+     * Formats the current state of an SRTP/SRTCP replay window, for debugging purposes.
+     */
+    public static String formatReplayWindow(long maxIdx, long replayWindow, long replayWindowSize)
+    {
+        StringBuilder out = new StringBuilder();
+        Formatter formatter = new Formatter(out);
+        formatter.format("maxIdx=%d, window=0x%016x: [", maxIdx, replayWindow);
+
+        boolean printedSomething = false;
+        for (long i = replayWindowSize - 1; i >= 0; i--)
+        {
+            if (((replayWindow >> i) & 0x1) != 0)
+            {
+                if (printedSomething)
+                {
+                    out.append(", ");
+                }
+                printedSomething = true;
+                out.append(maxIdx - i);
+            }
+        }
+
+        out.append("]");
+
+        return out.toString();
     }
 }
