@@ -15,9 +15,7 @@
  */
 package org.jitsi.srtp;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Random;
+import java.util.*;
 
 /**
  * an unreliable transport simulator

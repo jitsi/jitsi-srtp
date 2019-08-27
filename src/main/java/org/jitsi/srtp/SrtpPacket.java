@@ -15,7 +15,7 @@
  */
 package org.jitsi.srtp;
 
-import org.jitsi.utils.ByteArrayBuffer;
+import org.jitsi.utils.*;
 
 /**
  * SrtpPacket is the low-level utilities to get the data fields needed by SRTP.
