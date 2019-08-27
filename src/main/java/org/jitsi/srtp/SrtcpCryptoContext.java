@@ -212,7 +212,7 @@ public class SrtcpCryptoContext
      */
     public void processPacketAesCm(ByteArrayBuffer pkt, int index)
     {
-        int ssrc = SrtcpPacket.getSenderSsrc(pkt);
+        int ssrc = SrtcpPacketUtils.getSenderSsrc(pkt);
 
         /* Compute the CM IV (refer to chapter 4.1.1 in RFC 3711):
         *
@@ -309,11 +309,11 @@ public class SrtcpCryptoContext
         boolean decrypt = false;
         int tagLength = policy.getAuthTagLength();
 
-        if (!SrtcpPacket.validatePacketLength(pkt, tagLength))
+        if (!SrtcpPacketUtils.validatePacketLength(pkt, tagLength))
             /* Too short to be a valid SRTCP packet */
             return false;
 
-        int indexEflag = SrtcpPacket.getIndex(pkt, tagLength);
+        int indexEflag = SrtcpPacketUtils.getIndex(pkt, tagLength);
 
         if ((indexEflag & 0x80000000) == 0x80000000)
             decrypt = true;

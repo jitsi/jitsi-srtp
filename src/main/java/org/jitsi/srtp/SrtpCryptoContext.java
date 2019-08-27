@@ -443,8 +443,8 @@ public class SrtpCryptoContext
      */
     public void processPacketAesCm(ByteArrayBuffer pkt)
     {
-        int ssrc = SrtpPacket.getSsrc(pkt);
-        int seqNo = SrtpPacket.getSequenceNumber(pkt);
+        int ssrc = SrtpPacketUtils.getSsrc(pkt);
+        int seqNo = SrtpPacketUtils.getSequenceNumber(pkt);
         long index = (((long) guessedROC) << 16) | seqNo;
 
         // byte[] iv = new byte[16];
@@ -477,7 +477,7 @@ public class SrtpCryptoContext
 
         ivStore[14] = ivStore[15] = 0;
 
-        int rtpHeaderLength = SrtpPacket.getTotalHeaderLength(pkt);
+        int rtpHeaderLength = SrtpPacketUtils.getTotalHeaderLength(pkt);
 
         cipherCtr.process(
                 pkt.getBuffer(),
@@ -506,7 +506,7 @@ public class SrtpCryptoContext
         ivStore[14] = (byte) (roc >> 8);
         ivStore[15] = (byte) roc;
 
-        int rtpHeaderLength = SrtpPacket.getTotalHeaderLength(pkt);
+        int rtpHeaderLength = SrtpPacketUtils.getTotalHeaderLength(pkt);
 
         cipherF8.process(
                 pkt.getBuffer(),
@@ -534,13 +534,13 @@ public class SrtpCryptoContext
      */
     synchronized public boolean reverseTransformPacket(ByteArrayBuffer pkt, boolean skipDecryption)
     {
-        if (!SrtpPacket.validatePacketLength(pkt, policy.getAuthTagLength()))
+        if (!SrtpPacketUtils.validatePacketLength(pkt, policy.getAuthTagLength()))
         {
             /* Too short to be a valid SRTP packet */
             return false;
         }
 
-        int seqNo = SrtpPacket.getSequenceNumber(pkt);
+        int seqNo = SrtpPacketUtils.getSequenceNumber(pkt);
 
         if (logger.isDebugEnabled())
         {
@@ -632,7 +632,7 @@ public class SrtpCryptoContext
      */
     synchronized public boolean transformPacket(ByteArrayBuffer pkt)
     {
-        int seqNo = SrtpPacket.getSequenceNumber(pkt);
+        int seqNo = SrtpPacketUtils.getSequenceNumber(pkt);
 
         if (!seqNumSet)
         {
