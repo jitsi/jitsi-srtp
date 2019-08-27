@@ -57,8 +57,6 @@ public class OpenSslWrapperLoader
         }
     }
 
-    private OpenSslWrapperLoader() {}
-
     public static boolean isLoaded()
     {
         return libraryLoaded;
