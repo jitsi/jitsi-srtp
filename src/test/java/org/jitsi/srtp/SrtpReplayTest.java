@@ -31,9 +31,12 @@ public class SrtpReplayTest {
 
     private static final ByteArrayBuffer rtpPacket = new ByteArrayBufferImpl(rtpPacketData, 0, rtpPacketData.length);
 
-    private void setRtpPacketSequence(int seq) {
+    private void setRtpPacketSequence(int seq)
+    {
         if (seq > 0xffff || seq < 0)
+        {
             throw new IllegalArgumentException("Bad sequence number");
+        }
         rtpPacketData[2] = (byte) (seq >> 8);
         rtpPacketData[3] = (byte) seq;
     }
@@ -53,7 +56,8 @@ public class SrtpReplayTest {
         int latestSeq = -1;
         UtSim utSim = new UtSim();
 
-        for (int i = 0; i < NUM_SEQ_TESTS; i++) {
+        for (int i = 0; i < NUM_SEQ_TESTS; i++)
+        {
             int seq = utSim.getNextIndex();
             if (latestSeq < seq) latestSeq = seq;
             setRtpPacketSequence(seq & 0xffff);
@@ -61,9 +65,15 @@ public class SrtpReplayTest {
             boolean accepted = receiver.reverseTransformPacket(rtpPacket, false);
             int delta = latestSeq - seq;
             if (delta >= REPLAY_WINDOW_SIZE)
-                assertFalse(accepted, "packet outside RTP replay window accepted");
+            {
+                assertFalse(accepted,
+                    "packet outside RTP replay window accepted");
+            }
             else
-                assertTrue(accepted, "packet inside RTP replay window rejected");
+            {
+                assertTrue(accepted,
+                    "packet inside RTP replay window rejected");
+            }
 
             /* Should always reject packet when it's replayed. */
             assertFalse(receiver.reverseTransformPacket(rtpPacket, false),
@@ -81,9 +91,12 @@ public class SrtpReplayTest {
 
     private static final ByteArrayBuffer rtcpPacket = new ByteArrayBufferImpl(srtcpPacketData, 0, srtcpPacketData.length);
 
-    private void setRtcpPacketSequence(int seq, boolean enc) {
+    private void setRtcpPacketSequence(int seq, boolean enc)
+    {
         if (seq < 0)
+        {
             throw new IllegalArgumentException("Bad sequence number");
+        }
         int pos = srtcpPacketData.length - 4;
         srtcpPacketData[pos]   = (byte) ((seq >> 24) | (enc ? 0x80 : 0));
         srtcpPacketData[pos+1] = (byte) (seq >> 16);
@@ -101,7 +114,8 @@ public class SrtpReplayTest {
         int latestSeq = -1;
         UtSim utSim = new UtSim();
 
-        for (int i = 0; i < NUM_SEQ_TESTS; i++) {
+        for (int i = 0; i < NUM_SEQ_TESTS; i++)
+        {
             int seq = utSim.getNextIndex();
             if (latestSeq < seq) latestSeq = seq;
             setRtcpPacketSequence(seq, true);
@@ -109,9 +123,15 @@ public class SrtpReplayTest {
             boolean accepted = receiver.reverseTransformPacket(rtcpPacket);
             int delta = latestSeq - seq;
             if (delta >= REPLAY_WINDOW_SIZE)
-                assertFalse(accepted, "packet outside RTCP replay window accepted");
+            {
+                assertFalse(accepted,
+                    "packet outside RTCP replay window accepted");
+            }
             else
-                assertTrue(accepted, "packet inside RTCP replay window rejected");
+            {
+                assertTrue(accepted,
+                    "packet inside RTCP replay window rejected");
+            }
 
             /* Should always reject packet when it's replayed. */
             assertFalse( receiver.reverseTransformPacket(rtcpPacket),

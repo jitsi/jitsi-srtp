@@ -394,10 +394,12 @@ public class SrtpCryptoContext
      */
     synchronized public void deriveSrtpKeys(long index)
     {
-        try {
+        try
+        {
             deriveSrtpKeysInternal(index);
         }
-        finally {
+        finally
+        {
             if (encKey != null)
                 Arrays.fill(encKey, (byte) 0);
             if (authKey != null)
@@ -532,8 +534,10 @@ public class SrtpCryptoContext
     synchronized public boolean reverseTransformPacket(ByteArrayBuffer pkt, boolean skipDecryption)
     {
         if (!SrtpPacket.validatePacketLength(pkt, policy.getAuthTagLength()))
+        {
             /* Too short to be a valid SRTP packet */
             return false;
+        }
 
         int seqNo = SrtpPacket.getSequenceNumber(pkt);
 
@@ -682,8 +686,10 @@ public class SrtpCryptoContext
         long maxIdx = roc << 16 | s_l;
         System.out.printf("Updated replay window with %d. maxIdx=%d, window=0x%016x: [", newIdx, maxIdx, replayWindow);
         boolean printedSomething = false;
-        for (long i = REPLAY_WINDOW_SIZE - 1; i >= 0; i--) {
-            if (((replayWindow >> i) & 0x1) != 0) {
+        for (long i = REPLAY_WINDOW_SIZE - 1; i >= 0; i--)
+        {
+            if (((replayWindow >> i) & 0x1) != 0)
+            {
                 if (printedSomething)
                     System.out.print(", ");
                 printedSomething = true;

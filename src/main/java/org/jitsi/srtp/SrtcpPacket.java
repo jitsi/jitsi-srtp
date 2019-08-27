@@ -63,7 +63,9 @@ public class SrtcpPacket
         int neededLength = 8 /* sender SSRC */ + 4 /* index */ + authTagLen;
 
         if (length < neededLength)
+        {
             return false;
+        }
         return true;
     }
 

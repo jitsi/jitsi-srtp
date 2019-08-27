@@ -430,8 +430,10 @@ public class SrtcpCryptoContext
     {
         System.out.printf("Updated replay window with %d. maxIdx=%d, window=0x%016x: [", newIdx, receivedIndex, replayWindow);
         boolean printedSomething = false;
-        for (long i = REPLAY_WINDOW_SIZE - 1; i >= 0; i--) {
-            if (((replayWindow >> i) & 0x1) != 0) {
+        for (long i = REPLAY_WINDOW_SIZE - 1; i >= 0; i--)
+        {
+            if (((replayWindow >> i) & 0x1) != 0)
+            {
                 if (printedSomething)
                     System.out.print(", ");
                 printedSomething = true;

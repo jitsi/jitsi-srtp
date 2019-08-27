@@ -37,7 +37,8 @@ public class SrtpKeyDerivationTest {
             DatatypeConverter.parseHexBinary("CEBE321F6FF7716B6FD4AB49AF256A156D38BAA4");
 
     @Test
-    public void srtpKdf128Test() {
+    public void srtpKdf128Test()
+    {
         SrtpPolicy policy =
                 new SrtpPolicy(SrtpPolicy.AESCM_ENCRYPTION, 128/8,
                         SrtpPolicy.HMACSHA1_AUTHENTICATION, 160/8,
@@ -71,7 +72,8 @@ public class SrtpKeyDerivationTest {
             DatatypeConverter.parseHexBinary("fd9c32d39ed5fbb5a9dc96b30818454d1313dc05");
 
     @Test
-    public void srtpKdf256Test() {
+    public void srtpKdf256Test()
+    {
         SrtpPolicy policy =
                 new SrtpPolicy(SrtpPolicy.AESCM_ENCRYPTION, 256/8,
                         SrtpPolicy.HMACSHA1_AUTHENTICATION, 160/8,
