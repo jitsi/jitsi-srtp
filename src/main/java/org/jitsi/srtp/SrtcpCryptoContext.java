@@ -24,15 +24,15 @@ import org.jitsi.utils.*;
 import org.jitsi.utils.logging.*;
 
 /**
- * SrtpCryptoContext class is the core class of SRTP implementation. There can
- * be multiple SRTP sources in one SRTP session. And each SRTP stream has a
- * corresponding SrtpCryptoContext object, identified by SSRC. In this way,
+ * SrtcpCryptoContext class is the core class of SRTCP implementation. There can
+ * be multiple SRTCP sources in one SRTP session. And each SRTCP stream has a
+ * corresponding SrtcpCryptoContext object, identified by sender SSRC. In this way,
  * different sources can be protected independently.
  *
- * SrtpCryptoContext class acts as a manager class and maintains all the
- * information used in SRTP transformation. It is responsible for deriving
+ * SrtcpCryptoContext class acts as a manager class and maintains all the
+ * information used in SRTCP transformation. It is responsible for deriving
  * encryption/salting/authentication keys from master keys. And it will invoke
- * certain class to encrypt/decrypt (transform/reverse transform) RTP packets.
+ * certain class to encrypt/decrypt (transform/reverse transform) RTCP packets.
  * It will hold a replay check db and do replay check against incoming packets.
  *
  * Refer to section 3.2 in RFC3711 for detailed description of cryptographic
@@ -68,10 +68,10 @@ public class SrtcpCryptoContext
     private int sentIndex = 0;
 
     /**
-     * Construct an empty SrtpCryptoContext using ssrc. The other parameters are
+     * Construct an empty SrtcpCryptoContext using ssrc. The other parameters are
      * set to default null value.
      *
-     * @param ssrc SSRC of this SrtpCryptoContext
+     * @param ssrc SSRC of this SrtcpCryptoContext
      */
     public SrtcpCryptoContext(int ssrc)
     {
@@ -79,17 +79,17 @@ public class SrtcpCryptoContext
     }
 
     /**
-     * Construct a normal SrtpCryptoContext based on the given parameters.
+     * Construct a normal SrtcpCryptoContext based on the given parameters.
      *
-     * @param ssrc the RTP SSRC that this SRTP cryptographic context protects.
-     * @param masterK byte array holding the master key for this SRTP
+     * @param ssrc the RTP SSRC that this SRTCP cryptographic context protects.
+     * @param masterK byte array holding the master key for this SRTCP
      * cryptographic context. Refer to chapter 3.2.1 of the RFC about the role
      * of the master key.
-     * @param masterS byte array holding the master salt for this SRTP
+     * @param masterS byte array holding the master salt for this SRTCP
      * cryptographic context. It is used to computer the initialization vector
      * that in turn is input to compute the session key, session authentication
      * key and the session salt.
-     * @param policy SRTP policy for this SRTP cryptographic context, defined
+     * @param policy SRTP policy for this SRTCP cryptographic context, defined
      * the encryption algorithm, the authentication algorithm, etc
      */
     @SuppressWarnings("fallthrough")
@@ -145,13 +145,13 @@ public class SrtcpCryptoContext
     }
 
     /**
-     * Derives a new SrtpCryptoContext for use with a new SSRC. The method
-     * returns a new SrtpCryptoContext initialized with the data of this
-     * SrtpCryptoContext. Replacing the SSRC, Roll-over-Counter, and the key
-     * derivation rate the application cab use this SrtpCryptoContext to
+     * Derives a new SrtcpCryptoContext for use with a new SSRC. The method
+     * returns a new SrtcpCryptoContext initialized with the data of this
+     * SrtcpCryptoContext. Replacing the SSRC, Roll-over-Counter, and the key
+     * derivation rate the application can use this SrtcpCryptoContext to
      * encrypt/decrypt a new stream (Synchronization source) inside one RTP
-     * session. Before the application can use this SrtpCryptoContext it must
-     * call the deriveSrtpKeys method.
+     * session. Before the application can use this SrtcpCryptoContext it must
+     * call the deriveSrtcpKeys method.
      *
      * @param ssrc The SSRC for this context
      * @return a new SrtpCryptoContext with all relevant data set.
@@ -381,12 +381,12 @@ public class SrtcpCryptoContext
 
 
     /**
-     * Transform a RTP packet into a SRTP packet. The method is called when a
-     * normal RTP packet ready to be sent. Operations done by the transformation
+     * Transform a RTCP packet into a SRTCP packet. The method is called when a
+     * normal RTCP packet ready to be sent. Operations done by the transformation
      * may include: encryption, using either Counter Mode encryption, or F8 Mode
      * encryption, adding authentication tag, currently HMC SHA1 method. Both
      * encryption and authentication functionality can be turned off as long as
-     * the SrtpPolicy used in this SrtpCryptoContext is requires no encryption
+     * the SrtpPolicy used in this SrtcpCryptoContext is requires no encryption
      * and no authentication. Then the packet will be sent out untouched.
      * However, this is not encouraged. If no SRTP feature is enabled, then we
      * shall not use SRTP TransformConnector. We should use the original method

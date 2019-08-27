@@ -311,7 +311,7 @@ public class SrtpCryptoContext
      * Derives a new SrtpCryptoContext for use with a new SSRC. The method
      * returns a new SrtpCryptoContext initialized with the data of this
      * SrtpCryptoContext. Replacing the SSRC, Roll-over-Counter, and the key
-     * derivation rate the application cab use this SrtpCryptoContext to
+     * derivation rate the application can use this SrtpCryptoContext to
      * encrypt/decrypt a new stream (Synchronization source) inside one RTP
      * session. Before the application can use this SrtpCryptoContext it must
      * call the deriveSrtpKeys method.
