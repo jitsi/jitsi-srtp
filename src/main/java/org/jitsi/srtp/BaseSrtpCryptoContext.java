@@ -114,11 +114,6 @@ public class BaseSrtpCryptoContext
     protected final byte[] masterSalt;
 
     /**
-     * Master key identifier
-     */
-    private final byte[] mki = null;
-
-    /**
      * Encryption / Authentication policy for this session
      */
     protected final SrtpPolicy policy;
@@ -333,16 +328,6 @@ public class BaseSrtpCryptoContext
     public int getAuthTagLength()
     {
         return policy.getAuthTagLength();
-    }
-
-    /**
-     * Gets the MKI length of this SRTP cryptographic context
-     *
-     * @return the MKI length of this SRTP cryptographic context
-     */
-    public int getMkiLength()
-    {
-        return (mki == null) ? 0 : mki.length;
     }
 
     /**
