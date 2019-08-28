@@ -74,7 +74,7 @@ public class SecurityProviderBlockCipherFactory
      * <tt>java.security.Provider</tt>.
      *
      * @param transformation the name of the transformation
-     * @param provider the name of the <tt>java.security.Provider</tt> which
+     * @param providerName the name of the <tt>java.security.Provider</tt> which
      * provides the implementations of the <tt>BlockCipher</tt>s to be
      * initialized by the new instance
      */
