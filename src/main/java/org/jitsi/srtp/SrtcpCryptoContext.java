@@ -137,10 +137,27 @@ public class SrtcpCryptoContext
     {
         SrtpKdf kdf = new SrtpKdf(masterKey, masterSalt, policy);
 
-        kdf.computeKdf(encKey, SrtpKdf.LABEL_RTCP_ENCRYPTION);
+        // compute the session salt
+        kdf.computeKdf(saltKey, SrtpKdf.LABEL_RTCP_SALT);
 
-        if (authKey != null)
+        // compute the session encryption key
+        if (cipherCtr != null)
         {
+            byte[] encKey = new byte[policy.getEncKeyLength()];
+            kdf.computeKdf(encKey, SrtpKdf.LABEL_RTCP_ENCRYPTION);
+
+            if (cipherF8 != null)
+            {
+                cipherF8.init(encKey, saltKey);
+            }
+            cipherCtr.init(encKey);
+            Arrays.fill(encKey, (byte) 0);
+        }
+
+        // compute the session authentication key
+        if (mac != null)
+        {
+            byte[] authKey = new byte[policy.getAuthKeyLength()];
             kdf.computeKdf(authKey, SrtpKdf.LABEL_RTCP_MSG_AUTH);
 
             switch (policy.getAuthType())
@@ -160,23 +177,6 @@ public class SrtcpCryptoContext
             }
 
             Arrays.fill(authKey, (byte) 0);
-        }
-
-        // compute the session salt
-        kdf.computeKdf(saltKey, SrtpKdf.LABEL_RTCP_SALT);
-
-        // As last step: initialize cipher with derived encryption key.
-        if (cipherF8 != null)
-        {
-            cipherF8.init(encKey, saltKey);
-        }
-        if (cipherCtr != null)
-        {
-            cipherCtr.init(encKey);
-        }
-        if (encKey != null)
-        {
-            Arrays.fill(encKey, (byte) 0);
         }
 
         kdf.close();

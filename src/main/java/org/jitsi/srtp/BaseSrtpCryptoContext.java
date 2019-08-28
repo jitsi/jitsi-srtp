@@ -74,11 +74,6 @@ public class BaseSrtpCryptoContext
     protected static final long REPLAY_WINDOW_SIZE = 64;
 
     /**
-     * Derived session authentication key
-     */
-    protected final byte[] authKey;
-
-    /**
      * implements the counter cipher mode for RTP according to RFC 3711
      */
     protected final SrtpCipherCtr cipherCtr;
@@ -87,11 +82,6 @@ public class BaseSrtpCryptoContext
      * F8 mode cipher
      */
     protected final SrtpCipherF8 cipherF8;
-
-    /**
-     * Derived session encryption key
-     */
-    protected final byte[] encKey;
 
     /**
      * Temp store.
@@ -143,10 +133,8 @@ public class BaseSrtpCryptoContext
     {
         this.ssrc = ssrc;
 
-        authKey = null;
         cipherCtr = null;
         cipherF8 = null;
-        encKey = null;
         mac = null;
         policy = null;
         saltKey = null;
@@ -197,7 +185,6 @@ public class BaseSrtpCryptoContext
 
         SrtpCipherCtr cipherCtr = null;
         SrtpCipherF8 cipherF8 = null;
-        byte[] encKey = null;
         byte[] saltKey = null;
 
         switch (policy.getEncType())
@@ -221,7 +208,6 @@ public class BaseSrtpCryptoContext
                     = new SrtpCipherCtrJava(
                             Aes.createBlockCipher(encKeyLength));
             }
-            encKey = new byte[encKeyLength];
             saltKey = new byte[saltKeyLength];
             break;
 
@@ -231,41 +217,34 @@ public class BaseSrtpCryptoContext
 
         case SrtpPolicy.TWOFISH_ENCRYPTION:
             cipherCtr = new SrtpCipherCtrJava(new TwofishEngine());
-            encKey = new byte[encKeyLength];
             saltKey = new byte[saltKeyLength];
             break;
         }
         this.cipherCtr = cipherCtr;
         this.cipherF8 = cipherF8;
-        this.encKey = encKey;
         this.saltKey = saltKey;
 
-        byte[] authKey;
         Mac mac;
         byte[] tagStore;
 
         switch (policy.getAuthType())
         {
         case SrtpPolicy.HMACSHA1_AUTHENTICATION:
-            authKey = new byte[policy.getAuthKeyLength()];
             mac = HmacSha1.createMac();
             tagStore = new byte[mac.getMacSize()];
             break;
 
         case SrtpPolicy.SKEIN_AUTHENTICATION:
-            authKey = new byte[policy.getAuthKeyLength()];
             mac = new SkeinMac();
             tagStore = new byte[policy.getAuthTagLength()];
             break;
 
         case SrtpPolicy.NULL_AUTHENTICATION:
         default:
-            authKey = null;
             mac = null;
             tagStore = null;
             break;
         }
-        this.authKey = authKey;
         this.mac = mac;
         this.tagStore = tagStore;
     }
