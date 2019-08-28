@@ -101,7 +101,7 @@ public class SrtcpCryptoContext
     {
         super(ssrc, masterK, masterS, policy);
 
-        deriveSrtcpKeys(masterKey, masterSalt);
+        deriveSrtcpKeys(masterK, masterS);
     }
 
     /**

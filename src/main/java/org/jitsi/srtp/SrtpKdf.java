@@ -44,6 +44,11 @@ class SrtpKdf
     static final byte LABEL_RTCP_SALT = 0x05;
 
     /**
+     * Master salting key
+     */
+    protected final byte[] masterSalt;
+
+    /**
      * Construct an SRTP Key Derivation Function object.
      *
      * @param masterK The master key from which to derive keys.
@@ -61,7 +66,13 @@ class SrtpKdf
         {
             cipherCtr.init(masterK);
         }
-        Arrays.fill(masterKey, (byte) 0);
+
+        int saltKeyLength = policy.getSaltKeyLength();
+        masterSalt = new byte[saltKeyLength];
+        if (saltKeyLength != 0)
+        {
+            System.arraycopy(masterS, 0, masterSalt, 0, saltKeyLength);
+        }
     }
 
     /**

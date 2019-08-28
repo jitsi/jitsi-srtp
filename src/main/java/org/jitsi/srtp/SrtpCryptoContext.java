@@ -166,7 +166,7 @@ public class SrtpCryptoContext
         this.sender = sender;
         this.roc = roc;
 
-        deriveSrtpKeys(masterKey, masterSalt);
+        deriveSrtpKeys(masterK, masterS);
     }
 
     /**

@@ -104,16 +104,6 @@ public class BaseSrtpCryptoContext
     protected final Mac mac; // used for various HMAC computations
 
     /**
-     * Master encryption key
-     */
-    protected final byte[] masterKey;
-
-    /**
-     * Master salting key
-     */
-    protected final byte[] masterSalt;
-
-    /**
      * Encryption / Authentication policy for this session
      */
     protected final SrtpPolicy policy;
@@ -158,8 +148,6 @@ public class BaseSrtpCryptoContext
         cipherF8 = null;
         encKey = null;
         mac = null;
-        masterKey = null;
-        masterSalt = null;
         policy = null;
         saltKey = null;
         tagStore = null;
@@ -183,9 +171,6 @@ public class BaseSrtpCryptoContext
             {
                 throw new IllegalArgumentException("masterK.length != encKeyLength");
             }
-
-            masterKey = new byte[encKeyLength];
-            System.arraycopy(masterK, 0, masterKey, 0, encKeyLength);
         }
         else
         {
@@ -193,7 +178,6 @@ public class BaseSrtpCryptoContext
             {
                 throw new IllegalArgumentException("null masterK but encKeyLength != 0");
             }
-            masterKey = new byte[0];
         }
         int saltKeyLength = policy.getSaltKeyLength();
 
@@ -203,16 +187,12 @@ public class BaseSrtpCryptoContext
             {
                 throw new IllegalArgumentException("masterS.length != saltKeyLength");
             }
-
-            masterSalt = new byte[saltKeyLength];
-            System.arraycopy(masterS, 0, masterSalt, 0, saltKeyLength);
         }
         else {
             if (saltKeyLength != 0)
             {
                 throw new IllegalArgumentException("null masterS but saltKeyLength != 0");
             }
-            masterSalt = new byte[0];
         }
 
         SrtpCipherCtr cipherCtr = null;
@@ -316,8 +296,7 @@ public class BaseSrtpCryptoContext
      */
     synchronized public void close()
     {
-        Arrays.fill(masterKey, (byte) 0);
-        Arrays.fill(masterSalt, (byte) 0);
+        /* Nothing to do anymore. */
     }
 
     /**
