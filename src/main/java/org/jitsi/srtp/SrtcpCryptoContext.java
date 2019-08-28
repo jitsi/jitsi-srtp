@@ -100,6 +100,8 @@ public class SrtcpCryptoContext
             SrtpPolicy policy)
     {
         super(ssrc, masterK, masterS, policy);
+
+        deriveSrtcpKeys(masterKey, masterSalt);
     }
 
     /**
@@ -131,11 +133,9 @@ public class SrtcpCryptoContext
     /**
      * Derives the srtcp session keys from the master key.
      */
-    synchronized public void deriveSrtcpKeys()
+    private void deriveSrtcpKeys(byte[] masterKey, byte[] masterSalt)
     {
         SrtpKdf kdf = new SrtpKdf(masterKey, masterSalt, policy);
-        Arrays.fill(masterKey, (byte) 0);
-        Arrays.fill(masterSalt, (byte) 0);
 
         kdf.computeKdf(encKey, SrtpKdf.LABEL_RTCP_ENCRYPTION);
 
@@ -167,9 +167,17 @@ public class SrtcpCryptoContext
 
         // As last step: initialize cipher with derived encryption key.
         if (cipherF8 != null)
+        {
             cipherF8.init(encKey, saltKey);
-        cipherCtr.init(encKey);
-        Arrays.fill(encKey, (byte) 0);
+        }
+        if (cipherCtr != null)
+        {
+            cipherCtr.init(encKey);
+        }
+        if (encKey != null)
+        {
+            Arrays.fill(encKey, (byte) 0);
+        }
 
         kdf.close();
     }

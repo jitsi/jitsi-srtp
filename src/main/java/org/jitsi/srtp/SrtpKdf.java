@@ -57,7 +57,10 @@ class SrtpKdf
     {
         super(0, masterK, masterS, policy);
 
-        cipherCtr.init(masterK);
+        if (cipherCtr != null)
+        {
+            cipherCtr.init(masterK);
+        }
         Arrays.fill(masterKey, (byte) 0);
     }
 
@@ -70,6 +73,10 @@ class SrtpKdf
      */
     void computeKdf(byte[] sessKey, byte label)
     {
+        if (sessKey == null || sessKey.length == 0) {
+            return;
+        }
+
         assert(masterSalt.length == 14);
         System.arraycopy(masterSalt, 0, ivStore, 0, masterSalt.length);
 

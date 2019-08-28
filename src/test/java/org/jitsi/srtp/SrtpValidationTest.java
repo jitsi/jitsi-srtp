@@ -77,7 +77,6 @@ public class SrtpValidationTest {
         SrtpContextFactory receiverFactory = new SrtpContextFactory(false, test_key, test_key_salt, policy, policy);
 
         SrtpCryptoContext rtpSend = senderFactory.deriveContext(0xcafebabe, 0);
-        rtpSend.deriveSrtpKeys();
 
         ByteArrayBuffer rtpPkt = new ByteArrayBufferImpl(srtp_plaintext, 0, srtp_plaintext_ref.length);
 
@@ -86,7 +85,6 @@ public class SrtpValidationTest {
         assertArrayEquals(rtpPkt.getBuffer(), srtp_ciphertext);
 
         SrtcpCryptoContext rtcpSend = senderFactory.deriveControlContext(0xcafebabe);
-        rtcpSend.deriveSrtcpKeys();
 
         ByteArrayBuffer rtcpPkt = new ByteArrayBufferImpl(rtcp_plaintext, 0, rtcp_plaintext_ref.length);
         rtcpSend.transformPacket(rtcpPkt);
@@ -104,14 +102,12 @@ public class SrtpValidationTest {
         assertArrayEquals(rtcpPkt.getBuffer(), srtcp_ciphertext);
 
         SrtpCryptoContext rtpRecv = receiverFactory.deriveContext(0xcafebabe, 0);
-        rtpRecv.deriveSrtpKeys();
 
         assertTrue(rtpRecv.reverseTransformPacket(rtpPkt, false));
         assertEquals(rtpPkt.getLength(), srtp_plaintext_ref.length);
         assertArrayEquals(Arrays.copyOf(rtpPkt.getBuffer(), rtpPkt.getLength()), srtp_plaintext_ref);
 
         SrtcpCryptoContext rtcpRecv = receiverFactory.deriveControlContext(0xcafebabe);
-        rtcpRecv.deriveSrtcpKeys();
 
         assertTrue(rtcpRecv.reverseTransformPacket(rtcpPkt));
         assertEquals(rtcpPkt.getLength(), rtcp_plaintext_ref.length);
@@ -137,7 +133,6 @@ public class SrtpValidationTest {
 
             SrtpContextFactory receiverFactory = new SrtpContextFactory(false, test_key, test_key_salt, policy, policy);
             SrtpCryptoContext rtpRecv = receiverFactory.deriveContext(0xcafebabe, 0);
-            rtpRecv.deriveSrtpKeys();
 
             ByteArrayBuffer rtpPkt = new ByteArrayBufferImpl(Arrays.copyOf(srtp_ciphertext, len), 0, len);
 
@@ -161,7 +156,6 @@ public class SrtpValidationTest {
 
             SrtpContextFactory receiverFactory = new SrtpContextFactory(false, test_key, test_key_salt, policy, policy);
             SrtcpCryptoContext rtcpRecv = receiverFactory.deriveControlContext(0xcafebabe);
-            rtcpRecv.deriveSrtcpKeys();
 
             ByteArrayBuffer rtpPkt = new ByteArrayBufferImpl(Arrays.copyOf(srtcp_ciphertext, len), 0, len);
 

@@ -165,6 +165,8 @@ public class SrtpCryptoContext
 
         this.sender = sender;
         this.roc = roc;
+
+        deriveSrtpKeys(masterKey, masterSalt);
     }
 
     /**
@@ -265,11 +267,9 @@ public class SrtpCryptoContext
     /**
      * Derives the srtp session keys from the master key
      */
-    synchronized public void deriveSrtpKeys()
+    private void deriveSrtpKeys(byte[] masterKey, byte[] masterSalt)
     {
         SrtpKdf kdf = new SrtpKdf(masterKey, masterSalt, policy);
-        Arrays.fill(masterKey, (byte) 0);
-        Arrays.fill(masterSalt, (byte) 0);
 
         kdf.computeKdf(encKey, SrtpKdf.LABEL_RTP_ENCRYPTION);
 
@@ -301,9 +301,17 @@ public class SrtpCryptoContext
 
         // As last step: initialize cipher with derived encryption key.
         if (cipherF8 != null)
+        {
             cipherF8.init(encKey, saltKey);
-        cipherCtr.init(encKey);
-        Arrays.fill(encKey, (byte) 0);
+        }
+        if (cipherCtr != null)
+        {
+            cipherCtr.init(encKey);
+        }
+        if (encKey != null)
+        {
+            Arrays.fill(encKey, (byte) 0);
+        }
 
         kdf.close();
     }

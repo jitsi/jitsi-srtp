@@ -71,7 +71,6 @@ public class SrtpPerfTest {
     {
         factory = new SrtpContextFactory(true, test_key, test_key_salt, policy, policy);
         context = factory.deriveContext(0xcafebabe, 0);
-        context.deriveSrtpKeys();
     }
 
     public void doEncrypt(int num, int payloadSize)
