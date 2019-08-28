@@ -309,13 +309,11 @@ public class SrtpCryptoContext
 
 
     /**
-     * Internal code to derive the srtp session keys from the master key,
-     * without zeroing the keys after passing them to the cipher/hmac.
-     * For unit testing.
+     * Derives the srtp session keys from the master key
      *
-     * @param index the 48 bit SRTP packet index
+     * @param index the 48 bit Srtp packet index
      */
-    void deriveSrtpKeysInternal(long index)
+    synchronized public void deriveSrtpKeys(long index)
     {
         // compute the session encryption key
         computeIv(0x00, index);
@@ -348,6 +346,7 @@ public class SrtpCryptoContext
                                     tagStore.length * 8));
                     break;
             }
+            Arrays.fill(authKey, (byte) 0);
         }
 
         // compute the session salt
@@ -360,26 +359,7 @@ public class SrtpCryptoContext
         if (cipherF8 != null)
             cipherF8.init(encKey, saltKey);
         cipherCtr.init(encKey);
-    }
-
-    /**
-     * Derives the srtp session keys from the master key
-     *
-     * @param index the 48 bit Srtp packet index
-     */
-    synchronized public void deriveSrtpKeys(long index)
-    {
-        try
-        {
-            deriveSrtpKeysInternal(index);
-        }
-        finally
-        {
-            if (encKey != null)
-                Arrays.fill(encKey, (byte) 0);
-            if (authKey != null)
-                Arrays.fill(authKey, (byte) 0);
-        }
+        Arrays.fill(encKey, (byte) 0);
     }
 
     /**
