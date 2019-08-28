@@ -129,40 +129,19 @@ public class SrtcpCryptoContext
     }
 
     /**
-     * Computes the initialization vector, used later by encryption algorithms,
-     * based on the label.
-     *
-     * @param label label specified for each type of iv
-     */
-    private void computeIv(byte label)
-    {
-        for (int i = 0; i < 14; i++)
-        {
-            ivStore[i] = masterSalt[i];
-        }
-        ivStore[7] ^= label;
-        ivStore[14] = ivStore[15] = 0;
-    }
-
-    /**
      * Derives the srtcp session keys from the master key.
      */
     synchronized public void deriveSrtcpKeys()
     {
-        // compute the session encryption key
-        computeIv((byte) 3);
-
-        cipherCtr.init(masterKey);
+        SrtpKdf kdf = new SrtpKdf(masterKey, masterSalt, policy);
         Arrays.fill(masterKey, (byte) 0);
+        Arrays.fill(masterSalt, (byte) 0);
 
-        Arrays.fill(encKey, (byte) 0);
-        cipherCtr.process(encKey, 0, policy.getEncKeyLength(), ivStore);
+        kdf.computeKdf(encKey, SrtpKdf.LABEL_RTCP_ENCRYPTION);
 
         if (authKey != null)
         {
-            computeIv((byte) 4);
-            Arrays.fill(authKey, (byte) 0);
-            cipherCtr.process(authKey, 0, policy.getAuthKeyLength(), ivStore);
+            kdf.computeKdf(authKey, SrtpKdf.LABEL_RTCP_MSG_AUTH);
 
             switch (policy.getAuthType())
             {
@@ -184,16 +163,15 @@ public class SrtcpCryptoContext
         }
 
         // compute the session salt
-        computeIv((byte) 5);
-        Arrays.fill(saltKey, (byte) 0);
-        cipherCtr.process(saltKey, 0, policy.getSaltKeyLength(), ivStore);
-        Arrays.fill(masterSalt, (byte) 0);
+        kdf.computeKdf(saltKey, SrtpKdf.LABEL_RTCP_SALT);
 
         // As last step: initialize cipher with derived encryption key.
         if (cipherF8 != null)
             cipherF8.init(encKey, saltKey);
         cipherCtr.init(encKey);
         Arrays.fill(encKey, (byte) 0);
+
+        kdf.close();
     }
 
     /**

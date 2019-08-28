@@ -271,42 +271,6 @@ public class SrtpCryptoContext
         }
     }
 
-    /**
-     * Computes the initialization vector, used later by encryption algorithms,
-     * based on the label, the packet index, key derivation rate and master salt
-     * key.
-     *
-     * @param label label specified for each type of iv
-     * @param index 48bit RTP packet index
-     */
-    private void computeIv(long label, long index)
-    {
-        long key_id;
-
-        if (keyDerivationRate == 0)
-        {
-            key_id = label << 48;
-        }
-        else
-        {
-            key_id = ((label << 48) | (index / keyDerivationRate));
-        }
-        for (int i = 0; i < 7; i++)
-        {
-            ivStore[i] = masterSalt[i];
-        }
-        for (int i = 7; i < 14; i++)
-        {
-            ivStore[i] = (byte)
-                (
-                    (byte) (0xFF & (key_id >> (8 * (13 - i))))
-                    ^
-                    masterSalt[i]
-                );
-        }
-        ivStore[14] = ivStore[15] = 0;
-    }
-
 
     /**
      * Derives the srtp session keys from the master key
@@ -315,21 +279,16 @@ public class SrtpCryptoContext
      */
     synchronized public void deriveSrtpKeys(long index)
     {
-        // compute the session encryption key
-        computeIv(0x00, index);
-
-        cipherCtr.init(masterKey);
+        SrtpKdf kdf = new SrtpKdf(masterKey, masterSalt, policy);
         Arrays.fill(masterKey, (byte) 0);
+        Arrays.fill(masterSalt, (byte) 0);
 
-        Arrays.fill(encKey, (byte) 0);
-        cipherCtr.process(encKey, 0, policy.getEncKeyLength(), ivStore);
+        kdf.computeKdf(encKey, SrtpKdf.LABEL_RTP_ENCRYPTION);
 
         // compute the session authentication key
         if (authKey != null)
         {
-            computeIv(0x01, index);
-            Arrays.fill(authKey, (byte) 0);
-            cipherCtr.process(authKey, 0, policy.getAuthKeyLength(), ivStore);
+            kdf.computeKdf(authKey, SrtpKdf.LABEL_RTP_MSG_AUTH);
 
             switch (policy.getAuthType())
             {
@@ -350,16 +309,15 @@ public class SrtpCryptoContext
         }
 
         // compute the session salt
-        computeIv(0x02, index);
-        Arrays.fill(saltKey, (byte) 0);
-        cipherCtr.process(saltKey, 0, policy.getSaltKeyLength(), ivStore);
-        Arrays.fill(masterSalt, (byte) 0);
+        kdf.computeKdf(saltKey, SrtpKdf.LABEL_RTP_SALT);
 
         // As last step: initialize cipher with derived encryption key.
         if (cipherF8 != null)
             cipherF8.init(encKey, saltKey);
         cipherCtr.init(encKey);
         Arrays.fill(encKey, (byte) 0);
+
+        kdf.close();
     }
 
     /**
