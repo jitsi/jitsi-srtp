@@ -30,7 +30,7 @@ public class SrtpContextFactory
     private SrtpCryptoContext defaultContext;
 
     /**
-     * The default SrtpCryptoContext, which will be used to derive other
+     * The default SrtcpCryptoContext, which will be used to derive other
      * contexts.
      */
     private SrtcpCryptoContext defaultContextControl;
