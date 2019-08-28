@@ -51,7 +51,7 @@ public class SrtpReplayTest {
     {
         SrtpPolicy nullPolicy = new SrtpPolicy(SrtpPolicy.NULL_ENCRYPTION, 0, SrtpPolicy.NULL_AUTHENTICATION, 0, 0, 0);
 
-        SrtpCryptoContext receiver = new SrtpCryptoContext(false, 0xcafebabe, 0, 0, null, null, nullPolicy);
+        SrtpCryptoContext receiver = new SrtpCryptoContext(false, 0xcafebabe, 0, null, null, nullPolicy);
 
         int latestSeq = -1;
         UtSim utSim = new UtSim();

@@ -146,17 +146,15 @@ public class SrtpContextFactory
      *
      * @param ssrc The SSRC for this context
      * @param roc The Roll-Over-Counter for this context
-     * @param deriveRate The key derivation rate for this context
      * @return a new SrtpCryptoContext with all relevant data set.
      */
-    public SrtpCryptoContext deriveContext(int ssrc, int roc, long deriveRate)
+    public SrtpCryptoContext deriveContext(int ssrc, int roc)
     {
         return
             new SrtpCryptoContext(
                 sender,
                 ssrc,
                 roc,
-                deriveRate,
                 masterKey,
                 masterSalt,
                 srtpPolicy);

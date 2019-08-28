@@ -86,11 +86,6 @@ public class SrtpCryptoContext
     private int guessedROC;
 
     /**
-     * Key Derivation Rate, used to derive session keys from master keys
-     */
-    private final long keyDerivationRate;
-
-    /**
      * RFC 3711: a 32-bit unsigned rollover counter (ROC), which records how
      * many times the 16-bit RTP sequence number has been reset to zero after
      * passing through 65,535.  Unlike the sequence number (SEQ), which SRTP
@@ -134,7 +129,6 @@ public class SrtpCryptoContext
 
         this.sender = sender;
 
-        keyDerivationRate = 0;
         roc = 0;
     }
 
@@ -148,8 +142,6 @@ public class SrtpCryptoContext
      * @param roc the initial Roll-Over-Counter according to RFC 3711. These
      * are the upper 32 bit of the overall 48 bit SRTP packet index. Refer to
      * chapter 3.2.1 of the RFC.
-     * @param keyDerivationRate the key derivation rate defines when to
-     * recompute the SRTP session keys. Refer to chapter 4.3.1 in the RFC.
      * @param masterK byte array holding the master key for this SRTP
      * cryptographic context. Refer to chapter 3.2.1 of the RFC about the role
      * of the master key.
@@ -165,7 +157,6 @@ public class SrtpCryptoContext
             boolean sender,
             int ssrc,
             int roc,
-            long keyDerivationRate,
             byte[] masterK,
             byte[] masterS,
             SrtpPolicy policy)
@@ -174,7 +165,6 @@ public class SrtpCryptoContext
 
         this.sender = sender;
         this.roc = roc;
-        this.keyDerivationRate = keyDerivationRate;
     }
 
     /**
@@ -274,10 +264,8 @@ public class SrtpCryptoContext
 
     /**
      * Derives the srtp session keys from the master key
-     *
-     * @param index the 48 bit Srtp packet index
      */
-    synchronized public void deriveSrtpKeys(long index)
+    synchronized public void deriveSrtpKeys()
     {
         SrtpKdf kdf = new SrtpKdf(masterKey, masterSalt, policy);
         Arrays.fill(masterKey, (byte) 0);
