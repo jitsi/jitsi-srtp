@@ -145,23 +145,6 @@ public class SrtcpCryptoContext
     }
 
     /**
-     * Derives a new SrtcpCryptoContext for use with a new SSRC. The method
-     * returns a new SrtcpCryptoContext initialized with the data of this
-     * SrtcpCryptoContext. Replacing the SSRC, Roll-over-Counter, and the key
-     * derivation rate the application can use this SrtcpCryptoContext to
-     * encrypt/decrypt a new stream (Synchronization source) inside one RTP
-     * session. Before the application can use this SrtcpCryptoContext it must
-     * call the deriveSrtcpKeys method.
-     *
-     * @param ssrc The SSRC for this context
-     * @return a new SrtpCryptoContext with all relevant data set.
-     */
-    public SrtcpCryptoContext deriveContext(int ssrc)
-    {
-        return new SrtcpCryptoContext(ssrc, masterKey, masterSalt, policy);
-    }
-
-    /**
      * Derives the srtcp session keys from the master key.
      */
     synchronized public void deriveSrtcpKeys()
