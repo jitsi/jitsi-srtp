@@ -16,6 +16,9 @@
 
 package org.jitsi.srtp;
 
+import org.bouncycastle.crypto.engines.*;
+import org.jitsi.srtp.crypto.*;
+
 import java.util.*;
 
 /**
@@ -23,7 +26,6 @@ import java.util.*;
  * 4.3 of RFC 3711.
  */
 class SrtpKdf
-    extends BaseSrtpCryptoContext
 {
     /** The SRTP KDF label value for RTP encryption. */
     static final byte LABEL_RTP_ENCRYPTION = 0x00;
@@ -44,9 +46,19 @@ class SrtpKdf
     static final byte LABEL_RTCP_SALT = 0x05;
 
     /**
+     * implements the counter cipher mode for RTP key derivation according to RFC 3711
+     */
+    private final SrtpCipherCtr cipherCtr;
+
+    /**
      * Master salting key
      */
-    protected final byte[] masterSalt;
+    private final byte[] masterSalt;
+
+    /**
+     * Temp store.
+     */
+    private final byte[] ivStore = new byte[16];
 
     /**
      * Construct an SRTP Key Derivation Function object.
@@ -60,7 +72,35 @@ class SrtpKdf
         byte[] masterS,
         SrtpPolicy policy)
     {
-        super(0, masterK, masterS, policy);
+        int encKeyLength = policy.getEncKeyLength();
+
+        switch (policy.getEncType())
+        {
+        case SrtpPolicy.AESF8_ENCRYPTION:
+        case SrtpPolicy.AESCM_ENCRYPTION:
+            // use OpenSSL if available and AES128 is in use
+            if (OpenSslWrapperLoader.isLoaded() && encKeyLength == 16)
+            {
+                cipherCtr = new SrtpCipherCtrOpenSsl();
+            }
+            else
+            {
+                cipherCtr
+                    = new SrtpCipherCtrJava(
+                    Aes.createBlockCipher(encKeyLength));
+            }
+            break;
+
+        case SrtpPolicy.TWOFISHF8_ENCRYPTION:
+        case SrtpPolicy.TWOFISH_ENCRYPTION:
+            cipherCtr = new SrtpCipherCtrJava(new TwofishEngine());
+            break;
+
+        case SrtpPolicy.NULL_ENCRYPTION:
+        default:
+            cipherCtr = null;
+            break;
+        }
 
         if (cipherCtr != null)
         {
@@ -97,5 +137,14 @@ class SrtpKdf
 
         Arrays.fill(sessKey, (byte)0);
         cipherCtr.process(sessKey, 0, sessKey.length, ivStore);
+    }
+
+    /**
+     * Closes this KDF. The close function deletes key data and
+     * performs a cleanup of this crypto context.
+     */
+    public void close()
+    {
+        /* TODO, clean up cipherCtr. */
     }
 }
