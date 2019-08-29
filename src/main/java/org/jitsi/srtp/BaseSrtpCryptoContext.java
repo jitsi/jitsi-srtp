@@ -269,13 +269,11 @@ public class BaseSrtpCryptoContext
 
     /**
      * Closes this crypto context. The close functions deletes key data and
-     * performs a cleanup of this crypto context. Clean up key data, maybe this
-     * is the second time. However, sometimes we cannot know if the
-     * CryptoContext was used and the application called deriveSrtpKeys(...).
+     * performs a cleanup of this crypto context.
      */
     synchronized public void close()
     {
-        /* Nothing to do anymore. */
+        /* TODO, clean up ciphers and mac. */
     }
 
     /**
