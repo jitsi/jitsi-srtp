@@ -74,11 +74,6 @@ public class BaseSrtpCryptoContext
     protected static final long REPLAY_WINDOW_SIZE = 64;
 
     /**
-     * Derived session authentication key
-     */
-    protected final byte[] authKey;
-
-    /**
      * implements the counter cipher mode for RTP according to RFC 3711
      */
     protected final SrtpCipherCtr cipherCtr;
@@ -89,11 +84,6 @@ public class BaseSrtpCryptoContext
     protected final SrtpCipherF8 cipherF8;
 
     /**
-     * Derived session encryption key
-     */
-    protected final byte[] encKey;
-
-    /**
      * Temp store.
      */
     protected final byte[] ivStore = new byte[16];
@@ -102,21 +92,6 @@ public class BaseSrtpCryptoContext
      * The HMAC object we used to do packet authentication
      */
     protected final Mac mac; // used for various HMAC computations
-
-    /**
-     * Master encryption key
-     */
-    protected final byte[] masterKey;
-
-    /**
-     * Master salting key
-     */
-    protected final byte[] masterSalt;
-
-    /**
-     * Master key identifier
-     */
-    private final byte[] mki = null;
 
     /**
      * Encryption / Authentication policy for this session
@@ -158,13 +133,9 @@ public class BaseSrtpCryptoContext
     {
         this.ssrc = ssrc;
 
-        authKey = null;
         cipherCtr = null;
         cipherF8 = null;
-        encKey = null;
         mac = null;
-        masterKey = null;
-        masterSalt = null;
         policy = null;
         saltKey = null;
         tagStore = null;
@@ -188,9 +159,6 @@ public class BaseSrtpCryptoContext
             {
                 throw new IllegalArgumentException("masterK.length != encKeyLength");
             }
-
-            masterKey = new byte[encKeyLength];
-            System.arraycopy(masterK, 0, masterKey, 0, encKeyLength);
         }
         else
         {
@@ -198,7 +166,6 @@ public class BaseSrtpCryptoContext
             {
                 throw new IllegalArgumentException("null masterK but encKeyLength != 0");
             }
-            masterKey = new byte[0];
         }
         int saltKeyLength = policy.getSaltKeyLength();
 
@@ -208,21 +175,16 @@ public class BaseSrtpCryptoContext
             {
                 throw new IllegalArgumentException("masterS.length != saltKeyLength");
             }
-
-            masterSalt = new byte[saltKeyLength];
-            System.arraycopy(masterS, 0, masterSalt, 0, saltKeyLength);
         }
         else {
             if (saltKeyLength != 0)
             {
                 throw new IllegalArgumentException("null masterS but saltKeyLength != 0");
             }
-            masterSalt = new byte[0];
         }
 
         SrtpCipherCtr cipherCtr = null;
         SrtpCipherF8 cipherF8 = null;
-        byte[] encKey = null;
         byte[] saltKey = null;
 
         switch (policy.getEncType())
@@ -246,7 +208,6 @@ public class BaseSrtpCryptoContext
                     = new SrtpCipherCtrJava(
                             Aes.createBlockCipher(encKeyLength));
             }
-            encKey = new byte[encKeyLength];
             saltKey = new byte[saltKeyLength];
             break;
 
@@ -256,41 +217,34 @@ public class BaseSrtpCryptoContext
 
         case SrtpPolicy.TWOFISH_ENCRYPTION:
             cipherCtr = new SrtpCipherCtrJava(new TwofishEngine());
-            encKey = new byte[encKeyLength];
             saltKey = new byte[saltKeyLength];
             break;
         }
         this.cipherCtr = cipherCtr;
         this.cipherF8 = cipherF8;
-        this.encKey = encKey;
         this.saltKey = saltKey;
 
-        byte[] authKey;
         Mac mac;
         byte[] tagStore;
 
         switch (policy.getAuthType())
         {
         case SrtpPolicy.HMACSHA1_AUTHENTICATION:
-            authKey = new byte[policy.getAuthKeyLength()];
             mac = HmacSha1.createMac();
             tagStore = new byte[mac.getMacSize()];
             break;
 
         case SrtpPolicy.SKEIN_AUTHENTICATION:
-            authKey = new byte[policy.getAuthKeyLength()];
             mac = new SkeinMac();
             tagStore = new byte[policy.getAuthTagLength()];
             break;
 
         case SrtpPolicy.NULL_AUTHENTICATION:
         default:
-            authKey = null;
             mac = null;
             tagStore = null;
             break;
         }
-        this.authKey = authKey;
         this.mac = mac;
         this.tagStore = tagStore;
     }
@@ -315,14 +269,11 @@ public class BaseSrtpCryptoContext
 
     /**
      * Closes this crypto context. The close functions deletes key data and
-     * performs a cleanup of this crypto context. Clean up key data, maybe this
-     * is the second time. However, sometimes we cannot know if the
-     * CryptoContext was used and the application called deriveSrtpKeys(...).
+     * performs a cleanup of this crypto context.
      */
     synchronized public void close()
     {
-        Arrays.fill(masterKey, (byte) 0);
-        Arrays.fill(masterSalt, (byte) 0);
+        /* TODO, clean up ciphers and mac. */
     }
 
     /**
@@ -333,16 +284,6 @@ public class BaseSrtpCryptoContext
     public int getAuthTagLength()
     {
         return policy.getAuthTagLength();
-    }
-
-    /**
-     * Gets the MKI length of this SRTP cryptographic context
-     *
-     * @return the MKI length of this SRTP cryptographic context
-     */
-    public int getMkiLength()
-    {
-        return (mki == null) ? 0 : mki.length;
     }
 
     /**
