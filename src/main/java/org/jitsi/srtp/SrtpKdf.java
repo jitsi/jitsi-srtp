@@ -116,13 +116,13 @@ class SrtpKdf
     }
 
     /**
-     * Compute a session key.
+     * Derive a session key.
      *
-     * @param sessKey A buffer into which the computed session key will be placed.
+     * @param sessKey A buffer into which the derived session key will be placed.
      *                This should be allocated to be the desired key length.
      * @param label The key derivation label.
      */
-    void computeKdf(byte[] sessKey, byte label)
+    void deriveSessionKey(byte[] sessKey, byte label)
     {
         if (sessKey == null || sessKey.length == 0) {
             return;

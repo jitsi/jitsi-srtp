@@ -272,13 +272,13 @@ public class SrtpCryptoContext
         SrtpKdf kdf = new SrtpKdf(masterKey, masterSalt, policy);
 
         // compute the session salt
-        kdf.computeKdf(saltKey, SrtpKdf.LABEL_RTP_SALT);
+        kdf.deriveSessionKey(saltKey, SrtpKdf.LABEL_RTP_SALT);
 
         // compute the session encryption key
         if (cipherCtr != null)
         {
             byte[] encKey = new byte[policy.getEncKeyLength()];
-            kdf.computeKdf(encKey, SrtpKdf.LABEL_RTP_ENCRYPTION);
+            kdf.deriveSessionKey(encKey, SrtpKdf.LABEL_RTP_ENCRYPTION);
 
             if (cipherF8 != null)
             {
@@ -292,7 +292,7 @@ public class SrtpCryptoContext
         if (mac != null)
         {
             byte[] authKey = new byte[policy.getAuthKeyLength()];
-            kdf.computeKdf(authKey, SrtpKdf.LABEL_RTP_MSG_AUTH);
+            kdf.deriveSessionKey(authKey, SrtpKdf.LABEL_RTP_MSG_AUTH);
 
             switch (policy.getAuthType())
             {
