@@ -8,6 +8,7 @@
     <artifactId>jitsi-srtp</artifactId>
     <name>Jitsi Secure RTP implementation</name>
     <version>1.0-SNAPSHOT</version>
+    <packaging>bundle</packaging>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -305,6 +306,18 @@
                 <artifactId>maven-failsafe-plugin</artifactId>
                 <version>2.22.0</version>
             </plugin>
+	    <plugin>
+		<groupId>org.apache.felix</groupId>
+		<artifactId>maven-bundle-plugin</artifactId>
+		<version>3.0.1</version>
+		<extensions>true</extensions>
+		<configuration>
+		    <instructions>
+			<Export-Package>org.jitsi.srtp</Export-Package>
+			<Bundle-NativeCode>linux-x86-64/libjitsisrtp.so;osname=Linux;processor=x86-64</Bundle-NativeCode>
+		    </instructions>
+		</configuration>
+	    </plugin>
         </plugins>
     </build>
 
