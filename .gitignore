@@ -1,0 +1,7 @@
+/classes/
+/classes-test/
+/target/
+.classpath
+.project
+.settings/
+/src/main/resources
