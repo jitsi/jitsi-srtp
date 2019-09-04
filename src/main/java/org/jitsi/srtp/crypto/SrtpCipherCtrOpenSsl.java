@@ -15,21 +15,12 @@
  */
 package org.jitsi.srtp.crypto;
 
-import org.jitsi.utils.logging.*;
-
 /**
  * @see SrtpCipherCtr
  * SrtpCipherCtr implementation using OpenSSL via JNI.
  */
 public class SrtpCipherCtrOpenSsl extends SrtpCipherCtr
 {
-    /**
-     * The <tt>Logger</tt> used by the <tt>SrtpCipherCtrOpenSsl</tt> class to
-     * print out debug information.
-     */
-    private static final Logger logger =
-        Logger.getLogger(SrtpCipherCtrOpenSsl.class);
-
     private static native long AES128CTR_CTX_create();
 
     private static native void AES128CTR_CTX_destroy(long ctx);

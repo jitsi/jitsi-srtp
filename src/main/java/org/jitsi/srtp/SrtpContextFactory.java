@@ -15,6 +15,8 @@
  */
 package org.jitsi.srtp;
 
+import org.jitsi.utils.logging2.*;
+
 import java.util.*;
 
 /**
@@ -52,6 +54,10 @@ public class SrtpContextFactory
      */
     private final SrtpPolicy srtcpPolicy;
 
+    /**
+     * Logger for SrtpContextFactory and derived objects.
+     */
+    protected final Logger logger;
 
     /**
      * Construct a SrtpTransformEngine based on given master encryption key,
@@ -70,8 +76,10 @@ public class SrtpContextFactory
             byte[] masterKey,
             byte[] masterSalt,
             SrtpPolicy srtpPolicy,
-            SrtpPolicy srtcpPolicy)
+            SrtpPolicy srtcpPolicy,
+            Logger parentLogger)
     {
+        logger = parentLogger.createChildLogger(getClass().getName());
         int encKeyLength = srtpPolicy.getEncKeyLength();
         if (encKeyLength != srtcpPolicy.getEncKeyLength())
         {
@@ -157,7 +165,8 @@ public class SrtpContextFactory
                 roc,
                 masterKey,
                 masterSalt,
-                srtpPolicy);
+                srtpPolicy,
+                logger);
     }
 
     /**
@@ -177,6 +186,7 @@ public class SrtpContextFactory
                 ssrc,
                 masterKey,
                 masterSalt,
-                srtcpPolicy);
+                srtcpPolicy,
+                logger);
     }
 }

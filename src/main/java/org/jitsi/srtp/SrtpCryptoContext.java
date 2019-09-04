@@ -40,7 +40,7 @@ import org.bouncycastle.crypto.params.*;
 import org.jitsi.bccontrib.params.*;
 import org.jitsi.srtp.utils.*;
 import org.jitsi.utils.*;
-import org.jitsi.utils.logging.*;
+import org.jitsi.utils.logging2.*;
 
 /**
  * SrtpCryptoContext class is the core class of SRTP implementation. There can
@@ -69,13 +69,6 @@ import org.jitsi.utils.logging.*;
 public class SrtpCryptoContext
     extends BaseSrtpCryptoContext
 {
-    /**
-     * The <tt>Logger</tt> used by the <tt>SrtpCryptoContext</tt> class and its
-     * instances to print out debug information.
-     */
-    private static final Logger logger
-        = Logger.getLogger(SrtpCryptoContext.class);
-
     /**
      * For the receiver only, the rollover counter guessed from the sequence
      * number of the received packet that is currently being processed (i.e. the
@@ -123,9 +116,9 @@ public class SrtpCryptoContext
      * receiver
      * @param ssrc SSRC of this SrtpCryptoContext
      */
-    public SrtpCryptoContext(boolean sender, int ssrc)
+    public SrtpCryptoContext(boolean sender, int ssrc, Logger parentLogger)
     {
-        super(ssrc);
+        super(ssrc, parentLogger);
 
         this.sender = sender;
 
@@ -159,9 +152,10 @@ public class SrtpCryptoContext
             int roc,
             byte[] masterK,
             byte[] masterS,
-            SrtpPolicy policy)
+            SrtpPolicy policy,
+            Logger parentLogger)
     {
-        super(ssrc, masterK, masterS, policy);
+        super(ssrc, masterK, masterS, policy, parentLogger);
 
         this.sender = sender;
         this.roc = roc;

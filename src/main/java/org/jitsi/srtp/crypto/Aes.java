@@ -22,7 +22,7 @@ import java.util.*;
 import org.bouncycastle.crypto.*;
 import org.bouncycastle.crypto.engines.*;
 import org.bouncycastle.crypto.params.*;
-import org.jitsi.utils.logging.*;
+import org.jitsi.utils.logging2.*;
 
 /**
  * Implements a factory for an AES <tt>BlockCipher</tt>.
@@ -113,7 +113,7 @@ public class Aes
      * The <tt>Logger</tt> used by the <tt>Aes</tt> class to print out debug
      * information.
      */
-    private static final Logger logger = Logger.getLogger(Aes.class);
+    private static final Logger logger = new LoggerImpl(Aes.class.getName());
 
     /**
      * The output buffer to be used for the benchmarking of {@link #factories}.
@@ -622,7 +622,7 @@ public class Aes
          */
         public SunJCEBlockCipherFactory()
         {
-            super("AES_<size>/ECB/NoPadding", "SunJCE");
+            super("AES_<size>/ECB/NoPadding", "SunJCE", logger);
         }
     }
 
@@ -711,7 +711,7 @@ public class Aes
         public SunPKCS11BlockCipherFactory()
             throws Exception
         {
-            super("AES_<size>/ECB/NoPadding", getProvider());
+            super("AES_<size>/ECB/NoPadding", getProvider(), logger);
         }
     }
 }
