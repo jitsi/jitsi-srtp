@@ -400,12 +400,7 @@ public class SrtcpCryptoContext
      */
     private void logReplayWindow(long newIdx)
     {
-        if (!logger.isDebugEnabled())
-        {
-            return;
-        }
-
-        logger.debug("Updated replay window with " + newIdx + ". " +
+        logger.debug(() -> "Updated replay window with " + newIdx + ". " +
             SrtpPacketUtils.formatReplayWindow(receivedIndex, replayWindow, REPLAY_WINDOW_SIZE));
     }
 

@@ -43,17 +43,17 @@ public class OpenSslWrapperLoader
                 OpenSslWrapperLoader.class.getClassLoader());
             if (OpenSSL_Init())
             {
-                logger.info("jitsisrtp successfully loaded");
+                logger.info(() -> "jitsisrtp successfully loaded");
                 libraryLoaded = true;
             }
             else
             {
-                logger.warn("OpenSSL_Init failed");
+                logger.warn(() -> "OpenSSL_Init failed");
             }
         }
         catch (Throwable t)
         {
-            logger.warn("Unable to load jitsisrtp: " + t.toString());
+            logger.warn(() -> "Unable to load jitsisrtp: " + t.toString());
         }
     }
 
