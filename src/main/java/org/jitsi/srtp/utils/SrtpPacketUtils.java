@@ -79,8 +79,6 @@ public class SrtpPacketUtils
      */
     public static int getExtensionLength(ByteArrayBuffer buf)
     {
-        byte[] buffer = buf.getBuffer();
-
         int cc = getCsrcCount(buf);
 
         // The extension length comes after the RTP header, the CSRC list, and
