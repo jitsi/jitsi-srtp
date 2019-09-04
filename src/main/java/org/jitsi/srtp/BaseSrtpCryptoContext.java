@@ -41,6 +41,7 @@ import org.bouncycastle.crypto.engines.*;
 import org.jitsi.bccontrib.macs.*;
 import org.jitsi.srtp.crypto.*;
 import org.jitsi.utils.*;
+import org.jitsi.utils.logging2.*;
 
 /**
  * SrtpCryptoContext class is the core class of SRTP implementation. There can
@@ -129,8 +130,14 @@ public class BaseSrtpCryptoContext
      */
     protected final byte[] tempStore = new byte[100];
 
-    protected BaseSrtpCryptoContext(int ssrc)
+    /**
+     * Logger for BaseSrtpCryptoContext and derived objects.
+     */
+    protected final Logger logger;
+
+    protected BaseSrtpCryptoContext(int ssrc, Logger parentLogger)
     {
+        logger = parentLogger.createChildLogger(this.getClass().getName());
         this.ssrc = ssrc;
 
         cipherCtr = null;
@@ -146,8 +153,10 @@ public class BaseSrtpCryptoContext
             int ssrc,
             byte[] masterK,
             byte[] masterS,
-            SrtpPolicy policy)
+            SrtpPolicy policy,
+            Logger parentLogger)
     {
+        logger = parentLogger.createChildLogger(this.getClass().getName());
         this.ssrc = ssrc;
         this.policy = policy;
 

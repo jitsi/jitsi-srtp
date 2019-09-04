@@ -22,7 +22,7 @@ import javax.crypto.spec.*;
 
 import org.bouncycastle.crypto.*;
 import org.bouncycastle.crypto.params.*;
-import org.jitsi.utils.logging.*;
+import org.jitsi.utils.logging2.*;
 
 /**
  * Adapts the <tt>javax.crypto.Cipher</tt> class to the
@@ -34,11 +34,10 @@ public class BlockCipherAdapter
     implements BlockCipher
 {
     /**
-     * The <tt>Logger</tt> used by the <tt>BlockCipherAdapter</tt> class and its
+     * The <tt>Logger</tt> used by the
      * instance to print out debug information.
      */
-    private static final Logger logger
-        = Logger.getLogger(BlockCipherAdapter.class);
+    private final Logger logger;
 
     /**
      * The name of the algorithm implemented by this instance.
@@ -65,11 +64,12 @@ public class BlockCipherAdapter
      * the <tt>org.bouncycastle.crypto.BlockCipher</tt> interface by the new
      * instance
      */
-    public BlockCipherAdapter(Cipher cipher)
+    public BlockCipherAdapter(Cipher cipher, Logger parentLogger)
     {
         if (cipher == null)
             throw new NullPointerException("cipher");
 
+        logger = parentLogger.createChildLogger(getClass().getName());
         this.cipher = cipher;
 
         // The value of the algorithm property of javax.crypto.Cipher is a

@@ -22,7 +22,7 @@ import java.util.*;
 import org.bouncycastle.crypto.*;
 import org.bouncycastle.crypto.engines.*;
 import org.bouncycastle.crypto.params.*;
-import org.jitsi.utils.logging.*;
+import org.jitsi.utils.logging2.*;
 
 /**
  * Implements a factory for an AES <tt>BlockCipher</tt>.
@@ -113,7 +113,7 @@ public class Aes
      * The <tt>Logger</tt> used by the <tt>Aes</tt> class to print out debug
      * information.
      */
-    private static final Logger logger = Logger.getLogger(Aes.class);
+    private static final Logger logger = new LoggerImpl(Aes.class.getName());
 
     /**
      * The output buffer to be used for the benchmarking of {@link #factories}.
@@ -225,7 +225,7 @@ public class Aes
 
         if (log.length() != 0)
         {
-            logger.info(
+            logger.info(() ->
                     "AES benchmark"
                         + " (of execution times expressed in nanoseconds): "
                         + log);
@@ -271,7 +271,7 @@ public class Aes
                     }
                     else
                     {
-                        logger.warn(
+                        logger.warn(() ->
                                 "Failed to initialize an optimized AES"
                                     + " implementation: "
                                     + t.getLocalizedMessage());
@@ -292,9 +292,9 @@ public class Aes
                         Aes.factory = factory;
                         // Simplify the name of the BlockCipherFactory class to
                         // be employed for the purposes of brevity and ease.
-                        logger.info(
+                        logger.info(() ->
                                 "Will employ AES implemented by "
-                                    + getSimpleClassName(factory) + ".");
+                                    + getSimpleClassName(Aes.factory) + ".");
                     }
                 }
             }
@@ -311,6 +311,29 @@ public class Aes
             else
                 throw new RuntimeException(ex);
         }
+    }
+
+    private static String getEffectiveFactoryClassName()
+    {
+        String factoryClassName = FACTORY_CLASS_NAME;
+
+        if ((factoryClassName == null) || (factoryClassName.length() == 0))
+        {
+            return null;
+        }
+        // Support specifying FACTORY_CLASS_NAME without a package and
+        // without BlockCipherFactory at the end for the purposes of
+        // brevity and ease.
+        if (Character.isUpperCase(factoryClassName.charAt(0))
+            && !factoryClassName.contains(".")
+            && !factoryClassName.endsWith(
+            BLOCK_CIPHER_FACTORY_SIMPLE_CLASS_NAME))
+        {
+            factoryClassName
+                = Aes.class.getName() + "$" + factoryClassName
+                + BLOCK_CIPHER_FACTORY_SIMPLE_CLASS_NAME;
+        }
+        return factoryClassName;
     }
 
     /**
@@ -338,23 +361,10 @@ public class Aes
 
         if (factoryClass == null)
         {
-            String factoryClassName = FACTORY_CLASS_NAME;
+            String factoryClassName = getEffectiveFactoryClassName();
 
-            if ((factoryClassName != null) && (factoryClassName.length() != 0))
+            if (factoryClassName != null)
             {
-                // Support specifying FACTORY_CLASS_NAME without a package and
-                // without BlockCipherFactory at the end for the purposes of
-                // brevity and ease.
-                if (Character.isUpperCase(factoryClassName.charAt(0))
-                        && !factoryClassName.contains(".")
-                        && !factoryClassName.endsWith(
-                                BLOCK_CIPHER_FACTORY_SIMPLE_CLASS_NAME))
-                {
-                    factoryClassName
-                        = Aes.class.getName() + "$" + factoryClassName
-                            + BLOCK_CIPHER_FACTORY_SIMPLE_CLASS_NAME;
-                }
-
                 // Is the specified FACTORY_CLASS_NAME one of the well-known
                 // FACTORY_CLASSES? If it is, then we do not have to invoke the
                 // method Class.forName(String) and add a new Class to
@@ -402,7 +412,7 @@ public class Aes
                         }
                         else
                         {
-                            logger.warn(
+                            logger.warn(() ->
                                     "Failed to employ class " + factoryClassName
                                         + " as an AES implementation: "
                                         + t.getLocalizedMessage());
@@ -622,7 +632,7 @@ public class Aes
          */
         public SunJCEBlockCipherFactory()
         {
-            super("AES_<size>/ECB/NoPadding", "SunJCE");
+            super("AES_<size>/ECB/NoPadding", "SunJCE", logger);
         }
     }
 
@@ -711,7 +721,7 @@ public class Aes
         public SunPKCS11BlockCipherFactory()
             throws Exception
         {
-            super("AES_<size>/ECB/NoPadding", getProvider());
+            super("AES_<size>/ECB/NoPadding", getProvider(), logger);
         }
     }
 }

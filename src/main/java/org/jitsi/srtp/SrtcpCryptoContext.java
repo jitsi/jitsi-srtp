@@ -21,7 +21,7 @@ import org.bouncycastle.crypto.params.*;
 import org.jitsi.bccontrib.params.*;
 import org.jitsi.srtp.utils.*;
 import org.jitsi.utils.*;
-import org.jitsi.utils.logging.*;
+import org.jitsi.utils.logging2.*;
 
 /**
  * SrtcpCryptoContext class is the core class of SRTCP implementation. There can
@@ -51,13 +51,6 @@ public class SrtcpCryptoContext
     extends BaseSrtpCryptoContext
 {
     /**
-     * The <tt>Logger</tt> used by the <tt>SrtcpCryptoContext</tt> class and its
-     * instances to print out debug information.
-     */
-    private static final Logger logger
-        = Logger.getLogger(SrtcpCryptoContext.class);
-
-    /**
      * Index received so far
      */
     private int receivedIndex = 0;
@@ -73,9 +66,9 @@ public class SrtcpCryptoContext
      *
      * @param ssrc SSRC of this SrtcpCryptoContext
      */
-    public SrtcpCryptoContext(int ssrc)
+    public SrtcpCryptoContext(int ssrc, Logger parentLogger)
     {
-        super(ssrc);
+        super(ssrc, parentLogger);
     }
 
     /**
@@ -97,9 +90,10 @@ public class SrtcpCryptoContext
             int ssrc,
             byte[] masterK,
             byte[] masterS,
-            SrtpPolicy policy)
+            SrtpPolicy policy,
+            Logger parentLogger)
     {
-        super(ssrc, masterK, masterS, policy);
+        super(ssrc, masterK, masterS, policy, parentLogger);
 
         deriveSrtcpKeys(masterK, masterS);
     }
@@ -406,12 +400,7 @@ public class SrtcpCryptoContext
      */
     private void logReplayWindow(long newIdx)
     {
-        if (!logger.isDebugEnabled())
-        {
-            return;
-        }
-
-        logger.debug("Updated replay window with " + newIdx + ". " +
+        logger.debug(() -> "Updated replay window with " + newIdx + ". " +
             SrtpPacketUtils.formatReplayWindow(receivedIndex, replayWindow, REPLAY_WINDOW_SIZE));
     }
 

@@ -40,7 +40,7 @@ import org.bouncycastle.crypto.params.*;
 import org.jitsi.bccontrib.params.*;
 import org.jitsi.srtp.utils.*;
 import org.jitsi.utils.*;
-import org.jitsi.utils.logging.*;
+import org.jitsi.utils.logging2.*;
 
 /**
  * SrtpCryptoContext class is the core class of SRTP implementation. There can
@@ -69,13 +69,6 @@ import org.jitsi.utils.logging.*;
 public class SrtpCryptoContext
     extends BaseSrtpCryptoContext
 {
-    /**
-     * The <tt>Logger</tt> used by the <tt>SrtpCryptoContext</tt> class and its
-     * instances to print out debug information.
-     */
-    private static final Logger logger
-        = Logger.getLogger(SrtpCryptoContext.class);
-
     /**
      * For the receiver only, the rollover counter guessed from the sequence
      * number of the received packet that is currently being processed (i.e. the
@@ -123,9 +116,9 @@ public class SrtpCryptoContext
      * receiver
      * @param ssrc SSRC of this SrtpCryptoContext
      */
-    public SrtpCryptoContext(boolean sender, int ssrc)
+    public SrtpCryptoContext(boolean sender, int ssrc, Logger parentLogger)
     {
-        super(ssrc);
+        super(ssrc, parentLogger);
 
         this.sender = sender;
 
@@ -159,9 +152,10 @@ public class SrtpCryptoContext
             int roc,
             byte[] masterK,
             byte[] masterS,
-            SrtpPolicy policy)
+            SrtpPolicy policy,
+            Logger parentLogger)
     {
-        super(ssrc, masterK, masterS, policy);
+        super(ssrc, masterK, masterS, policy, parentLogger);
 
         this.sender = sender;
         this.roc = roc;
@@ -235,7 +229,7 @@ public class SrtpCryptoContext
         {
             if (sender)
             {
-                logger.error(
+                logger.error(() ->
                         "Discarding RTP packet with sequence number " + seqNo
                             + ", SSRC " + Long.toString(0xFFFFFFFFL & ssrc)
                             + " because it is outside the replay window! (roc "
@@ -248,7 +242,7 @@ public class SrtpCryptoContext
         {
             if (sender)
             {
-                logger.error(
+                logger.error(() ->
                         "Discarding RTP packet with sequence number " + seqNo
                             + ", SSRC " + Long.toString(0xFFFFFFFFL & ssrc)
                             + " because it has been received already! (roc "
@@ -450,16 +444,13 @@ public class SrtpCryptoContext
 
         int seqNo = SrtpPacketUtils.getSequenceNumber(pkt);
 
-        if (logger.isDebugEnabled())
-        {
-            logger.debug(
-                    "Reverse transform for SSRC " + this.ssrc
-                        + " SeqNo=" + seqNo
-                        + " s_l=" + s_l
-                        + " seqNumSet=" + seqNumSet
-                        + " guessedROC=" + guessedROC
-                        + " roc=" + roc);
-        }
+        logger.debug(() ->
+            "Reverse transform for SSRC " + this.ssrc
+                + " SeqNo=" + seqNo
+                + " s_l=" + s_l
+                + " seqNumSet=" + seqNumSet
+                + " guessedROC=" + guessedROC
+                + " roc=" + roc);
 
         // Whether s_l was initialized while processing this packet.
         boolean seqNumWasJustSet = false;
@@ -505,9 +496,9 @@ public class SrtpCryptoContext
 
                 b = true;
             }
-            else if (logger.isDebugEnabled())
+            else
             {
-                logger.debug("SRTP auth failed for SSRC " + ssrc);
+                logger.debug(() -> "SRTP auth failed for SSRC " + ssrc);
             }
         }
 
@@ -592,14 +583,8 @@ public class SrtpCryptoContext
      */
     private void logReplayWindow(long newIdx)
     {
-        if (!logger.isDebugEnabled())
-        {
-            return;
-        }
-        long maxIdx = roc << 16 | s_l;
-
-        logger.debug("Updated replay window with " + newIdx + ". " +
-            SrtpPacketUtils.formatReplayWindow(maxIdx, replayWindow, REPLAY_WINDOW_SIZE));
+        logger.debug(() -> "Updated replay window with " + newIdx + ". " +
+            SrtpPacketUtils.formatReplayWindow((roc << 16 | s_l), replayWindow, REPLAY_WINDOW_SIZE));
    }
 
     /**

@@ -18,6 +18,7 @@ package org.jitsi.srtp;
 import static org.junit.jupiter.api.Assertions.*;
 
 import org.jitsi.utils.*;
+import org.jitsi.utils.logging2.*;
 import org.junit.jupiter.api.*;
 
 import javax.xml.bind.*;
@@ -49,9 +50,11 @@ public class SrtpReplayTest {
     @Test
     public void TestRTPReplay()
     {
+        Logger logger = new LoggerImpl(getClass().getName());
+
         SrtpPolicy nullPolicy = new SrtpPolicy(SrtpPolicy.NULL_ENCRYPTION, 0, SrtpPolicy.NULL_AUTHENTICATION, 0, 0, 0);
 
-        SrtpCryptoContext receiver = new SrtpCryptoContext(false, 0xcafebabe, 0, null, null, nullPolicy);
+        SrtpCryptoContext receiver = new SrtpCryptoContext(false, 0xcafebabe, 0, null, null, nullPolicy, logger);
 
         int latestSeq = -1;
         UtSim utSim = new UtSim();
@@ -107,9 +110,11 @@ public class SrtpReplayTest {
     @Test
     public void TestRTCPReplay()
     {
+        Logger logger = new LoggerImpl(getClass().getName());
+
         SrtpPolicy nullPolicy = new SrtpPolicy(SrtpPolicy.NULL_ENCRYPTION, 0, SrtpPolicy.NULL_AUTHENTICATION, 0, 0, 0);
 
-        SrtcpCryptoContext receiver = new SrtcpCryptoContext(0xcafebabe, null, null, nullPolicy);
+        SrtcpCryptoContext receiver = new SrtcpCryptoContext(0xcafebabe, null, null, nullPolicy, logger);
 
         int latestSeq = -1;
         UtSim utSim = new UtSim();
