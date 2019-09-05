@@ -105,14 +105,13 @@
                     <plugin>
                         <groupId>org.codehaus.mojo</groupId>
                         <artifactId>native-maven-plugin</artifactId>
-                        <version>1.0-alpha-9</version>
+                        <version>1.0-alpha-11</version>
                         <extensions>true</extensions>
                         <executions>
                             <execution>
                                 <id>native-compile</id>
                                 <phase>compile</phase>
                                 <goals>
-                                    <goal>javah</goal>
                                     <goal>compile</goal>
                                     <goal>link</goal>
                                 </goals>
@@ -124,6 +123,9 @@
                                 <compilerStartOption>
                                     -g -fPIC -std=c99 -O2 -Wall
                                 </compilerStartOption>
+				<compilerStartOption>
+				    -I ${project.build.directory}/native/javah
+				</compilerStartOption>
 				<compilerStartOption>${compilerStartOpts}</compilerStartOption>
                             </compilerStartOptions>
 
@@ -276,7 +278,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.5.1</version>
+                <version>3.8.1</version>
                 <executions>
                     <!-- Replacing default-compile as it is treated specially by maven -->
                     <execution>
@@ -302,6 +304,10 @@
                 <configuration>
                     <source>1.8</source>
                     <target>1.8</target>
+		    <compilerArgs combine.children="append">
+			<arg>-h</arg>
+			<arg>${project.build.directory}/native/javah/</arg>
+		    </compilerArgs>
                 </configuration>
             </plugin>
             <plugin>
