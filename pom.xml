@@ -17,6 +17,26 @@
     </properties>
 
     <profiles>
+	<profile>
+	    <!-- for reasons I don't understand, depending on the JDK version,
+		 sometimes ${java.home} ends in ../jre, and sometimes it doesn't.
+		 Because the default jdkIncludePath is ${java.home}/../include,
+		 we need to override its value in cases where it doesn't end in jre. -->
+            <id>set-custom-jdkIncludePath</id>
+            <activation>
+                <property>
+                    <name>buildNativeLib</name>
+                </property>
+                <file>
+                    <missing>${java.home}/../include</missing>
+                    <exists>${java.home}/include</exists>
+                </file>
+            </activation>
+            <properties>
+                <jdkIncludePath>${java.home}/include</jdkIncludePath>
+            </properties>
+        </profile>
+
         <profile>
             <id>build-native-lib-mac</id>
             <activation>
@@ -129,11 +149,7 @@
 				<compilerStartOption>${compilerStartOpts}</compilerStartOption>
                             </compilerStartOptions>
 
-                            <javahClassNames>
-				<javahClassName>org.jitsi.srtp.crypto.OpenSslHmac</javahClassName>
-				<javahClassName>org.jitsi.srtp.crypto.SrtpCipherCtrOpenSsl</javahClassName>
-				<javahClassName>org.jitsi.srtp.crypto.OpenSslWrapperLoader</javahClassName>
-                            </javahClassNames>
+                            <jdkIncludePath>${jdkIncludePath}</jdkIncludePath>
                             <javahOS>${os}</javahOS>
 
                             <sources>
