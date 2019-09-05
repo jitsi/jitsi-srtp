@@ -40,7 +40,7 @@ import org.bouncycastle.crypto.params.*;
 import org.jitsi.bccontrib.params.*;
 import org.jitsi.srtp.utils.*;
 import org.jitsi.utils.*;
-import org.jitsi.utils.logging.*;
+import org.jitsi.utils.logging2.*;
 
 /**
  * SrtpCryptoContext class is the core class of SRTP implementation. There can
@@ -70,13 +70,6 @@ public class SrtpCryptoContext
     extends BaseSrtpCryptoContext
 {
     /**
-     * The <tt>Logger</tt> used by the <tt>SrtpCryptoContext</tt> class and its
-     * instances to print out debug information.
-     */
-    private static final Logger logger
-        = Logger.getLogger(SrtpCryptoContext.class);
-
-    /**
      * For the receiver only, the rollover counter guessed from the sequence
      * number of the received packet that is currently being processed (i.e. the
      * value is valid during the execution of
@@ -84,11 +77,6 @@ public class SrtpCryptoContext
      * by the name <tt>v</tt>.
      */
     private int guessedROC;
-
-    /**
-     * Key Derivation Rate, used to derive session keys from master keys
-     */
-    private final long keyDerivationRate;
 
     /**
      * RFC 3711: a 32-bit unsigned rollover counter (ROC), which records how
@@ -128,13 +116,12 @@ public class SrtpCryptoContext
      * receiver
      * @param ssrc SSRC of this SrtpCryptoContext
      */
-    public SrtpCryptoContext(boolean sender, int ssrc)
+    public SrtpCryptoContext(boolean sender, int ssrc, Logger parentLogger)
     {
-        super(ssrc);
+        super(ssrc, parentLogger);
 
         this.sender = sender;
 
-        keyDerivationRate = 0;
         roc = 0;
     }
 
@@ -148,8 +135,6 @@ public class SrtpCryptoContext
      * @param roc the initial Roll-Over-Counter according to RFC 3711. These
      * are the upper 32 bit of the overall 48 bit SRTP packet index. Refer to
      * chapter 3.2.1 of the RFC.
-     * @param keyDerivationRate the key derivation rate defines when to
-     * recompute the SRTP session keys. Refer to chapter 4.3.1 in the RFC.
      * @param masterK byte array holding the master key for this SRTP
      * cryptographic context. Refer to chapter 3.2.1 of the RFC about the role
      * of the master key.
@@ -165,16 +150,17 @@ public class SrtpCryptoContext
             boolean sender,
             int ssrc,
             int roc,
-            long keyDerivationRate,
             byte[] masterK,
             byte[] masterS,
-            SrtpPolicy policy)
+            SrtpPolicy policy,
+            Logger parentLogger)
     {
-        super(ssrc, masterK, masterS, policy);
+        super(ssrc, masterK, masterS, policy, parentLogger);
 
         this.sender = sender;
         this.roc = roc;
-        this.keyDerivationRate = keyDerivationRate;
+
+        deriveSrtpKeys(masterK, masterS);
     }
 
     /**
@@ -243,7 +229,7 @@ public class SrtpCryptoContext
         {
             if (sender)
             {
-                logger.error(
+                logger.error(() ->
                         "Discarding RTP packet with sequence number " + seqNo
                             + ", SSRC " + Long.toString(0xFFFFFFFFL & ssrc)
                             + " because it is outside the replay window! (roc "
@@ -256,7 +242,7 @@ public class SrtpCryptoContext
         {
             if (sender)
             {
-                logger.error(
+                logger.error(() ->
                         "Discarding RTP packet with sequence number " + seqNo
                             + ", SSRC " + Long.toString(0xFFFFFFFFL & ssrc)
                             + " because it has been received already! (roc "
@@ -271,93 +257,36 @@ public class SrtpCryptoContext
         }
     }
 
-    /**
-     * Computes the initialization vector, used later by encryption algorithms,
-     * based on the label, the packet index, key derivation rate and master salt
-     * key.
-     *
-     * @param label label specified for each type of iv
-     * @param index 48bit RTP packet index
-     */
-    private void computeIv(long label, long index)
-    {
-        long key_id;
-
-        if (keyDerivationRate == 0)
-        {
-            key_id = label << 48;
-        }
-        else
-        {
-            key_id = ((label << 48) | (index / keyDerivationRate));
-        }
-        for (int i = 0; i < 7; i++)
-        {
-            ivStore[i] = masterSalt[i];
-        }
-        for (int i = 7; i < 14; i++)
-        {
-            ivStore[i] = (byte)
-                (
-                    (byte) (0xFF & (key_id >> (8 * (13 - i))))
-                    ^
-                    masterSalt[i]
-                );
-        }
-        ivStore[14] = ivStore[15] = 0;
-    }
 
     /**
-     * Derives a new SrtpCryptoContext for use with a new SSRC. The method
-     * returns a new SrtpCryptoContext initialized with the data of this
-     * SrtpCryptoContext. Replacing the SSRC, Roll-over-Counter, and the key
-     * derivation rate the application can use this SrtpCryptoContext to
-     * encrypt/decrypt a new stream (Synchronization source) inside one RTP
-     * session. Before the application can use this SrtpCryptoContext it must
-     * call the deriveSrtpKeys method.
-     *
-     * @param ssrc The SSRC for this context
-     * @param roc The Roll-Over-Counter for this context
-     * @param deriveRate The key derivation rate for this context
-     * @return a new SrtpCryptoContext with all relevant data set.
+     * Derives the srtp session keys from the master key
      */
-    public SrtpCryptoContext deriveContext(int ssrc, int roc, long deriveRate)
+    private void deriveSrtpKeys(byte[] masterKey, byte[] masterSalt)
     {
-        return
-            new SrtpCryptoContext(
-                    sender,
-                    ssrc,
-                    roc,
-                    deriveRate,
-                    masterKey,
-                    masterSalt,
-                    policy);
-    }
+        SrtpKdf kdf = new SrtpKdf(masterKey, masterSalt, policy);
 
-    /**
-     * Internal code to derive the srtp session keys from the master key,
-     * without zeroing the keys after passing them to the cipher/hmac.
-     * For unit testing.
-     *
-     * @param index the 48 bit SRTP packet index
-     */
-    void deriveSrtpKeysInternal(long index)
-    {
+        // compute the session salt
+        kdf.deriveSessionKey(saltKey, SrtpKdf.LABEL_RTP_SALT);
+
         // compute the session encryption key
-        computeIv(0x00, index);
+        if (cipherCtr != null)
+        {
+            byte[] encKey = new byte[policy.getEncKeyLength()];
+            kdf.deriveSessionKey(encKey, SrtpKdf.LABEL_RTP_ENCRYPTION);
 
-        cipherCtr.init(masterKey);
-        Arrays.fill(masterKey, (byte) 0);
-
-        Arrays.fill(encKey, (byte) 0);
-        cipherCtr.process(encKey, 0, policy.getEncKeyLength(), ivStore);
+            if (cipherF8 != null)
+            {
+                cipherF8.init(encKey, saltKey);
+            }
+            cipherCtr.init(encKey);
+            Arrays.fill(encKey, (byte) 0);
+        }
 
         // compute the session authentication key
-        if (authKey != null)
+        if (mac != null)
         {
-            computeIv(0x01, index);
-            Arrays.fill(authKey, (byte) 0);
-            cipherCtr.process(authKey, 0, policy.getAuthKeyLength(), ivStore);
+            byte[] authKey = new byte[policy.getAuthKeyLength()];
+            kdf.deriveSessionKey(authKey, SrtpKdf.LABEL_RTP_MSG_AUTH);
 
             switch (policy.getAuthType())
             {
@@ -374,38 +303,11 @@ public class SrtpCryptoContext
                                     tagStore.length * 8));
                     break;
             }
+
+            Arrays.fill(authKey, (byte) 0);
         }
 
-        // compute the session salt
-        computeIv(0x02, index);
-        Arrays.fill(saltKey, (byte) 0);
-        cipherCtr.process(saltKey, 0, policy.getSaltKeyLength(), ivStore);
-        Arrays.fill(masterSalt, (byte) 0);
-
-        // As last step: initialize cipher with derived encryption key.
-        if (cipherF8 != null)
-            cipherF8.init(encKey, saltKey);
-        cipherCtr.init(encKey);
-    }
-
-    /**
-     * Derives the srtp session keys from the master key
-     *
-     * @param index the 48 bit Srtp packet index
-     */
-    synchronized public void deriveSrtpKeys(long index)
-    {
-        try
-        {
-            deriveSrtpKeysInternal(index);
-        }
-        finally
-        {
-            if (encKey != null)
-                Arrays.fill(encKey, (byte) 0);
-            if (authKey != null)
-                Arrays.fill(authKey, (byte) 0);
-        }
+        kdf.close();
     }
 
     /**
@@ -542,16 +444,13 @@ public class SrtpCryptoContext
 
         int seqNo = SrtpPacketUtils.getSequenceNumber(pkt);
 
-        if (logger.isDebugEnabled())
-        {
-            logger.debug(
-                    "Reverse transform for SSRC " + this.ssrc
-                        + " SeqNo=" + seqNo
-                        + " s_l=" + s_l
-                        + " seqNumSet=" + seqNumSet
-                        + " guessedROC=" + guessedROC
-                        + " roc=" + roc);
-        }
+        logger.debug(() ->
+            "Reverse transform for SSRC " + this.ssrc
+                + " SeqNo=" + seqNo
+                + " s_l=" + s_l
+                + " seqNumSet=" + seqNumSet
+                + " guessedROC=" + guessedROC
+                + " roc=" + roc);
 
         // Whether s_l was initialized while processing this packet.
         boolean seqNumWasJustSet = false;
@@ -597,9 +496,9 @@ public class SrtpCryptoContext
 
                 b = true;
             }
-            else if (logger.isDebugEnabled())
+            else
             {
-                logger.debug("SRTP auth failed for SSRC " + ssrc);
+                logger.debug(() -> "SRTP auth failed for SSRC " + ssrc);
             }
         }
 
@@ -684,14 +583,8 @@ public class SrtpCryptoContext
      */
     private void logReplayWindow(long newIdx)
     {
-        if (!logger.isDebugEnabled())
-        {
-            return;
-        }
-        long maxIdx = roc << 16 | s_l;
-
-        logger.debug("Updated replay window with " + newIdx + ". " +
-            SrtpPacketUtils.formatReplayWindow(maxIdx, replayWindow, REPLAY_WINDOW_SIZE));
+        logger.debug(() -> "Updated replay window with " + newIdx + ". " +
+            SrtpPacketUtils.formatReplayWindow((roc << 16 | s_l), replayWindow, REPLAY_WINDOW_SIZE));
    }
 
     /**

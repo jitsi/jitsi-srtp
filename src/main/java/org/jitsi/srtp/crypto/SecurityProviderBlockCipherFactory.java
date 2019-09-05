@@ -20,7 +20,9 @@ import java.security.*;
 import javax.crypto.*;
 
 import org.bouncycastle.crypto.*;
+import org.jetbrains.annotations.*;
 import org.jitsi.srtp.crypto.*;
+import org.jitsi.utils.logging2.*;
 
 /**
  * Implements a <tt>BlockCipherFactory</tt> which initializes
@@ -44,6 +46,12 @@ public class SecurityProviderBlockCipherFactory
     private final String transformation;
 
     /**
+     * The <tt>Logger</tt> used by the
+     * instance to print out debug information.
+     */
+    private final Logger logger;
+
+    /**
      * Initializes a new <tt>SecurityProvider</tt> instance which is to
      * initialize <tt>BlockCipher</tt>s that are implemented by a specific
      * <tt>java.security.Provider</tt>.
@@ -55,7 +63,8 @@ public class SecurityProviderBlockCipherFactory
      */
     public SecurityProviderBlockCipherFactory(
             String transformation,
-            Provider provider)
+            Provider provider,
+            @NotNull Logger parentLogger)
     {
         if (transformation == null)
             throw new NullPointerException("transformation");
@@ -64,6 +73,7 @@ public class SecurityProviderBlockCipherFactory
         if (provider == null)
             throw new NullPointerException("provider");
 
+        logger = parentLogger.createChildLogger(getClass().getName());
         this.transformation = transformation;
         this.provider = provider;
     }
@@ -74,15 +84,16 @@ public class SecurityProviderBlockCipherFactory
      * <tt>java.security.Provider</tt>.
      *
      * @param transformation the name of the transformation
-     * @param provider the name of the <tt>java.security.Provider</tt> which
+     * @param providerName the name of the <tt>java.security.Provider</tt> which
      * provides the implementations of the <tt>BlockCipher</tt>s to be
      * initialized by the new instance
      */
     public SecurityProviderBlockCipherFactory(
             String transformation,
-            String providerName)
+            String providerName,
+            @NotNull Logger parentLogger)
     {
-        this(transformation, Security.getProvider(providerName));
+        this(transformation, Security.getProvider(providerName), parentLogger);
     }
 
     /**
@@ -98,6 +109,7 @@ public class SecurityProviderBlockCipherFactory
                             transformation.replaceFirst(
                                     "<size>",
                                     Integer.toString(keySize * 8)),
-                            provider));
+                            provider),
+                logger);
     }
 }

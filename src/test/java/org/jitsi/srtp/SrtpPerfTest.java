@@ -18,6 +18,7 @@ package org.jitsi.srtp;
 import gnu.getopt.*;
 import org.jitsi.srtp.crypto.*;
 import org.jitsi.utils.*;
+import org.jitsi.utils.logging2.*;
 import org.junit.jupiter.api.*;
 
 import javax.xml.bind.*;
@@ -69,9 +70,9 @@ public class SrtpPerfTest {
 
     private void createContext(SrtpPolicy policy)
     {
-        factory = new SrtpContextFactory(true, test_key, test_key_salt, policy, policy);
-        context = factory.getDefaultContext().deriveContext(0xcafebabe, 0, 0);
-        context.deriveSrtpKeys(0);
+        Logger logger = new LoggerImpl(getClass().getName());
+        factory = new SrtpContextFactory(true, test_key, test_key_salt, policy, policy, logger);
+        context = factory.deriveContext(0xcafebabe, 0);
     }
 
     public void doEncrypt(int num, int payloadSize)

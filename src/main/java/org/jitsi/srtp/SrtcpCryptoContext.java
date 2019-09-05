@@ -21,7 +21,7 @@ import org.bouncycastle.crypto.params.*;
 import org.jitsi.bccontrib.params.*;
 import org.jitsi.srtp.utils.*;
 import org.jitsi.utils.*;
-import org.jitsi.utils.logging.*;
+import org.jitsi.utils.logging2.*;
 
 /**
  * SrtcpCryptoContext class is the core class of SRTCP implementation. There can
@@ -51,13 +51,6 @@ public class SrtcpCryptoContext
     extends BaseSrtpCryptoContext
 {
     /**
-     * The <tt>Logger</tt> used by the <tt>SrtcpCryptoContext</tt> class and its
-     * instances to print out debug information.
-     */
-    private static final Logger logger
-        = Logger.getLogger(SrtcpCryptoContext.class);
-
-    /**
      * Index received so far
      */
     private int receivedIndex = 0;
@@ -73,9 +66,9 @@ public class SrtcpCryptoContext
      *
      * @param ssrc SSRC of this SrtcpCryptoContext
      */
-    public SrtcpCryptoContext(int ssrc)
+    public SrtcpCryptoContext(int ssrc, Logger parentLogger)
     {
-        super(ssrc);
+        super(ssrc, parentLogger);
     }
 
     /**
@@ -97,9 +90,12 @@ public class SrtcpCryptoContext
             int ssrc,
             byte[] masterK,
             byte[] masterS,
-            SrtpPolicy policy)
+            SrtpPolicy policy,
+            Logger parentLogger)
     {
-        super(ssrc, masterK, masterS, policy);
+        super(ssrc, masterK, masterS, policy, parentLogger);
+
+        deriveSrtcpKeys(masterK, masterS);
     }
 
     /**
@@ -129,57 +125,34 @@ public class SrtcpCryptoContext
     }
 
     /**
-     * Computes the initialization vector, used later by encryption algorithms,
-     * based on the label.
-     *
-     * @param label label specified for each type of iv
-     */
-    private void computeIv(byte label)
-    {
-        for (int i = 0; i < 14; i++)
-        {
-            ivStore[i] = masterSalt[i];
-        }
-        ivStore[7] ^= label;
-        ivStore[14] = ivStore[15] = 0;
-    }
-
-    /**
-     * Derives a new SrtcpCryptoContext for use with a new SSRC. The method
-     * returns a new SrtcpCryptoContext initialized with the data of this
-     * SrtcpCryptoContext. Replacing the SSRC, Roll-over-Counter, and the key
-     * derivation rate the application can use this SrtcpCryptoContext to
-     * encrypt/decrypt a new stream (Synchronization source) inside one RTP
-     * session. Before the application can use this SrtcpCryptoContext it must
-     * call the deriveSrtcpKeys method.
-     *
-     * @param ssrc The SSRC for this context
-     * @return a new SrtpCryptoContext with all relevant data set.
-     */
-    public SrtcpCryptoContext deriveContext(int ssrc)
-    {
-        return new SrtcpCryptoContext(ssrc, masterKey, masterSalt, policy);
-    }
-
-    /**
      * Derives the srtcp session keys from the master key.
      */
-    synchronized public void deriveSrtcpKeys()
+    private void deriveSrtcpKeys(byte[] masterKey, byte[] masterSalt)
     {
+        SrtpKdf kdf = new SrtpKdf(masterKey, masterSalt, policy);
+
+        // compute the session salt
+        kdf.deriveSessionKey(saltKey, SrtpKdf.LABEL_RTCP_SALT);
+
         // compute the session encryption key
-        computeIv((byte) 3);
-
-        cipherCtr.init(masterKey);
-        Arrays.fill(masterKey, (byte) 0);
-
-        Arrays.fill(encKey, (byte) 0);
-        cipherCtr.process(encKey, 0, policy.getEncKeyLength(), ivStore);
-
-        if (authKey != null)
+        if (cipherCtr != null)
         {
-            computeIv((byte) 4);
-            Arrays.fill(authKey, (byte) 0);
-            cipherCtr.process(authKey, 0, policy.getAuthKeyLength(), ivStore);
+            byte[] encKey = new byte[policy.getEncKeyLength()];
+            kdf.deriveSessionKey(encKey, SrtpKdf.LABEL_RTCP_ENCRYPTION);
+
+            if (cipherF8 != null)
+            {
+                cipherF8.init(encKey, saltKey);
+            }
+            cipherCtr.init(encKey);
+            Arrays.fill(encKey, (byte) 0);
+        }
+
+        // compute the session authentication key
+        if (mac != null)
+        {
+            byte[] authKey = new byte[policy.getAuthKeyLength()];
+            kdf.deriveSessionKey(authKey, SrtpKdf.LABEL_RTCP_MSG_AUTH);
 
             switch (policy.getAuthType())
             {
@@ -200,17 +173,7 @@ public class SrtcpCryptoContext
             Arrays.fill(authKey, (byte) 0);
         }
 
-        // compute the session salt
-        computeIv((byte) 5);
-        Arrays.fill(saltKey, (byte) 0);
-        cipherCtr.process(saltKey, 0, policy.getSaltKeyLength(), ivStore);
-        Arrays.fill(masterSalt, (byte) 0);
-
-        // As last step: initialize cipher with derived encryption key.
-        if (cipherF8 != null)
-            cipherF8.init(encKey, saltKey);
-        cipherCtr.init(encKey);
-        Arrays.fill(encKey, (byte) 0);
+        kdf.close();
     }
 
     /**
@@ -437,12 +400,7 @@ public class SrtcpCryptoContext
      */
     private void logReplayWindow(long newIdx)
     {
-        if (!logger.isDebugEnabled())
-        {
-            return;
-        }
-
-        logger.debug("Updated replay window with " + newIdx + ". " +
+        logger.debug(() -> "Updated replay window with " + newIdx + ". " +
             SrtpPacketUtils.formatReplayWindow(receivedIndex, replayWindow, REPLAY_WINDOW_SIZE));
     }
 

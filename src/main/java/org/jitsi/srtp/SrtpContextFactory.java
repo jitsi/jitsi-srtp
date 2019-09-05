@@ -15,6 +15,10 @@
  */
 package org.jitsi.srtp;
 
+import org.jitsi.utils.logging2.*;
+
+import java.util.*;
+
 /**
  * The <tt>SrtpContextFactory</tt> creates the initial crypto contexts for RTP
  * and RTCP encryption using the supplied key material.
@@ -24,16 +28,36 @@ package org.jitsi.srtp;
 public class SrtpContextFactory
 {
     /**
-     * The default SrtpCryptoContext, which will be used to derive other
-     * contexts.
+     * Master encryption key
      */
-    private SrtpCryptoContext defaultContext;
+    private final byte[] masterKey;
 
     /**
-     * The default SrtcpCryptoContext, which will be used to derive other
-     * contexts.
+     * Master salting key
      */
-    private SrtcpCryptoContext defaultContextControl;
+    private final byte[] masterSalt;
+
+
+    /**
+     * The indicator which determines whether this instance is used by SRTP
+     * senders (<tt>true</tt>) or receiver (<tt>false</tt>).
+     */
+    private final boolean sender;
+
+    /**
+     * Encryption / Authentication policy for SRTP
+     */
+    private final SrtpPolicy srtpPolicy;
+
+    /**
+     * Encryption / Authentication policy for SRTCP
+     */
+    private final SrtpPolicy srtcpPolicy;
+
+    /**
+     * Logger for SrtpContextFactory and derived objects.
+     */
+    protected final Logger logger;
 
     /**
      * Construct a SrtpTransformEngine based on given master encryption key,
@@ -52,58 +76,117 @@ public class SrtpContextFactory
             byte[] masterKey,
             byte[] masterSalt,
             SrtpPolicy srtpPolicy,
-            SrtpPolicy srtcpPolicy)
+            SrtpPolicy srtcpPolicy,
+            Logger parentLogger)
     {
-        defaultContext
-            = new SrtpCryptoContext(
-                    sender,
-                    0,
-                    0,
-                    0,
-                    masterKey,
-                    masterSalt,
-                    srtpPolicy);
-        defaultContextControl
-            = new SrtcpCryptoContext(0, masterKey, masterSalt, srtcpPolicy);
+        logger = parentLogger.createChildLogger(getClass().getName());
+        int encKeyLength = srtpPolicy.getEncKeyLength();
+        if (encKeyLength != srtcpPolicy.getEncKeyLength())
+        {
+            throw new IllegalArgumentException("srtpPolicy.getEncKeyLength() != srtcpPolicy.getEncKeyLength()");
+        }
+
+        if (masterKey != null)
+        {
+            if (masterKey.length != encKeyLength)
+            {
+                throw new IllegalArgumentException("masterK.length != encKeyLength");
+            }
+
+            this.masterKey = new byte[encKeyLength];
+            System.arraycopy(masterKey, 0, this.masterKey, 0, encKeyLength);
+        }
+        else
+        {
+            if (encKeyLength != 0)
+            {
+                throw new IllegalArgumentException("null masterK but encKeyLength != 0");
+            }
+            this.masterKey = new byte[0];
+        }
+
+        int saltKeyLength = srtpPolicy.getSaltKeyLength();
+        if (saltKeyLength != srtcpPolicy.getSaltKeyLength())
+        {
+            throw new IllegalArgumentException("srtpPolicy.getSaltKeyLength() != srtcpPolicy.getSaltKeyLength()");
+        }
+
+        if (masterSalt != null)
+        {
+            if (masterSalt.length != saltKeyLength)
+            {
+                throw new IllegalArgumentException("masterS.length != saltKeyLength");
+            }
+
+            this.masterSalt = new byte[saltKeyLength];
+            System.arraycopy(masterSalt, 0, this.masterSalt, 0, saltKeyLength);
+        }
+        else {
+            if (saltKeyLength != 0)
+            {
+                throw new IllegalArgumentException("null masterS but saltKeyLength != 0");
+            }
+            this.masterSalt = new byte[0];
+        }
+
+        this.sender = sender;
+        this.srtpPolicy = srtpPolicy;
+        this.srtcpPolicy = srtcpPolicy;
     }
 
     /**
      * Close the transformer engine.
      *
-     * The close functions closes all stored default crypto contexts. This
-     * deletes key data and forces a cleanup of the crypto contexts.
+     * The close functions closes all stored default crypto state.
      */
     public void close()
     {
-        if (defaultContext != null)
-        {
-            defaultContext.close();
-            defaultContext = null;
-        }
-        if (defaultContextControl != null)
-        {
-            defaultContextControl.close();
-            defaultContextControl = null;
-        }
+        Arrays.fill(masterKey, (byte)0);
+        Arrays.fill(masterSalt, (byte)0);
     }
 
     /**
-     * Get the default SrtpCryptoContext
+     * Derives a new SrtpCryptoContext for use with a new SSRC. The method
+     * returns a new SrtpCryptoContext initialized with the master key,
+     * master salt, and sender state of this factory.
+     * Before the application can use this SrtpCryptoContext it must
+     * call the deriveSrtpKeys method.
      *
-     * @return the default SrtpCryptoContext
+     * @param ssrc The SSRC for this context
+     * @param roc The Roll-Over-Counter for this context
+     * @return a new SrtpCryptoContext with all relevant data set.
      */
-    public SrtpCryptoContext getDefaultContext()
+    public SrtpCryptoContext deriveContext(int ssrc, int roc)
     {
-        return defaultContext;
+        return
+            new SrtpCryptoContext(
+                sender,
+                ssrc,
+                roc,
+                masterKey,
+                masterSalt,
+                srtpPolicy,
+                logger);
     }
 
     /**
-     * Get the default SrtpCryptoContext
+     * Derives a new SrtcpCryptoContext for use with a new SSRC. The method
+     * returns a new SrtcpCryptoContext initialized with the master key
+     * and master salt of this factory.
+     * Before the application can use this SrtpCryptoContext it must
+     * call the deriveSrtcpKeys method.
      *
-     * @return the default SrtpCryptoContext
+     * @param ssrc The sender SSRC for this context
+     * @return a new SrtcpCryptoContext with all relevant data set.
      */
-    public SrtcpCryptoContext getDefaultContextControl()
+    public SrtcpCryptoContext deriveControlContext(int ssrc)
     {
-        return defaultContextControl;
+        return
+            new SrtcpCryptoContext(
+                ssrc,
+                masterKey,
+                masterSalt,
+                srtcpPolicy,
+                logger);
     }
 }
