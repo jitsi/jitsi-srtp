@@ -19,6 +19,8 @@ import org.jitsi.utils.*;
 
 import java.util.*;
 
+import static org.jitsi.utils.ByteArrayUtils.*;
+
 /**
  * SrtpPacket is the low-level utilities to get the data fields needed by SRTP.
  */
@@ -79,15 +81,13 @@ public class SrtpPacketUtils
      */
     public static int getExtensionLength(ByteArrayBuffer buf)
     {
-        byte[] buffer = buf.getBuffer();
-
         int cc = getCsrcCount(buf);
 
         // The extension length comes after the RTP header, the CSRC list, and
         // two bytes in the extension header called "defined by profile".
         int extLenIndex = FIXED_HEADER_SIZE + cc * 4 + 2;
 
-        int len = readUint16AsInt(buf, extLenIndex) * 4;
+        int len = readUint16(buf, extLenIndex) * 4;
 
         return len;
     }
@@ -99,7 +99,7 @@ public class SrtpPacketUtils
      */
     public static int getSequenceNumber(ByteArrayBuffer buf)
     {
-        return readUint16AsInt(buf, 2);
+        return readUint16(buf, 2);
     }
 
     /**
@@ -166,45 +166,11 @@ public class SrtpPacketUtils
         int length = FIXED_HEADER_SIZE + getCsrcCount(buf)*4;
 
         if (getExtensionBit(buf))
+        {
             length += EXT_HEADER_SIZE + getExtensionLength(buf);
+        }
 
         return length;
-    }
-
-    /**
-     * Read a 32-bit integer from a byte array buffer at a specified offset.
-     *
-     * @param byteArray the buffer.
-     * @param off start offset in the buffer of the integer to be read.
-     */
-    static int readInt(ByteArrayBuffer byteArray, int off)
-    {
-        byte[] buf = byteArray.getBuffer();
-        off += byteArray.getOffset();
-
-        return
-                ((buf[off++] & 0xFF) << 24)
-                        | ((buf[off++] & 0xFF) << 16)
-                        | ((buf[off++] & 0xFF) << 8)
-                        | (buf[off] & 0xFF);
-    }
-
-    /**
-     * Read a unsigned 16-bit value from a byte array buffer at a specified offset as an int.
-     *
-     * @param byteArray the buffer from which to read.
-     * @param off start offset of the unsigned short
-     * @return the int value of the unsigned short at offset
-     */
-    static int readUint16AsInt(ByteArrayBuffer byteArray, int off)
-    {
-        byte[] buf = byteArray.getBuffer();
-        off += byteArray.getOffset();
-
-        int b1 = (0xFF & (buf[off + 0]));
-        int b2 = (0xFF & (buf[off + 1]));
-        int val = b1 << 8 | b2;
-        return val;
     }
 
     /**
