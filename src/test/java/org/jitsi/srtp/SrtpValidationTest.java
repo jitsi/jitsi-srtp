@@ -83,7 +83,7 @@ public class SrtpValidationTest {
 
         ByteArrayBuffer rtpPkt = new ByteArrayBufferImpl(srtp_plaintext, 0, srtp_plaintext_ref.length);
 
-        assertTrue(rtpSend.transformPacket(rtpPkt));
+        assertEquals(rtpSend.transformPacket(rtpPkt), SrtpErrorStatus.OK);
         assertEquals(rtpPkt.getLength(), srtp_ciphertext.length);
         assertArrayEquals(rtpPkt.getBuffer(), srtp_ciphertext);
 
@@ -99,20 +99,19 @@ public class SrtpValidationTest {
         System.arraycopy(rtcp_plaintext_ref, 0, rtcpPkt.getBuffer(), 0, rtcp_plaintext_ref.length);
         rtcpPkt.setLength(rtcp_plaintext_ref.length);
 
-        rtcpSend.transformPacket(rtcpPkt);
-
+        assertEquals(rtcpSend.transformPacket(rtcpPkt), SrtpErrorStatus.OK);
         assertEquals(rtcpPkt.getLength(), srtcp_ciphertext.length);
         assertArrayEquals(rtcpPkt.getBuffer(), srtcp_ciphertext);
 
         SrtpCryptoContext rtpRecv = receiverFactory.deriveContext(0xcafebabe, 0);
 
-        assertTrue(rtpRecv.reverseTransformPacket(rtpPkt, false));
+        assertEquals(rtpRecv.reverseTransformPacket(rtpPkt, false), SrtpErrorStatus.OK);
         assertEquals(rtpPkt.getLength(), srtp_plaintext_ref.length);
         assertArrayEquals(Arrays.copyOf(rtpPkt.getBuffer(), rtpPkt.getLength()), srtp_plaintext_ref);
 
         SrtcpCryptoContext rtcpRecv = receiverFactory.deriveControlContext(0xcafebabe);
 
-        assertTrue(rtcpRecv.reverseTransformPacket(rtcpPkt));
+        assertEquals(rtcpRecv.reverseTransformPacket(rtcpPkt), SrtpErrorStatus.OK);
         assertEquals(rtcpPkt.getLength(), rtcp_plaintext_ref.length);
         assertArrayEquals(Arrays.copyOf(rtcpPkt.getBuffer(), rtcpPkt.getLength()), rtcp_plaintext_ref);
 
@@ -141,15 +140,15 @@ public class SrtpValidationTest {
 
             ByteArrayBuffer rtpPkt = new ByteArrayBufferImpl(Arrays.copyOf(srtp_ciphertext, len), 0, len);
 
-            boolean accept = rtpRecv.reverseTransformPacket(rtpPkt, false);
+            SrtpErrorStatus status = rtpRecv.reverseTransformPacket(rtpPkt, false);
 
             if (len == srtp_ciphertext.length)
             {
-                assertTrue(accept, "Rejected valid SRTP packet");
+                assertEquals(status, SrtpErrorStatus.OK, "Rejected valid SRTP packet");
             }
             else
             {
-                assertFalse(accept, "Accepted truncated SRTP packet");
+                assertNotEquals(status, SrtpErrorStatus.OK, "Accepted truncated SRTP packet");
             }
         }
 
@@ -164,15 +163,15 @@ public class SrtpValidationTest {
 
             ByteArrayBuffer rtpPkt = new ByteArrayBufferImpl(Arrays.copyOf(srtcp_ciphertext, len), 0, len);
 
-            boolean accept = rtcpRecv.reverseTransformPacket(rtpPkt);
+            SrtpErrorStatus status = rtcpRecv.reverseTransformPacket(rtpPkt);
 
             if (len == srtcp_ciphertext.length)
             {
-                assertTrue(accept, "Rejected valid SRTCP packet");
+                assertEquals(status, SrtpErrorStatus.OK, "Rejected valid SRTCP packet");
             }
             else
             {
-                assertFalse(accept, "Accepted truncated SRTCP packet");
+                assertNotEquals(status, SrtpErrorStatus.OK, "Accepted truncated SRTCP packet");
             }
         }
     }
