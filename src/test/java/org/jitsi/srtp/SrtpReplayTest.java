@@ -65,21 +65,23 @@ public class SrtpReplayTest {
             if (latestSeq < seq) latestSeq = seq;
             setRtpPacketSequence(seq & 0xffff);
 
-            boolean accepted = receiver.reverseTransformPacket(rtpPacket, false);
+            SrtpErrorStatus status = receiver.reverseTransformPacket(rtpPacket, false);
             int delta = latestSeq - seq;
             if (delta >= REPLAY_WINDOW_SIZE)
             {
-                assertFalse(accepted,
+                assertEquals(status, SrtpErrorStatus.REPLAY_OLD,
                     "packet outside RTP replay window accepted");
             }
             else
             {
-                assertTrue(accepted,
+                assertEquals(status, SrtpErrorStatus.OK,
                     "packet inside RTP replay window rejected");
             }
 
             /* Should always reject packet when it's replayed. */
-            assertFalse(receiver.reverseTransformPacket(rtpPacket, false),
+            /* Status might be either REPLAY_OLD or REPLAY_FAIL. */
+            assertNotEquals(receiver.reverseTransformPacket(rtpPacket, false),
+                    SrtpErrorStatus.OK,
                     "replayed RTP packet accepted");
         }
     }
@@ -125,22 +127,24 @@ public class SrtpReplayTest {
             if (latestSeq < seq) latestSeq = seq;
             setRtcpPacketSequence(seq, true);
 
-            boolean accepted = receiver.reverseTransformPacket(rtcpPacket);
+            SrtpErrorStatus status = receiver.reverseTransformPacket(rtcpPacket);
             int delta = latestSeq - seq;
             if (delta >= REPLAY_WINDOW_SIZE)
             {
-                assertFalse(accepted,
+                assertEquals(status, SrtpErrorStatus.REPLAY_OLD,
                     "packet outside RTCP replay window accepted");
             }
             else
             {
-                assertTrue(accepted,
+                assertEquals(status, SrtpErrorStatus.OK,
                     "packet inside RTCP replay window rejected");
             }
 
             /* Should always reject packet when it's replayed. */
-            assertFalse( receiver.reverseTransformPacket(rtcpPacket),
-                    "replayed RTCP packet accepted");
+            /* Status might be either REPLAY_OLD or REPLAY_FAIL. */
+            assertNotEquals( receiver.reverseTransformPacket(rtcpPacket),
+                SrtpErrorStatus.OK,
+                "replayed RTCP packet accepted");
         }
     }
 }
