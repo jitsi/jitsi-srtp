@@ -174,7 +174,7 @@ public class SrtpCryptoContext
      * performed or <tt>pkt</tt> was successfully authenticated; otherwise,
      * <tt>false</tt>
      */
-    private boolean authenticatePacket(ByteArrayBuffer pkt)
+    private SrtpErrorStatus authenticatePacket(ByteArrayBuffer pkt)
     {
         if (policy.getAuthType() != SrtpPolicy.NULL_AUTHENTICATION)
         {
@@ -198,9 +198,9 @@ public class SrtpCryptoContext
                 nonEqual |= (tempStore[i] ^ tagStore[i]);
             }
             if (nonEqual != 0)
-                return false;
+                return SrtpErrorStatus.AUTH_FAIL;
         }
-        return true;
+        return SrtpErrorStatus.OK;
     }
 
     /**
@@ -214,7 +214,7 @@ public class SrtpCryptoContext
      * @return <tt>true</tt> if the specified sequence number indicates that the
      * packet is not a replayed one; <tt>false</tt>, otherwise
      */
-    boolean checkReplay(int seqNo, long guessedIndex)
+    SrtpErrorStatus checkReplay(int seqNo, long guessedIndex)
     {
         // Compute the index of the previously received packet and its delta to
         // the newly received packet.
@@ -223,7 +223,7 @@ public class SrtpCryptoContext
 
         if (delta > 0)
         {
-            return true; // Packet not received yet.
+            return SrtpErrorStatus.OK; // Packet not received yet.
         }
         else if (-delta >= REPLAY_WINDOW_SIZE)
         {
@@ -236,7 +236,7 @@ public class SrtpCryptoContext
                             + roc + ", s_l " + s_l + ", guessedROC "
                             + guessedROC);
             }
-            return false; // Packet too old.
+            return SrtpErrorStatus.REPLAY_OLD; // Packet too old.
         }
         else if (((replayWindow >>> (-delta)) & 0x1) != 0)
         {
@@ -249,11 +249,11 @@ public class SrtpCryptoContext
                             + roc + ", s_l " + s_l + ", guessedROC "
                             + guessedROC);
             }
-            return false; // Packet received already!
+            return SrtpErrorStatus.REPLAY_FAIL; // Packet received already!
         }
         else
         {
-            return true; // Packet not received yet.
+            return SrtpErrorStatus.OK; // Packet not received yet.
         }
     }
 
@@ -431,15 +431,15 @@ public class SrtpCryptoContext
      * @param pkt the RTP packet that is just received
      * @param skipDecryption if {@code true}, the decryption of the packet will not be performed (so as not to waste
      * resources when it is not needed). The packet will still be authenticated and the ROC updated.
-     * @return <tt>true</tt> if the packet can be accepted; <tt>false</tt> if
+     * @return {@link SrtpErrorStatus#OK} if the packet can be accepted; an error status if
      * the packet failed authentication or failed replay check
      */
-    synchronized public boolean reverseTransformPacket(ByteArrayBuffer pkt, boolean skipDecryption)
+    synchronized public SrtpErrorStatus reverseTransformPacket(ByteArrayBuffer pkt, boolean skipDecryption)
     {
         if (!SrtpPacketUtils.validatePacketLength(pkt, policy.getAuthTagLength()))
         {
             /* Too short to be a valid SRTP packet */
-            return false;
+            return SrtpErrorStatus.INVALID_PACKET;
         }
 
         int seqNo = SrtpPacketUtils.getSequenceNumber(pkt);
@@ -464,13 +464,13 @@ public class SrtpCryptoContext
         // Guess the SRTP index (48 bit), see RFC 3711, 3.3.1
         // Stores the guessed rollover counter (ROC) in this.guessedROC.
         long guessedIndex = guessIndex(seqNo);
-        boolean b = false;
+        SrtpErrorStatus ret, err;
 
         // Replay control
-        if (policy.isReceiveReplayDisabled() || checkReplay(seqNo, guessedIndex))
+        if (policy.isReceiveReplayDisabled() || ((err = checkReplay(seqNo, guessedIndex)) == SrtpErrorStatus.OK))
         {
             // Authenticate the packet.
-            if (authenticatePacket(pkt))
+            if ((err = authenticatePacket(pkt)) == SrtpErrorStatus.OK)
             {
                 if (!skipDecryption)
                 {
@@ -494,15 +494,19 @@ public class SrtpCryptoContext
                 // necessary.
                 update(seqNo, guessedIndex);
 
-                b = true;
+                ret = SrtpErrorStatus.OK;
             }
             else
             {
                 logger.debug(() -> "SRTP auth failed for SSRC " + ssrc);
+                ret = err;
             }
         }
+        else {
+            ret = err;
+        }
 
-        if (!b && seqNumWasJustSet)
+        if (ret != SrtpErrorStatus.OK && seqNumWasJustSet)
         {
             // We set the initial value of s_l as a result of processing this
             // packet, but the packet failed to authenticate. We shouldn't
@@ -512,7 +516,7 @@ public class SrtpCryptoContext
             s_l = 0;
         }
 
-        return b;
+        return ret;
     }
 
     /**
@@ -529,7 +533,7 @@ public class SrtpCryptoContext
      *
      * @param pkt the RTP packet that is going to be sent out
      */
-    synchronized public boolean transformPacket(ByteArrayBuffer pkt)
+    synchronized public SrtpErrorStatus transformPacket(ByteArrayBuffer pkt)
     {
         int seqNo = SrtpPacketUtils.getSequenceNumber(pkt);
 
@@ -543,12 +547,14 @@ public class SrtpCryptoContext
         // Stores the guessed ROC in this.guessedROC
         long guessedIndex = guessIndex(seqNo);
 
+        SrtpErrorStatus err;
+
         /*
          * XXX The invocation of the checkReplay method here is not meant as
          * replay protection but as a consistency check of our implementation.
          */
-        if (policy.isSendReplayEnabled() && !checkReplay(seqNo, guessedIndex))
-            return false;
+        if (policy.isSendReplayEnabled() && (err = checkReplay(seqNo, guessedIndex)) != SrtpErrorStatus.OK)
+            return err;
 
         switch (policy.getEncType())
         {
@@ -575,7 +581,7 @@ public class SrtpCryptoContext
         // Update the ROC if necessary.
         update(seqNo, guessedIndex);
 
-        return true;
+        return SrtpErrorStatus.OK;
     }
 
     /**

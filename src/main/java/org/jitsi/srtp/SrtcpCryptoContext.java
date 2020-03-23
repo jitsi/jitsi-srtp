@@ -108,20 +108,20 @@ public class SrtcpCryptoContext
      * @return true if this sequence number indicates the packet is not a
      * replayed one, false if not
      */
-    boolean checkReplay(int index)
+    SrtpErrorStatus checkReplay(int index)
     {
         // compute the index of previously received packet and its
         // delta to the new received packet
         long delta = index - receivedIndex;
 
         if (delta > 0)
-            return true; // Packet not yet received
+            return SrtpErrorStatus.OK; // Packet not yet received
         else if (-delta >= REPLAY_WINDOW_SIZE)
-            return false; // Packet too old
+            return SrtpErrorStatus.REPLAY_OLD; // Packet too old
         else if (((replayWindow >>> (-delta)) & 0x1) != 0)
-            return false; // Packet already received!
+            return SrtpErrorStatus.REPLAY_FAIL; // Packet already received!
         else
-            return true; // Packet not yet received
+            return SrtpErrorStatus.OK; // Packet not yet received
     }
 
     /**
@@ -272,17 +272,17 @@ public class SrtcpCryptoContext
      * managed transportation) instead.
      *
      * @param pkt the received RTCP packet
-     * @return <tt>true</tt> if the packet can be accepted or <tt>false</tt> if
-     * authentication or replay check failed
+     * @return <tt>SrtpErrorStatus#OK</tt> if the packet can be accepted or another
+     * error status if authentication or replay check failed
      */
-    synchronized public boolean reverseTransformPacket(ByteArrayBuffer pkt)
+    synchronized public SrtpErrorStatus reverseTransformPacket(ByteArrayBuffer pkt)
     {
         boolean decrypt = false;
         int tagLength = policy.getAuthTagLength();
 
         if (!SrtcpPacketUtils.validatePacketLength(pkt, tagLength))
             /* Too short to be a valid SRTCP packet */
-            return false;
+            return SrtpErrorStatus.INVALID_PACKET;
 
         int indexEflag = SrtcpPacketUtils.getIndex(pkt, tagLength);
 
@@ -291,10 +291,12 @@ public class SrtcpCryptoContext
 
         int index = indexEflag & ~0x80000000;
 
+        SrtpErrorStatus err;
+
         /* Replay control */
-        if (!checkReplay(index))
+        if ((err = checkReplay(index)) != SrtpErrorStatus.OK)
         {
-            return false;
+            return err;
         }
 
         /* Authenticate the packet */
@@ -318,7 +320,7 @@ public class SrtcpCryptoContext
                 nonEqual |= (tempStore[i] ^ tagStore[i]);
             }
             if (nonEqual != 0)
-                return false;
+                return SrtpErrorStatus.AUTH_FAIL;
         }
 
         if (decrypt)
@@ -339,7 +341,7 @@ public class SrtcpCryptoContext
         }
         update(index);
 
-        return true;
+        return SrtpErrorStatus.OK;
     }
 
 
@@ -357,7 +359,7 @@ public class SrtcpCryptoContext
      *
      * @param pkt the RTP packet that is going to be sent out
      */
-    synchronized public void transformPacket(ByteArrayBuffer pkt)
+    synchronized public SrtpErrorStatus transformPacket(ByteArrayBuffer pkt)
     {
         boolean encrypt = false;
         /* Encrypt the packet using Counter Mode encryption */
@@ -393,6 +395,8 @@ public class SrtcpCryptoContext
         }
         sentIndex++;
         sentIndex &= ~0x80000000;       // clear possible overflow
+
+        return SrtpErrorStatus.OK;
     }
 
     /**
