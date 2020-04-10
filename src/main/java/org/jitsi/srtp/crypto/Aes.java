@@ -476,7 +476,7 @@ public class Aes
                     if (BouncyCastleBlockCipherFactory.class.equals(clazz))
                         factory = BOUNCYCASTLE_FACTORY;
                     else
-                        factory = (BlockCipherFactory) clazz.newInstance();
+                        factory = (BlockCipherFactory) clazz.getConstructor().newInstance();
 
                     factories[i++] = factory;
                 }
