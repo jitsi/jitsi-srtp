@@ -39,7 +39,7 @@ public class OpenSslWrapperLoader
     {
         try
         {
-            JNIUtils.loadLibrary("jitsisrtp",
+            JNIUtils.loadLibrary("jnisrtp",
                 OpenSslWrapperLoader.class.getClassLoader());
             if (OpenSSL_Init())
             {
