@@ -10,6 +10,7 @@
     <version>1.0-SNAPSHOT</version>
     <modules>
         <module>jitsi-srtp-java</module>
+        <module>jitsi-srtp-native</module>
     </modules>
     <packaging>pom</packaging>
 
