@@ -5,3 +5,4 @@
 .project
 .settings/
 /src/main/resources
+*.iml
