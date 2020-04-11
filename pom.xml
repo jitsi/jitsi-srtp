@@ -19,6 +19,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <junit.version>5.5.1</junit.version>
         <bouncycastle.version>1.61</bouncycastle.version>
+        <maven_platform_classifier>${os.detected.classifier}</maven_platform_classifier>
     </properties>
 
 
@@ -61,6 +62,13 @@
     </dependencies>
 
     <build>
+        <extensions>
+            <extension>
+                <groupId>kr.motd.maven</groupId>
+                <artifactId>os-maven-plugin</artifactId>
+                <version>1.6.1</version>
+            </extension>
+        </extensions>
         <pluginManagement>
             <plugins>
                 <plugin>
@@ -80,11 +88,28 @@
                 </plugin>
                 <plugin>
                     <artifactId>maven-surefire-plugin</artifactId>
-                    <version>2.22.0</version>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <version>3.0.0-M4</version>
                 </plugin>
                 <plugin>
                     <artifactId>maven-failsafe-plugin</artifactId>
-                    <version>2.22.0</version>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <version>3.0.0-M4</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-dependency-plugin</artifactId>
+                    <version>3.1.2</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.codehaus.mojo</groupId>
+                    <artifactId>exec-maven-plugin</artifactId>
+                    <version>1.6.0</version>
+                </plugin>
+                <plugin>
+                    <artifactId>maven-jar-plugin</artifactId>
+                    <groupId>maven</groupId>
+                    <version>1.8.1</version>
                 </plugin>
             </plugins>
         </pluginManagement>
@@ -126,18 +151,6 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-failsafe-plugin</artifactId>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.felix</groupId>
-                <artifactId>maven-bundle-plugin</artifactId>
-                <extensions>true</extensions>
-                <configuration>
-                    <instructions>
-                        <_removeheaders>Bnd-*, Tool, Require-Capability</_removeheaders>
-                        <Bundle-NativeCode>linux-x86-64/libjitsisrtp.so;osname=Linux;processor=x86-64
-                        </Bundle-NativeCode>
-                    </instructions>
-                </configuration>
             </plugin>
         </plugins>
     </build>
