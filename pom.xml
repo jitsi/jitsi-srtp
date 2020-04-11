@@ -25,9 +25,9 @@
 
     <dependencies>
         <dependency>
-            <groupId>org.jitsi</groupId>
+            <groupId>${project.groupId}</groupId>
             <artifactId>jitsi-utils</artifactId>
-            <version>1.0-9-gb8d9bee</version>
+            <version>1.0-44-gba9ad73 </version>
         </dependency>
         <dependency>
             <groupId>org.bouncycastle</groupId>
