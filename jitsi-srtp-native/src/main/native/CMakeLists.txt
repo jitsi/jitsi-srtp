@@ -29,9 +29,12 @@ find_package(OpenSSL)
 
 if (APPLE AND NOT OPENSSL_FOUND)
     set(OPENSSL_ROOT_DIR "/usr/local/opt/openssl@1.1/")
-    find_package(OpenSSL REQUIRED)
+    set(OPENSSL_INCLUDE_DIR "${OPENSSL_ROOT_DIR}/include")
+    set(OPENSSL_CRYPTO_LIBRARY "${OPENSSL_ROOT_DIR}/lib/libcrypto.dylib")
 endif()
 
+message(STATUS "OpenSSL locaiton: ${OPENSSL_CRYPTO_LIBRARY}")
+message(STATUS "OpenSSL include: ${OPENSSL_INCLUDE_DIR}")
 
 #################################################
 # COMPILER SETTINGS
