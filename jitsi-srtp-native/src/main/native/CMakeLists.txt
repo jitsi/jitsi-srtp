@@ -28,7 +28,7 @@ find_package(JNI)
 find_package(OpenSSL)
 
 if (APPLE AND NOT OPENSSL_FOUND)
-    set(OPENSSL_ROOT_DIR /usr/local/opt/openssl)
+    set(OPENSSL_ROOT_DIR /usr/local/opt/openssl@1.1/)
     find_package(OpenSSL REQUIRED)
 endif()
 
