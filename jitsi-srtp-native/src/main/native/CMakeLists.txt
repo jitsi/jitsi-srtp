@@ -27,7 +27,7 @@ message(STATUS "javah headers directory (JITSI_SRTP_JAVA_HEADERS_DIR): `${JITSI_
 find_package(JNI)
 find_package(OpenSSL)
 
-if (APPLE AND OPENSSL_NOT_FOUND)
+if (APPLE AND NOT OPENSSL_FOUND)
     set(OPENSSL_ROOT_DIR /usr/local/opt/openssl)
     find_package(OpenSSL REQUIRED)
 endif()
