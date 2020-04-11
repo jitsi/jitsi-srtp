@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>org.jitsi</groupId>
-    <artifactId>jitsi-srtp</artifactId>
+    <artifactId>jitsi-srtp-root</artifactId>
     <name>Jitsi Secure RTP implementation</name>
     <version>1.0-SNAPSHOT</version>
     <modules>
