@@ -19,8 +19,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <junit.version>5.5.1</junit.version>
         <bouncycastle.version>1.61</bouncycastle.version>
-        <!-- property assigned during build -->
-        <maven_platform_classifier />
+        <maven_platform_classifier>${os.detected.classifier}</maven_platform_classifier>
     </properties>
 
     <dependencyManagement>
@@ -139,16 +138,28 @@
                         </configuration>
                     </execution>
                     <execution>
-                        <!-- Adjust ${os.detected.classifier} to format supported by jitsi-utils loader -->
-                        <id>os-classifier-compatibility-with-jitsi-utils</id>
+                        <id>os-classifier-fix-arch-compatibility-with-jitsi-utils</id>
                         <goals>
                             <goal>regex-property</goal>
                         </goals>
                         <configuration>
                             <name>maven_platform_classifier</name>
                             <regex>x86_64</regex>
-                            <value>${os.detected.classifier}</value>
+                            <value>${maven_platform_classifier}</value>
                             <replacement>x86-64</replacement>
+                            <failIfNoMatch>false</failIfNoMatch>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>os-classifier-fix-os-compatibility-with-jitsi-utils</id>
+                        <goals>
+                            <goal>regex-property</goal>
+                        </goals>
+                        <configuration>
+                            <name>maven_platform_classifier</name>
+                            <regex>osx</regex>
+                            <value>${maven_platform_classifier}</value>
+                            <replacement>darwin</replacement>
                             <failIfNoMatch>false</failIfNoMatch>
                         </configuration>
                     </execution>

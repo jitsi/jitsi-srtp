@@ -11,6 +11,25 @@
 
     <artifactId>jitsi-srtp</artifactId>
 
+    <profiles>
+        <profile>
+            <id>build-x-plat-jar</id>
+            <dependencies>
+                <dependency>
+                    <groupId>${project.groupId}</groupId>
+                    <artifactId>jitsi-srtp-native</artifactId>
+                    <version>${project.version}</version>
+                    <classifier>linux-x86-64</classifier>
+                </dependency>
+                <dependency>
+                    <groupId>${project.groupId}</groupId>
+                    <artifactId>jitsi-srtp-native</artifactId>
+                    <version>${project.version}</version>
+                    <classifier>darwin-x86-64</classifier>
+                </dependency>
+            </dependencies>
+        </profile>
+    </profiles>
 
     <dependencies>
         <dependency>
@@ -40,6 +59,15 @@
 
     <build>
         <plugins>
+            <plugin>
+                <artifactId>maven-jar-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>default-jar</id>
+                        <phase>none</phase>
+                    </execution>
+                </executions>
+            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-assembly-plugin</artifactId>
