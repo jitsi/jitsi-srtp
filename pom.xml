@@ -19,8 +19,64 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <junit.version>5.5.1</junit.version>
         <bouncycastle.version>1.61</bouncycastle.version>
-        <maven_platform_classifier>${os.detected.classifier}</maven_platform_classifier>
     </properties>
+
+    <profiles>
+        <!-- List of supported platforms and architectures.
+            It is necessary to specify ${maven_platform_classifier} in format,
+            supported by JNA https://github.com/java-native-access/jna/blob/master/src/com/sun/jna/Platform.java
+             -->
+        <profile>
+            <id>linux-x86-64</id>
+            <activation>
+                <os>
+                    <family>unix</family>
+                    <name>Linux</name>
+                    <arch>amd64</arch>
+                </os>
+            </activation>
+            <properties>
+                <maven_platform_classifier>linux-x86-64</maven_platform_classifier>
+            </properties>
+        </profile>
+        <profile>
+            <id>linux-arm64</id>
+            <activation>
+                <os>
+                    <family>unix</family>
+                    <name>Linux</name>
+                    <arch>arm64</arch>
+                </os>
+            </activation>
+            <properties>
+                <maven_platform_classifier>linux-arm64</maven_platform_classifier>
+            </properties>
+        </profile>
+        <profile>
+            <id>freebsd-x86-64</id>
+            <activation>
+                <os>
+                    <family>unix</family>
+                    <name>freebsd</name>
+                    <arch>arm64</arch>
+                </os>
+            </activation>
+            <properties>
+                <maven_platform_classifier>freebsd-x86-64</maven_platform_classifier>
+            </properties>
+        </profile>
+        <profile>
+            <id>darwin</id>
+            <activation>
+                <os>
+                    <family>mac</family>
+                </os>
+            </activation>
+            <properties>
+                <maven_platform_classifier>darwin</maven_platform_classifier>
+            </properties>
+        </profile>
+    </profiles>
 
     <dependencyManagement>
         <dependencies>
@@ -69,15 +125,13 @@
 
 
     <build>
-        <extensions>
-            <extension>
-                <groupId>kr.motd.maven</groupId>
-                <artifactId>os-maven-plugin</artifactId>
-                <version>1.6.1</version>
-            </extension>
-        </extensions>
         <pluginManagement>
             <plugins>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-jar-plugin</artifactId>
+                    <version>3.2.0</version>
+                </plugin>
                 <plugin>
                     <groupId>org.codehaus.mojo</groupId>
                     <artifactId>build-helper-maven-plugin</artifactId>
@@ -135,32 +189,6 @@
                             <sources>
                                 <source>src/main/native</source>
                             </sources>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <id>os-classifier-fix-arch-compatibility-with-jitsi-utils</id>
-                        <goals>
-                            <goal>regex-property</goal>
-                        </goals>
-                        <configuration>
-                            <name>maven_platform_classifier</name>
-                            <regex>x86_64</regex>
-                            <value>${maven_platform_classifier}</value>
-                            <replacement>x86-64</replacement>
-                            <failIfNoMatch>false</failIfNoMatch>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <id>os-classifier-fix-os-compatibility-with-jitsi-utils</id>
-                        <goals>
-                            <goal>regex-property</goal>
-                        </goals>
-                        <configuration>
-                            <name>maven_platform_classifier</name>
-                            <regex>osx</regex>
-                            <value>${maven_platform_classifier}</value>
-                            <replacement>darwin</replacement>
-                            <failIfNoMatch>false</failIfNoMatch>
                         </configuration>
                     </execution>
                 </executions>
