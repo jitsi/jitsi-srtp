@@ -11,5 +11,25 @@
 
     <artifactId>jitsi-srtp-java</artifactId>
 
+    <properties>
+        <native_headers_dir>${project.build.outputDirectory}/native/headers/</native_headers_dir>
+    </properties>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <source>1.8</source>
+                    <target>1.8</target>
+                    <compilerArgs>
+                        <compilerArg>-h</compilerArg>
+                        <compilerArg>${native_headers_dir}</compilerArg>
+                    </compilerArgs>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 
 </project>
