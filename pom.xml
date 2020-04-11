@@ -8,7 +8,10 @@
     <artifactId>jitsi-srtp</artifactId>
     <name>Jitsi Secure RTP implementation</name>
     <version>1.0-SNAPSHOT</version>
-    <packaging>bundle</packaging>
+    <modules>
+        <module>jitsi-srtp-java</module>
+    </modules>
+    <packaging>pom</packaging>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
