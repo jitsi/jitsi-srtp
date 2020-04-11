@@ -11,6 +11,7 @@
     <modules>
         <module>jitsi-srtp-java</module>
         <module>jitsi-srtp-native</module>
+        <module>jitsi-srtp</module>
     </modules>
     <packaging>pom</packaging>
 
