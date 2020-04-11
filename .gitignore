@@ -1,8 +1,11 @@
 /classes/
 /classes-test/
-/target/
 .classpath
 .project
 .settings/
 /src/main/resources
-*.iml
+**/*.iml
+**/target/*
+.idea
+**/*.swp
+
