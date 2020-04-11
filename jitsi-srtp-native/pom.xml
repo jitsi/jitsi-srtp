@@ -16,7 +16,7 @@
         <maven.install.skip>true</maven.install.skip>
         <jitsi_srtp_java_unpacked>${project.build.directory}/jitsi-srtp-java/</jitsi_srtp_java_unpacked>
         <jitsi_srtp_native_cmake_build_dir>${project.build.directory}/${project.artifactId}/${maven_platform_classifier}/build</jitsi_srtp_native_cmake_build_dir>
-        <jitsi_srtp_native_cmake_install_dir>${project.build.outputDirectory}/lib/${maven_platform_classifier}</jitsi_srtp_native_cmake_install_dir>
+        <jitsi_srtp_native_cmake_install_dir>${project.build.outputDirectory}/${maven_platform_classifier}</jitsi_srtp_native_cmake_install_dir>
     </properties>
 
     <profiles>

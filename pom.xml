@@ -19,7 +19,8 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <junit.version>5.5.1</junit.version>
         <bouncycastle.version>1.61</bouncycastle.version>
-        <maven_platform_classifier>${os.detected.classifier}</maven_platform_classifier>
+        <!-- property assigned during build -->
+        <maven_platform_classifier />
     </properties>
 
     <dependencyManagement>
@@ -38,6 +39,11 @@
                 <groupId>${project.groupId}</groupId>
                 <artifactId>bccontrib</artifactId>
                 <version>1.0</version>
+            </dependency>
+            <dependency>
+                <groupId>org.jetbrains</groupId>
+                <artifactId>annotations</artifactId>
+                <version>15.0</version>
             </dependency>
 
             <!-- test -->
@@ -130,6 +136,20 @@
                             <sources>
                                 <source>src/main/native</source>
                             </sources>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <!-- Adjust ${os.detected.classifier} to format supported by jitsi-utils loader -->
+                        <id>os-classifier-compatibility-with-jitsi-utils</id>
+                        <goals>
+                            <goal>regex-property</goal>
+                        </goals>
+                        <configuration>
+                            <name>maven_platform_classifier</name>
+                            <regex>x86_64</regex>
+                            <value>${os.detected.classifier}</value>
+                            <replacement>x86-64</replacement>
+                            <failIfNoMatch>false</failIfNoMatch>
                         </configuration>
                     </execution>
                 </executions>

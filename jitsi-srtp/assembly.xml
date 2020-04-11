@@ -1,0 +1,29 @@
+<assembly>
+    <!-- Dependent projects will use this id as the classifier to match this assembly -->
+    <id>jar-with-native-and-java-dependencies</id>
+    <formats>
+        <format>jar</format>
+    </formats>
+    <includeBaseDirectory>false</includeBaseDirectory>
+    <fileSets>
+        <fileSet>
+            <directory>${project.basedir}</directory>
+            <includes>
+                <include>pom.xml</include>
+            </includes>
+            <outputDirectory>META-INF/maven/${project.groupId}/${project.artifactId}/</outputDirectory>
+        </fileSet>
+    </fileSets>
+    <dependencySets>
+        <dependencySet>
+            <includes>
+                <!-- merge native and java libraries into single fat jar. -->
+                <include>${project.groupId}:jitsi-srtp-*:jar:*</include>
+            </includes>
+            <outputDirectory>/</outputDirectory>
+            <useProjectArtifact>true</useProjectArtifact>
+            <unpack>true</unpack>
+            <scope>runtime</scope>
+        </dependencySet>
+    </dependencySets>
+</assembly>
