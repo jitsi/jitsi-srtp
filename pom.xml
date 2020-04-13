@@ -223,7 +223,7 @@
         <dependency>
             <groupId>org.jitsi</groupId>
             <artifactId>jitsi-utils</artifactId>
-            <version>1.0-44-gba9ad73</version>
+            <version>1.0-45-gc3afb76</version>
         </dependency>
         <dependency>
             <groupId>org.bouncycastle</groupId>
