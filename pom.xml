@@ -235,12 +235,12 @@
 	    <artifactId>bccontrib</artifactId>
 	    <version>1.0</version>
 	</dependency>
-    <dependency>
-        <groupId>org.jetbrains</groupId>
-        <artifactId>annotations</artifactId>
-        <version>19.0.0</version>
-        <optional>true</optional>
-    </dependency>
+        <dependency>
+            <groupId>org.jetbrains</groupId>
+            <artifactId>annotations</artifactId>
+            <version>19.0.0</version>
+            <optional>true</optional>
+        </dependency>
         <!-- test -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>
