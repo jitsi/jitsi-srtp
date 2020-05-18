@@ -18,7 +18,6 @@ package org.jitsi.srtp;
 import java.util.*;
 
 import org.bouncycastle.crypto.params.*;
-import org.jitsi.bccontrib.params.*;
 import org.jitsi.srtp.utils.*;
 import org.jitsi.utils.*;
 import org.jitsi.utils.logging2.*;
@@ -153,23 +152,7 @@ public class SrtcpCryptoContext
         {
             byte[] authKey = new byte[policy.getAuthKeyLength()];
             kdf.deriveSessionKey(authKey, SrtpKdf.LABEL_RTCP_MSG_AUTH);
-
-            switch (policy.getAuthType())
-            {
-            case SrtpPolicy.HMACSHA1_AUTHENTICATION:
-                mac.init(new KeyParameter(authKey));
-                break;
-
-            case SrtpPolicy.SKEIN_AUTHENTICATION:
-                // Skein MAC uses number of bits as MAC size, not just bytes
-                mac.init(
-                        new ParametersForSkein(
-                                new KeyParameter(authKey),
-                                ParametersForSkein.Skein512,
-                                tagStore.length * 8));
-                break;
-            }
-
+            mac.init(new KeyParameter(authKey));
             Arrays.fill(authKey, (byte) 0);
         }
 

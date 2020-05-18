@@ -230,11 +230,6 @@
             <artifactId>bcprov-jdk15on</artifactId>
             <version>${bouncycastle.version}</version>
         </dependency>
-	<dependency>
-	    <groupId>${project.groupId}</groupId>
-	    <artifactId>bccontrib</artifactId>
-	    <version>1.0</version>
-	</dependency>
         <dependency>
             <groupId>org.jetbrains</groupId>
             <artifactId>annotations</artifactId>

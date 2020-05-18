@@ -34,11 +34,9 @@
 */
 package org.jitsi.srtp;
 
-import java.util.*;
-
 import org.bouncycastle.crypto.*;
 import org.bouncycastle.crypto.engines.*;
-import org.jitsi.bccontrib.macs.*;
+import org.bouncycastle.crypto.macs.*;
 import org.jitsi.srtp.crypto.*;
 import org.jitsi.utils.*;
 import org.jitsi.utils.logging2.*;
@@ -244,8 +242,8 @@ public class BaseSrtpCryptoContext
             break;
 
         case SrtpPolicy.SKEIN_AUTHENTICATION:
-            mac = new SkeinMac();
             tagStore = new byte[policy.getAuthTagLength()];
+            mac = new SkeinMac(SkeinMac.SKEIN_512, tagStore.length * 8);
             break;
 
         case SrtpPolicy.NULL_AUTHENTICATION:
