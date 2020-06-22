@@ -245,7 +245,7 @@
         <dependency>
             <groupId>org.jitsi</groupId>
             <artifactId>jitsi-utils</artifactId>
-            <version>1.0-45-gc3afb76</version>
+            <version>1.0-53-g8535a53</version>
         </dependency>
         <dependency>
             <groupId>org.bouncycastle</groupId>
@@ -370,7 +370,7 @@
                         <_removeheaders>Bnd-*, Tool, Require-Capability
                         </_removeheaders>
                         <Bundle-NativeCode>
-                            linux-x86-64/libjitsisrtp.so;osname=Linux;processor=x86-64
+                            linux-x86-64/libjitsisrtp.so;osname=Linux;processor=x86-64,*
                         </Bundle-NativeCode>
                     </instructions>
                 </configuration>
