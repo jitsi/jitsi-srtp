@@ -155,7 +155,7 @@ public class SrtpPerfTest {
                         payloadSize = Integer.parseInt(arg);
                     }
                     catch (NumberFormatException e) {
-                        System.err.println("Invalid payload size " + arg);
+                        System.err.println("Invalid payload size " + arg + ": " + e.getMessage());
                         usage();
                     }
                     if (payloadSize < 0) {
