@@ -15,9 +15,10 @@
  */
 package org.jitsi.srtp.crypto;
 
-import org.bouncycastle.crypto.*;
 import org.bouncycastle.crypto.digests.*;
 import org.bouncycastle.crypto.macs.*;
+import javax.crypto.*;
+import java.security.*;
 
 /**
  * Implements a factory for an HMAC-SHA1 <tt>org.bouncycastle.crypto.Mac</tt>.
@@ -33,7 +34,7 @@ public class HmacSha1
      * @return a new <tt>org.bouncycastle.crypto.Mac</tt> instance which
      * implements a keyed-hash message authentication code (HMAC) with SHA-1
      */
-    public static Mac createMac()
+    public static org.bouncycastle.crypto.Mac createMac()
     {
         if (OpenSslWrapperLoader.isLoaded())
         {
@@ -41,8 +42,15 @@ public class HmacSha1
         }
         else
         {
-            // Fallback to BouncyCastle.
-            return new HMac(new SHA1Digest());
+            // Fallback to JCE.
+            try
+            {
+                return new MacAdapter(Mac.getInstance("HmacSHA1"));
+            }
+            catch (NoSuchAlgorithmException e) {
+                /* Boom */
+                throw new IllegalStateException(e);
+            }
         }
     }
 }
