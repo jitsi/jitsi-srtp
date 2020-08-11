@@ -84,7 +84,7 @@ public class SrtpPerfTest {
         }
     }
 
-    public void doPerfTest(int num, int payloadSize)
+    public void doPerfTest(int num, int payloadSize, int numWarmups)
     {
         SrtpPolicy policy =
                 new SrtpPolicy(SrtpPolicy.AESCM_ENCRYPTION, 128/8,
@@ -95,7 +95,7 @@ public class SrtpPerfTest {
         setupPacket(payloadSize, policy);
 
         /* Warm up JVM */
-        doEncrypt(10, payloadSize);
+        doEncrypt(numWarmups, payloadSize);
 
         Clock clock = Clock.systemUTC();
         Instant startTime = clock.instant();
@@ -113,11 +113,13 @@ public class SrtpPerfTest {
 
     private static final int DEFAULT_NUM_TESTS = 100000;
     private static final int DEFAULT_PAYLOAD_SIZE = 1250;
+    private static final int DEFAULT_NUM_WARMUPS = 20000;
+    /* Allegedly, 10000 is is the threshold for JIT optimization */
 
     @Test
     public void srtpPerf()
     {
-        doPerfTest(DEFAULT_NUM_TESTS, DEFAULT_PAYLOAD_SIZE);
+        doPerfTest(DEFAULT_NUM_TESTS, DEFAULT_PAYLOAD_SIZE, DEFAULT_NUM_WARMUPS);
     }
 
     private static final String progName = "SrtpPerfTest";
@@ -132,9 +134,10 @@ public class SrtpPerfTest {
     {
         int numTests = DEFAULT_NUM_TESTS;
         int payloadSize = DEFAULT_PAYLOAD_SIZE;
+        int numWarmups = DEFAULT_NUM_WARMUPS;
         String factoryClassName = null;
 
-        Getopt g = new Getopt(progName, args, "f:p:");
+        Getopt g = new Getopt(progName, args, "f:p:w:");
 
         int c;
         String arg;
@@ -160,6 +163,20 @@ public class SrtpPerfTest {
                         usage();
                     }
                     break;
+                case 'w':
+                    arg = g.getOptarg();
+                    try {
+                        numTests = Integer.parseInt(arg);
+                    }
+                    catch (NumberFormatException e) {
+                        System.err.println("Invalid number of warmups " + arg + ": " + e.getMessage());
+                        usage();
+                    }
+                    if (payloadSize < 0) {
+                        System.err.println("Invalid number of warmups " + arg);
+                        usage();
+                    }
+                    break;
                 case '?':
                     // getopt() already printed an error
                     usage();
@@ -182,7 +199,7 @@ public class SrtpPerfTest {
             }
             catch (NumberFormatException e)
             {
-                System.err.println("Invalid number of tests " + args[optind]);
+                System.err.println("Invalid number of tests " + args[optind]+ ": " + e.getMessage());
                 usage();
             }
             if (numTests < 0)
@@ -193,6 +210,6 @@ public class SrtpPerfTest {
         }
 
         SrtpPerfTest test = new SrtpPerfTest();
-        test.doPerfTest(numTests, payloadSize);
+        test.doPerfTest(numTests, payloadSize, numWarmups);
     }
 }
