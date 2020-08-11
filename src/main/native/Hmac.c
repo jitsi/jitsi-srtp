@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "org_jitsi_srtp_crypto_OpenSslHmac.h"
+#include "org_jitsi_srtp_crypto_OpenSslHmacSpi.h"
 
 #include <openssl/evp.h>
 #include <openssl/hmac.h>
@@ -22,82 +22,62 @@
 #include <stdlib.h>
 
 /*
- * Class:     org_jitsi_srtp_OpenSslHmac
+ * Class:     org_jitsi_srtp_OpenSslHmacSpi
  * Method:    EVP_MD_size
  * Signature: (J)I
  */
 JNIEXPORT jint JNICALL
-Java_org_jitsi_srtp_crypto_OpenSslHmac_EVP_1MD_1size
+Java_org_jitsi_srtp_crypto_OpenSslHmacSpi_EVP_1MD_1size
     (JNIEnv *env, jclass clazz, jlong md)
 {
     return EVP_MD_size((const EVP_MD *) (intptr_t) md);
 }
 
 /*
- * Class:     org_jitsi_srtp_OpenSslHmac
+ * Class:     org_jitsi_srtp_OpenSslHmacSpi
  * Method:    EVP_sha1
  * Signature: ()J
  */
 JNIEXPORT jlong JNICALL
-Java_org_jitsi_srtp_crypto_OpenSslHmac_EVP_1sha1
+Java_org_jitsi_srtp_crypto_OpenSslHmacSpi_EVP_1sha1
     (JNIEnv *env, jclass clazz)
 {
     return (jlong) (intptr_t) EVP_sha1();
 }
 
 /*
- * Class:     org_jitsi_srtp_OpenSslHmac
+ * Class:     org_jitsi_srtp_OpenSslHmacSpi
  * Method:    HMAC_CTX_create
  * Signature: ()J
  */
 JNIEXPORT jlong JNICALL
-Java_org_jitsi_srtp_crypto_OpenSslHmac_HMAC_1CTX_1create
+Java_org_jitsi_srtp_crypto_OpenSslHmacSpi_HMAC_1CTX_1create
     (JNIEnv *env, jclass clazz)
 {
-/* OpenSSL 1.1.0 made HMAC_CTX an opaque structure, which must be allocated
-   using HMAC_CTX_new.  But this function doesn't exist in OpenSSL 1.0.x. */
-#if OPENSSL_VERSION_NUMBER < 0x10100000L || LIBRESSL_VERSION_NUMBER
-    HMAC_CTX *ctx = malloc(sizeof(HMAC_CTX));
-
-    if (ctx)
-        HMAC_CTX_init(ctx);
-
-#else
     HMAC_CTX *ctx = HMAC_CTX_new();
-
-#endif
-
     return (jlong) (intptr_t) ctx;
 }
 
 /*
- * Class:     org_jitsi_srtp_OpenSslHmac
+ * Class:     org_jitsi_srtp_OpenSslHmacSpi
  * Method:    HMAC_CTX_destroy
  * Signature: (J)V
  */
 JNIEXPORT void JNICALL
-Java_org_jitsi_srtp_crypto_OpenSslHmac_HMAC_1CTX_1destroy
+Java_org_jitsi_srtp_crypto_OpenSslHmacSpi_HMAC_1CTX_1destroy
     (JNIEnv *env, jclass clazz, jlong ctx)
 {
     HMAC_CTX *ctx_ = (HMAC_CTX *) (intptr_t) ctx;
-
-#if OPENSSL_VERSION_NUMBER < 0x10100000L || LIBRESSL_VERSION_NUMBER
-    HMAC_CTX_cleanup(ctx_);
-    free(ctx_);
-
-#else
     HMAC_CTX_free(ctx_);
-
-#endif
 }
 
 /*
- * Class:     org_jitsi_srtp_OpenSslHmac
+ * Class:     org_jitsi_srtp_OpenSslHmacSpi
  * Method:    HMAC_Final
  * Signature: (J[BII)I
  */
 JNIEXPORT jint JNICALL
-Java_org_jitsi_srtp_crypto_OpenSslHmac_HMAC_1Final
+Java_org_jitsi_srtp_crypto_OpenSslHmacSpi_HMAC_1Final
     (JNIEnv *env, jclass clazz, jlong ctx, jbyteArray md, jint mdOff,
         jint mdLen)
 {
@@ -124,12 +104,12 @@ Java_org_jitsi_srtp_crypto_OpenSslHmac_HMAC_1Final
 }
 
 /*
- * Class:     org_jitsi_srtp_OpenSslHmac
+ * Class:     org_jitsi_srtp_OpenSslHmacSpi
  * Method:    HMAC_Init_ex
  * Signature: (J[BIJJ)Z
  */
 JNIEXPORT jboolean JNICALL
-Java_org_jitsi_srtp_crypto_OpenSslHmac_HMAC_1Init_1ex
+Java_org_jitsi_srtp_crypto_OpenSslHmacSpi_HMAC_1Init_1ex
     (JNIEnv *env, jclass clazz, jlong ctx, jbyteArray key, jint keyLen,
         jlong md, jlong impl)
 {
@@ -162,12 +142,12 @@ Java_org_jitsi_srtp_crypto_OpenSslHmac_HMAC_1Init_1ex
 }
 
 /*
- * Class:     org_jitsi_srtp_OpenSslHmac
+ * Class:     org_jitsi_srtp_OpenSslHmacSpi
  * Method:    HMAC_Update
  * Signature: (J[BII)Z
  */
 JNIEXPORT jboolean JNICALL
-Java_org_jitsi_srtp_crypto_OpenSslHmac_HMAC_1Update
+Java_org_jitsi_srtp_crypto_OpenSslHmacSpi_HMAC_1Update
     (JNIEnv *env, jclass clazz, jlong ctx, jbyteArray data, jint off, jint len)
 {
     jbyte *data_ = (*env)->GetPrimitiveArrayCritical(env, data, NULL);

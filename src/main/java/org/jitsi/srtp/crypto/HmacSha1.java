@@ -15,34 +15,52 @@
  */
 package org.jitsi.srtp.crypto;
 
-import org.bouncycastle.crypto.*;
-import org.bouncycastle.crypto.digests.*;
-import org.bouncycastle.crypto.macs.*;
+import java.security.*;
+import java.util.*;
+import javax.crypto.Mac;
+import org.bouncycastle.jce.provider.*;
+import org.jitsi.utils.logging2.*;
 
 /**
- * Implements a factory for an HMAC-SHA1 <tt>org.bouncycastle.crypto.Mac</tt>.
+ * Implements a factory for an HMAC-SHA1 {@link Mac}.
  *
  * @author Lyubomir Marinov
  */
 public class HmacSha1
 {
     /**
-     * Initializes a new <tt>org.bouncycastle.crypto.Mac</tt> instance which
-     * implements a keyed-hash message authentication code (HMAC) with SHA-1.
+     * Initializes a new {@link Mac} instance which implements a keyed-hash
+     * message authentication code (HMAC) with SHA-1.
      *
-     * @return a new <tt>org.bouncycastle.crypto.Mac</tt> instance which
-     * implements a keyed-hash message authentication code (HMAC) with SHA-1
+     * @param parentLogger the logging context
+     * @return a new {@link Mac} instance which implements a keyed-hash message
+     * authentication code (HMAC) with SHA-1
      */
-    public static Mac createMac()
+    public static Mac createMac(Logger parentLogger)
     {
-        if (OpenSslWrapperLoader.isLoaded())
+        List<Provider> providers = new ArrayList<>(3);
+        if (JitsiOpenSslProvider.isLoaded())
         {
-            return new OpenSslHmac(OpenSslHmac.SHA1);
+            providers.add(new JitsiOpenSslProvider());
         }
-        else
+        providers.add(Security.getProvider("SunJCE"));
+        providers.add(new BouncyCastleProvider());
+
+        // Try providers in order
+        for (Provider p : providers)
         {
-            // Fallback to BouncyCastle.
-            return new HMac(new SHA1Digest());
+            try
+            {
+                Mac mac = Mac.getInstance("HmacSHA1", p);
+                parentLogger.debug(() -> "Using " + p.getName() + " for HMAC");
+                return mac;
+            }
+            catch (NoSuchAlgorithmException e)
+            {
+                // continue
+            }
         }
+
+        throw new RuntimeException("No HmacSHA1 provider found");
     }
 }

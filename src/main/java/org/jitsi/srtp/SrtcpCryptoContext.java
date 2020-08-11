@@ -15,9 +15,9 @@
  */
 package org.jitsi.srtp;
 
-import java.util.*;
-
-import org.bouncycastle.crypto.params.*;
+import java.security.*;
+import java.security.spec.*;
+import javax.crypto.spec.*;
 import org.jitsi.srtp.utils.*;
 import org.jitsi.utils.*;
 import org.jitsi.utils.logging2.*;
@@ -60,17 +60,6 @@ public class SrtcpCryptoContext
     private int sentIndex = 0;
 
     /**
-     * Construct an empty SrtcpCryptoContext using ssrc. The other parameters are
-     * set to default null value.
-     *
-     * @param ssrc SSRC of this SrtcpCryptoContext
-     */
-    public SrtcpCryptoContext(int ssrc, Logger parentLogger)
-    {
-        super(ssrc, parentLogger);
-    }
-
-    /**
      * Construct a normal SrtcpCryptoContext based on the given parameters.
      *
      * @param ssrc the RTP SSRC that this SRTCP cryptographic context protects.
@@ -84,13 +73,13 @@ public class SrtcpCryptoContext
      * @param policy SRTP policy for this SRTCP cryptographic context, defined
      * the encryption algorithm, the authentication algorithm, etc
      */
-    @SuppressWarnings("fallthrough")
     public SrtcpCryptoContext(
             int ssrc,
             byte[] masterK,
             byte[] masterS,
             SrtpPolicy policy,
             Logger parentLogger)
+        throws GeneralSecurityException
     {
         super(ssrc, masterK, masterS, policy, parentLogger);
 
@@ -127,6 +116,7 @@ public class SrtcpCryptoContext
      * Derives the srtcp session keys from the master key.
      */
     private void deriveSrtcpKeys(byte[] masterKey, byte[] masterSalt)
+        throws GeneralSecurityException
     {
         SrtpKdf kdf = new SrtpKdf(masterKey, masterSalt, policy);
 
@@ -134,17 +124,11 @@ public class SrtcpCryptoContext
         kdf.deriveSessionKey(saltKey, SrtpKdf.LABEL_RTCP_SALT);
 
         // compute the session encryption key
-        if (cipherCtr != null)
+        if (cipher != null)
         {
             byte[] encKey = new byte[policy.getEncKeyLength()];
             kdf.deriveSessionKey(encKey, SrtpKdf.LABEL_RTCP_ENCRYPTION);
-
-            if (cipherF8 != null)
-            {
-                cipherF8.init(encKey, saltKey);
-            }
-            cipherCtr.init(encKey);
-            Arrays.fill(encKey, (byte) 0);
+            cipher.init(encKey, saltKey);
         }
 
         // compute the session authentication key
@@ -152,11 +136,10 @@ public class SrtcpCryptoContext
         {
             byte[] authKey = new byte[policy.getAuthKeyLength()];
             kdf.deriveSessionKey(authKey, SrtpKdf.LABEL_RTCP_MSG_AUTH);
-            mac.init(new KeyParameter(authKey));
-            Arrays.fill(authKey, (byte) 0);
+            AlgorithmParameterSpec spec = null;
+            Key key = new SecretKeySpec(authKey, mac.getAlgorithm());
+            mac.init(key, spec);
         }
-
-        kdf.close();
     }
 
     /**
@@ -165,6 +148,7 @@ public class SrtcpCryptoContext
      * @param pkt the RTP packet to be encrypted/decrypted
      */
     private void processPacketAesCm(ByteArrayBuffer pkt, int index)
+        throws GeneralSecurityException
     {
         int ssrc = SrtcpPacketUtils.getSenderSsrc(pkt);
 
@@ -202,7 +186,7 @@ public class SrtcpCryptoContext
         int payloadOffset = 8;
         int payloadLength = pkt.getLength() - payloadOffset;
 
-        cipherCtr.process(
+        cipher.process(
                 pkt.getBuffer(), pkt.getOffset() + payloadOffset, payloadLength,
                 ivStore);
     }
@@ -213,6 +197,7 @@ public class SrtcpCryptoContext
      * @param pkt the RTP packet to be encrypted/decrypted
      */
     private void processPacketAesF8(ByteArrayBuffer pkt, int index)
+        throws GeneralSecurityException
     {
         // 4 bytes of the iv are zero
         // the first byte of the RTP header is not used.
@@ -238,7 +223,7 @@ public class SrtcpCryptoContext
         int payloadOffset = 8;
         int payloadLength = pkt.getLength() - (4 + policy.getAuthTagLength());
 
-        cipherF8.process(
+        cipher.process(
                 pkt.getBuffer(), pkt.getOffset() + payloadOffset, payloadLength,
                 ivStore);
     }
@@ -259,6 +244,7 @@ public class SrtcpCryptoContext
      * error status if authentication or replay check failed
      */
     synchronized public SrtpErrorStatus reverseTransformPacket(ByteArrayBuffer pkt)
+        throws GeneralSecurityException
     {
         boolean decrypt = false;
         int tagLength = policy.getAuthTagLength();
@@ -294,7 +280,7 @@ public class SrtcpCryptoContext
             pkt.shrink(tagLength + 4);
 
             // compute, then save authentication in tagStore
-            authenticatePacketHmac(pkt, indexEflag);
+            byte[] tagStore = authenticatePacketHmac(pkt, indexEflag);
 
             // compare authentication tags using constant time comparison
             int nonEqual = 0;
@@ -343,6 +329,7 @@ public class SrtcpCryptoContext
      * @param pkt the RTP packet that is going to be sent out
      */
     synchronized public SrtpErrorStatus transformPacket(ByteArrayBuffer pkt)
+        throws GeneralSecurityException
     {
         boolean encrypt = false;
         /* Encrypt the packet using Counter Mode encryption */
@@ -372,7 +359,7 @@ public class SrtcpCryptoContext
         // it in network order in rbStore variable.
         if (policy.getAuthType() != SrtpPolicy.NULL_AUTHENTICATION)
         {
-            authenticatePacketHmac(pkt, index);
+            byte[] tagStore = authenticatePacketHmac(pkt, index);
             pkt.append(rbStore, 4);
             pkt.append(tagStore, policy.getAuthTagLength());
         }
