@@ -21,12 +21,13 @@ import javax.crypto.*;
 import javax.crypto.spec.*;
 
 import org.bouncycastle.crypto.*;
+import org.bouncycastle.crypto.modes.*;
 import org.bouncycastle.crypto.params.*;
 import org.jitsi.utils.logging2.*;
 
 /**
- * Adapts the <tt>javax.crypto.Cipher</tt> class to the
- * <tt>org.bouncycastle.crypto.BlockCipher</tt> interface. 
+ * Adapts the {@link javax.crypto.Cipher} class to the
+ * {@link org.bouncycastle.crypto.BlockCipher} interface.
  *
  * @author Lyubomir Marinov
  */
@@ -50,18 +51,18 @@ public class BlockCipherAdapter
     private final int blockSize;
 
     /**
-     * The <tt>javax.crypto.Cipher</tt> instance which is adapted to the
-     * <tt>org.bouncycastle.crypto.BlockCipher</tt> interface by this instance.
+     * The {@link javax.crypto.Cipher} instance which is adapted to the
+     * {@link org.bouncycastle.crypto.BlockCipher} interface by this instance.
      */
     private final Cipher cipher;
 
     /**
      * Initializes a new <tt>BlockCipherAdapter</tt> instance which is to adapt
-     * a specific <tt>javax.crypto.Cipher</tt> instance to the
-     * <tt>org.bouncycastle.crypto.BlockCipher</tt> interface.
+     * a specific {@link javax.crypto.Cipher} instance to the
+     * {@link org.bouncycastle.crypto.BlockCipher} interface.
      *
-     * @param cipher the <tt>javax.crypto.Cipher</tt> instance to be adapted to
-     * the <tt>org.bouncycastle.crypto.BlockCipher</tt> interface by the new
+     * @param cipher the {@link javax.crypto.Cipher} instance to be adapted to
+     * the {@link org.bouncycastle.crypto.BlockCipher} interface by the new
      * instance
      */
     public BlockCipherAdapter(Cipher cipher, Logger parentLogger)
@@ -118,11 +119,11 @@ public class BlockCipherAdapter
     }
 
     /**
-     * Gets the <tt>javax.crypto.Cipher</tt> instance which is adapted to the
-     * <tt>org.bouncycastle.crypto.BlockCipher</tt> interface by this instance.
+     * Gets the {@link javax.crypto.Cipher} instance which is adapted to the
+     * {@link org.bouncycastle.crypto.BlockCipher} interface by this instance.
      *
-     * @return the <tt>javax.crypto.Cipher</tt> instance which is adapted to the
-     * <tt>org.bouncycastle.crypto.BlockCipher</tt> interface by this instance
+     * @return the {@link javax.crypto.Cipher} instance which is adapted to the
+     * {@link org.bouncycastle.crypto.BlockCipher} interface by this instance
      */
     public Cipher getCipher()
     {

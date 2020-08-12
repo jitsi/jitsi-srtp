@@ -20,7 +20,7 @@ import org.bouncycastle.crypto.params.*;
 
 /**
  * @see SrtpCipherCtr
- * SrtpCipherCtr implementation using Java and a <tt>BlockCipher</tt>.
+ * SrtpCipherCtr implementation using Java and a {@link StreamCipher}.
  *
  * You can use any <tt>BlockCipher</tt> with <tt>BLKLEN</tt> bytes key and
  * block size like TwofishEngine instead of AES.
@@ -28,9 +28,13 @@ import org.bouncycastle.crypto.params.*;
 public class SrtpCipherCtrJava extends SrtpCipherCtr
 {
     private final byte[] tmpCipherBlock = new byte[BLKLEN];
-    private final BlockCipher cipher;
+    private final StreamCipher cipher;
 
-    public SrtpCipherCtrJava(BlockCipher cipher)
+    private static final byte[] zeroIV = new byte[BLKLEN];
+
+    private KeyParameter key = null;
+
+    public SrtpCipherCtrJava(StreamCipher cipher)
     {
         this.cipher = cipher;
     }
@@ -43,7 +47,9 @@ public class SrtpCipherCtrJava extends SrtpCipherCtr
         if (key.length != 16 && key.length != 24 && key.length != 32)
             throw new IllegalArgumentException("Not an AES key length");
 
-        cipher.init(true, new KeyParameter(key));
+        this.key = new KeyParameter(key);
+
+        cipher.init(true, new ParametersWithIV(this.key, zeroIV));
     }
 
     /**
@@ -52,41 +58,7 @@ public class SrtpCipherCtrJava extends SrtpCipherCtr
     public void process(byte[] data, int off, int len, byte[] iv)
     {
         checkProcessArgs(data, off, len, iv);
-
-        int l = len, o = off;
-        while (l >= BLKLEN)
-        {
-            cipher.processBlock(iv, 0, tmpCipherBlock, 0);
-            //incr counter
-            if(++iv[15] == 0) ++iv[14];
-            //unroll XOR loop to force java to optimise it
-            data[o+0]  ^= tmpCipherBlock[0];
-            data[o+1]  ^= tmpCipherBlock[1];
-            data[o+2]  ^= tmpCipherBlock[2];
-            data[o+3]  ^= tmpCipherBlock[3];
-            data[o+4]  ^= tmpCipherBlock[4];
-            data[o+5]  ^= tmpCipherBlock[5];
-            data[o+6]  ^= tmpCipherBlock[6];
-            data[o+7]  ^= tmpCipherBlock[7];
-            data[o+8]  ^= tmpCipherBlock[8];
-            data[o+9]  ^= tmpCipherBlock[9];
-            data[o+10] ^= tmpCipherBlock[10];
-            data[o+11] ^= tmpCipherBlock[11];
-            data[o+12] ^= tmpCipherBlock[12];
-            data[o+13] ^= tmpCipherBlock[13];
-            data[o+14] ^= tmpCipherBlock[14];
-            data[o+15] ^= tmpCipherBlock[15];
-            l -= BLKLEN;
-            o += BLKLEN;
-        }
-
-        if (l > 0)
-        {
-            cipher.processBlock(iv, 0, tmpCipherBlock, 0);
-            //incr counter
-            if(++iv[15] == 0) ++iv[14];
-            for (int i = 0; i < l; i++)
-                data[o+i] ^= tmpCipherBlock[i];
-        }
+        cipher.init(true, new ParametersWithIV(this.key, iv));
+        cipher.processBytes(data, off, len, data, off);
     }
 }

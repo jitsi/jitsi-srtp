@@ -17,6 +17,7 @@
 package org.jitsi.srtp;
 
 import org.bouncycastle.crypto.engines.*;
+import org.bouncycastle.crypto.modes.*;
 import org.jitsi.srtp.crypto.*;
 
 import java.util.*;
@@ -85,15 +86,13 @@ class SrtpKdf
             }
             else
             {
-                cipherCtr
-                    = new SrtpCipherCtrJava(
-                    Aes.createBlockCipher(encKeyLength));
+                cipherCtr = new SrtpCipherCtrJava(Aes.createStreamCipher(encKeyLength));
             }
             break;
 
         case SrtpPolicy.TWOFISHF8_ENCRYPTION:
         case SrtpPolicy.TWOFISH_ENCRYPTION:
-            cipherCtr = new SrtpCipherCtrJava(new TwofishEngine());
+            cipherCtr = new SrtpCipherCtrJava(new SICBlockCipher(new TwofishEngine()));
             break;
 
         case SrtpPolicy.NULL_ENCRYPTION:

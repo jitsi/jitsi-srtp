@@ -37,6 +37,7 @@ package org.jitsi.srtp;
 import org.bouncycastle.crypto.*;
 import org.bouncycastle.crypto.engines.*;
 import org.bouncycastle.crypto.macs.*;
+import org.bouncycastle.crypto.modes.*;
 import org.jitsi.srtp.crypto.*;
 import org.jitsi.utils.*;
 import org.jitsi.utils.logging2.*;
@@ -199,9 +200,13 @@ public class BaseSrtpCryptoContext
         case SrtpPolicy.NULL_ENCRYPTION:
             break;
 
+            /* TODO */
+        /*
         case SrtpPolicy.AESF8_ENCRYPTION:
-            cipherF8 = new SrtpCipherF8(Aes.createBlockCipher(encKeyLength));
+            cipherF8 = new SrtpCipherF8(Aes.createStreamCipher(encKeyLength));
             //$FALL-THROUGH$
+            */
+
 
         case SrtpPolicy.AESCM_ENCRYPTION:
             // use OpenSSL if available and AES128 is in use
@@ -212,8 +217,7 @@ public class BaseSrtpCryptoContext
             else
             {
                 cipherCtr
-                    = new SrtpCipherCtrJava(
-                            Aes.createBlockCipher(encKeyLength));
+                    = new SrtpCipherCtrJava(Aes.createStreamCipher(encKeyLength));
             }
             saltKey = new byte[saltKeyLength];
             break;
@@ -223,7 +227,7 @@ public class BaseSrtpCryptoContext
             //$FALL-THROUGH$
 
         case SrtpPolicy.TWOFISH_ENCRYPTION:
-            cipherCtr = new SrtpCipherCtrJava(new TwofishEngine());
+            cipherCtr = new SrtpCipherCtrJava(new SICBlockCipher(new TwofishEngine()));
             saltKey = new byte[saltKeyLength];
             break;
         }

@@ -21,18 +21,17 @@ import javax.crypto.*;
 
 import org.bouncycastle.crypto.*;
 import org.jetbrains.annotations.*;
-import org.jitsi.srtp.crypto.*;
 import org.jitsi.utils.logging2.*;
 
 /**
- * Implements a <tt>BlockCipherFactory</tt> which initializes
+ * Implements a <tt>StreamCipherFactory</tt> which initializes
  * <tt>BlockCipher</tt>s that are implemented by a
  * <tt>java.security.Provider</tt>.
  *
  * @author Lyubomir Marinov
  */
-public class SecurityProviderBlockCipherFactory
-    implements BlockCipherFactory
+public class SecurityProviderStreamCipherFactory
+    implements StreamCipherFactory
 {
     /**
      * The <tt>java.security.Provider</tt> which provides the implementations of
@@ -61,7 +60,7 @@ public class SecurityProviderBlockCipherFactory
      * implementations of the <tt>BlockCipher</tt>s to be initialized by the new
      * instance
      */
-    public SecurityProviderBlockCipherFactory(
+    public SecurityProviderStreamCipherFactory(
             String transformation,
             Provider provider,
             @NotNull Logger parentLogger)
@@ -88,7 +87,7 @@ public class SecurityProviderBlockCipherFactory
      * provides the implementations of the <tt>BlockCipher</tt>s to be
      * initialized by the new instance
      */
-    public SecurityProviderBlockCipherFactory(
+    public SecurityProviderStreamCipherFactory(
             String transformation,
             String providerName,
             @NotNull Logger parentLogger)
@@ -98,13 +97,14 @@ public class SecurityProviderBlockCipherFactory
 
     /**
      * {@inheritDoc}
+     * @return
      */
     @Override
-    public BlockCipher createBlockCipher(int keySize)
+    public StreamCipher createStreamCipher(int keySize)
         throws Exception
     {
         return
-            new BlockCipherAdapter(
+            new StreamCipherAdapter(
                     Cipher.getInstance(
                             transformation.replaceFirst(
                                     "<size>",

@@ -19,6 +19,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import java.util.*;
 import javax.xml.bind.*;
 import org.bouncycastle.crypto.engines.*;
+import org.bouncycastle.crypto.modes.*;
 import org.jitsi.srtp.crypto.*;
 import org.junit.jupiter.api.*;
 
@@ -47,7 +48,7 @@ public class SrtpCipherCtrTest
     @Test
     public void testJavaCtrAes()
     {
-        SrtpCipherCtr cipher = new SrtpCipherCtrJava(new AESEngine());
+        SrtpCipherCtr cipher = new SrtpCipherCtrJava(new SICBlockCipher(new AESEngine()));
         cipher.init(TV_Key);
         byte[] data = new byte[TV_Cipher_AES_1.length];
 

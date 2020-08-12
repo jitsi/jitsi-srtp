@@ -23,17 +23,45 @@ import javax.crypto.spec.*;
 import java.security.*;
 
 /**
- * Adapts the <tt>javax.crypto.Mac</tt> class to the
- * <tt>org.bouncycastle.crypto.Mac</tt> interface.
+ * Adapts the {@link javax.crypto.Mac} class to the
+ * {@link org.bouncycastle.crypto.Mac} interface.
  */
 public class MacAdapter implements org.bouncycastle.crypto.Mac
 {
+    /**
+     * The {@link javax.crypto.Mac} instance which is adapted to the
+     * {@link org.bouncycastle.crypto.Mac} interface by this instance.
+     */
     private final javax.crypto.Mac mac;
 
+    /**
+     * Initializes a new <tt>MacAdapter</tt> instance which is to adapt
+     * a specific {@link javax.crypto.Mac} instance to the
+     * {@link org.bouncycastle.crypto.Mac} interface.
+     *
+     * @param mac the {@link javax.crypto.Mac} instance to be adapted to
+     * the {@link org.bouncycastle.crypto.Mac} interface by the new
+     * instance
+     */
     public MacAdapter(javax.crypto.Mac mac) {
         this.mac = mac;
     }
 
+    /**
+     * Gets the {@link javax.crypto.Mac} instance which is adapted to the
+     * {@link org.bouncycastle.crypto.Mac} interface by this instance.
+     *
+     * @return the {@link javax.crypto.Mac} instance which is adapted to the
+     * {@link org.bouncycastle.crypto.Mac} interface by this instance
+     */
+    public javax.crypto.Mac getJavaxMac()
+    {
+        return mac;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void init(CipherParameters params) throws IllegalArgumentException
     {
@@ -52,24 +80,36 @@ public class MacAdapter implements org.bouncycastle.crypto.Mac
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public String getAlgorithmName()
     {
         return mac.getAlgorithm();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public int getMacSize()
     {
         return mac.getMacLength();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void update(byte in) throws IllegalStateException
     {
         mac.update(in);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void update(byte[] in, int inOff, int len)
         throws DataLengthException, IllegalStateException
@@ -77,6 +117,9 @@ public class MacAdapter implements org.bouncycastle.crypto.Mac
         mac.update(in, inOff, len);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public int doFinal(byte[] out, int outOff)
         throws DataLengthException, IllegalStateException
@@ -91,6 +134,9 @@ public class MacAdapter implements org.bouncycastle.crypto.Mac
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void reset()
     {

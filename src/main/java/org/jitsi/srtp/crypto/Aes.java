@@ -21,11 +21,12 @@ import java.util.*;
 
 import org.bouncycastle.crypto.*;
 import org.bouncycastle.crypto.engines.*;
+import org.bouncycastle.crypto.modes.*;
 import org.bouncycastle.crypto.params.*;
 import org.jitsi.utils.logging2.*;
 
 /**
- * Implements a factory for an AES <tt>BlockCipher</tt>.
+ * Implements a factory for an AES/CTR <tt>StreamCipher</tt>.
  *
  * @author Lyubomir Marinov
  */
@@ -38,48 +39,48 @@ public class Aes
     private static final int BLOCK_SIZE = 16;
 
     /**
-     * The simple name of the <tt>BlockCipherFactory</tt> class/interface which
+     * The simple name of the <tt>StreamCipherFactory</tt> class/interface which
      * is used as a class name suffix by the well-known
-     * <tt>BlockCipherFactory</tt> implementations.
+     * <tt>StreamCipherFactory</tt> implementations.
      */
-    private static final String BLOCK_CIPHER_FACTORY_SIMPLE_CLASS_NAME
-        = "BlockCipherFactory";
+    private static final String STREAM_CIPHER_FACTORY_SIMPLE_CLASS_NAME
+        = "StreamCipherFactory";
 
     /**
-     * The <tt>BlockCipherFactory</tt> implemented with BouncyCastle. It is the
+     * The <tt>StreamCipherFactory</tt> implemented with BouncyCastle. It is the
      * well-known fallback.
      */
-    private static final BlockCipherFactory BOUNCYCASTLE_FACTORY
-        = new BouncyCastleBlockCipherFactory();
+    private static final StreamCipherFactory BOUNCYCASTLE_FACTORY
+        = new BouncyCastleStreamCipherFactory();
 
     /**
-     * The <tt>BlockCipherFactory</tt> implementations known to the <tt>Aes</tt>
+     * The <tt>StreamCipherFactory</tt> implementations known to the <tt>Aes</tt>
      * class among which the fastest is to be elected as {@link #factory}.
      */
-    private static BlockCipherFactory[] factories;
+    private static StreamCipherFactory[] factories;
 
     /**
-     * The <tt>BlockCipherFactory</tt> implementation which is (to be) used by
+     * The <tt>StreamCipherFactory</tt> implementation which is (to be) used by
      * the class <tt>Aes</tt> to initialize <tt>BlockCipher</tt>s.
      */
-    private static BlockCipherFactory factory;
+    private static StreamCipherFactory factory;
 
     /**
-     * The name of the class to instantiate as a <tt>BlockCipherFactory</tt>
+     * The name of the class to instantiate as a <tt>StreamCipherFactory</tt>
      * implementation to be used by the class <tt>Aes</tt> to initialize
      * <tt>BlockCipher</tt>s.
      */
     private static String FACTORY_CLASS_NAME = null;
 
     /**
-     * The <tt>Class</tt>es of the well-known <tt>BlockCipherFactory</tt>
+     * The <tt>Class</tt>es of the well-known <tt>StreamCipherFactory</tt>
      * implementations.
      */
     private static final Class<?>[] FACTORY_CLASSES
         = {
-            BouncyCastleBlockCipherFactory.class,
-            SunJCEBlockCipherFactory.class,
-            SunPKCS11BlockCipherFactory.class,
+            BouncyCastleStreamCipherFactory.class,
+            SunJCEStreamCipherFactory.class,
+            SunPKCS11StreamCipherFactory.class,
         };
 
     /**
@@ -89,12 +90,12 @@ public class Aes
     public static final long FACTORY_TIMEOUT = 60 * 1000;
 
     /**
-     * The class to instantiate as a <tt>BlockCipherFactory</tt> implementation
+     * The class to instantiate as a <tt>StreamCipherFactory</tt> implementation
      * to be used to initialized <tt>BlockCipher</tt>s.
      *
      * @see #FACTORY_CLASS_NAME
      */
-    private static Class<? extends BlockCipherFactory> factoryClass;
+    private static Class<? extends StreamCipherFactory> factoryClass;
 
     /**
      * The time in milliseconds at which {@link #factories} were benchmarked and
@@ -122,7 +123,7 @@ public class Aes
 
     /**
      * The random number generator which generates keys and inputs for the
-     * benchmarking of the <tt>BlockCipherFactory</tt> implementations.
+     * benchmarking of the <tt>StreamCipherFactory</tt> implementations.
      */
     private static final Random random = new Random();
 
@@ -136,16 +137,16 @@ public class Aes
     }
 
     /**
-     * Benchmarks a specific array/list of <tt>BlockCipherFactory</tt> instances
+     * Benchmarks a specific array/list of <tt>StreamCipherFactory</tt> instances
      * and returns the fastest-performing element.
      *
-     * @param factories the <tt>BlockCipherFactory</tt> instances to benchmark
+     * @param factories the <tt>StreamCipherFactory</tt> instances to benchmark
      * @param keySize AES key size (16, 24, 32 bytes)
-     * @return the fastest-performing <tt>BlockCipherFactory</tt> among the
+     * @return the fastest-performing <tt>StreamCipherFactory</tt> among the
      * specified <tt>factories</tt>
      */
-    private static BlockCipherFactory benchmark(
-            BlockCipherFactory[] factories,
+    private static StreamCipherFactory benchmark(
+            StreamCipherFactory[] factories,
             int keySize)
     {
         Random random = Aes.random;
@@ -160,24 +161,24 @@ public class Aes
         int inEnd = in.length - blockSize + 1;
         byte[] out = Aes.out;
         long minTime = Long.MAX_VALUE;
-        BlockCipherFactory minFactory = null;
+        StreamCipherFactory minFactory = null;
 
         StringBuilder log = new StringBuilder();
 
         for (int f = 0; f < factories.length; ++f)
         {
-            BlockCipherFactory factory = factories[f];
+            StreamCipherFactory factory = factories[f];
 
             if (factory == null)
                 continue;
 
             try
             {
-                BlockCipher cipher = factory.createBlockCipher(keySize);
+                StreamCipher cipher = factory.createStreamCipher(keySize);
 
                 if (cipher == null)
                 {
-                    // The BlockCipherFactory failed to initialize a new
+                    // The StreamCipherFactory failed to initialize a new
                     // BlockCipher instance. We will not use it again because
                     // the failure may persist.
                     factories[f] = null;
@@ -188,13 +189,9 @@ public class Aes
 
                     long startTime = System.nanoTime();
 
-                    for (int inOff = 0;
-                            inOff < inEnd;
-                            inOff = inOff + blockSize)
-                    {
-                        cipher.processBlock(in, inOff, out, 0);
-                    }
-                    // We do not invoke the method BlockCipher.reset() so we do
+                    cipher.processBytes(in, 0, in.length, out, 0);
+
+                    // We do not invoke the method StreamCipher.reset() so we do
                     // not need to take it into account in the benchmark.
 
                     long endTime = System.nanoTime();
@@ -235,16 +232,16 @@ public class Aes
     }
 
     /**
-     * Initializes a new <tt>BlockCipher</tt> instance which implements Advanced
-     * Encryption Standard (AES).
+     * Initializes a new <tt>StreamCipher</tt> instance which implements Advanced
+     * Encryption Standard (AES) CTR mode.
      * @param keySize length of the AES key (16, 24, 32 bytes)
      *
      * @return a new <tt>BlockCipher</tt> instance which implements Advanced
-     * Encryption Standard (AES)
+     * Encryption Standard (AES) in the specified mode
      */
-    public static BlockCipher createBlockCipher(int keySize)
+    public static StreamCipher createStreamCipher(int keySize)
     {
-        BlockCipherFactory factory;
+        StreamCipherFactory factory;
 
         synchronized (Aes.class)
         {
@@ -290,7 +287,7 @@ public class Aes
                     if (Aes.factory != factory)
                     {
                         Aes.factory = factory;
-                        // Simplify the name of the BlockCipherFactory class to
+                        // Simplify the name of the StreamCipherFactory class to
                         // be employed for the purposes of brevity and ease.
                         logger.info(() ->
                                 "Will employ AES implemented by "
@@ -302,7 +299,7 @@ public class Aes
 
         try
         {
-            return factory.createBlockCipher(keySize);
+            return factory.createStreamCipher(keySize);
         }
         catch (Exception ex)
         {
@@ -322,40 +319,40 @@ public class Aes
             return null;
         }
         // Support specifying FACTORY_CLASS_NAME without a package and
-        // without BlockCipherFactory at the end for the purposes of
+        // without StreamCipherFactory at the end for the purposes of
         // brevity and ease.
         if (Character.isUpperCase(factoryClassName.charAt(0))
             && !factoryClassName.contains(".")
             && !factoryClassName.endsWith(
-            BLOCK_CIPHER_FACTORY_SIMPLE_CLASS_NAME))
+            STREAM_CIPHER_FACTORY_SIMPLE_CLASS_NAME))
         {
             factoryClassName
                 = Aes.class.getName() + "$" + factoryClassName
-                + BLOCK_CIPHER_FACTORY_SIMPLE_CLASS_NAME;
+                + STREAM_CIPHER_FACTORY_SIMPLE_CLASS_NAME;
         }
         return factoryClassName;
     }
 
     /**
-     * Initializes the <tt>BlockCipherFactory</tt> instances to be benchmarked
+     * Initializes the <tt>StreamCipherFactory</tt> instances to be benchmarked
      * by the class <tt>Aes</tt> and among which the fastest-performing one is
      * to be selected.
      * 
-     * @return the <tt>BlockCipherFactory</tt> instances to be benchmarked by
+     * @return the <tt>StreamCipherFactory</tt> instances to be benchmarked by
      * the class <tt>Aes</tt> and among which the fastest-performing one is to
      * be selected
      */
     @SuppressWarnings("unchecked")
-    private static BlockCipherFactory[] createBlockCipherFactories()
+    private static StreamCipherFactory[] createStreamCipherFactories()
     {
-        // The user may have specified a specific BlockCipherFactory class
+        // The user may have specified a specific StreamCipherFactory class
         // (name) through setFactoryClassName(String). Practically, the specified FACTORY_CLASS_NAME
         // will override all other FACTORY_CLASSES and, consequently, it does
         // not seem necessary to try FACTORY_CLASSES at all. Technically though,
-        // the specified BlockCipherFactory may malfunction. That is why all
+        // the specified StreamCipherFactory may malfunction. That is why all
         // FACTORY_CLASSES are tried as well and FACTORY_CLASS_NAME is selected
         // later on after it has proven itself functional.
-        Class<? extends BlockCipherFactory> factoryClass = Aes.factoryClass;
+        Class<? extends StreamCipherFactory> factoryClass = Aes.factoryClass;
         Class<?>[] factoryClasses = FACTORY_CLASSES;
         boolean add = true;
 
@@ -373,11 +370,11 @@ public class Aes
                 {
                     if ((clazz != null)
                             && clazz.getName().equals(factoryClassName)
-                            && BlockCipherFactory.class.isAssignableFrom(clazz))
+                            && StreamCipherFactory.class.isAssignableFrom(clazz))
                     {
                         Aes.factoryClass
                             = factoryClass
-                                = (Class<? extends BlockCipherFactory>)
+                                = (Class<? extends StreamCipherFactory>)
                                     clazz;
                         add = false;
                         break;
@@ -392,11 +389,11 @@ public class Aes
                     {
                         Class<?> clazz = Class.forName(factoryClassName);
     
-                        if (BlockCipherFactory.class.isAssignableFrom(clazz))
+                        if (StreamCipherFactory.class.isAssignableFrom(clazz))
                         {
                             Aes.factoryClass
                                 = factoryClass
-                                    = (Class<? extends BlockCipherFactory>)
+                                    = (Class<? extends StreamCipherFactory>)
                                         clazz;
                         }
                     }
@@ -448,35 +445,35 @@ public class Aes
             }
         }
 
-        return createBlockCipherFactories(factoryClasses);
+        return createStreamCipherFactories(factoryClasses);
     }
 
     /**
-     * Initializes <tt>BlockCipherFactory</tt> instances of specific
+     * Initializes <tt>StreamCipherFactory</tt> instances of specific
      * <tt>Class</tt>es.
      *
      * @param classes the runtime <tt>Class</tt>es to instantiate
-     * @return the <tt>BlockCipherFactory</tt> instances initialized by the
+     * @return the <tt>StreamCipherFactory</tt> instances initialized by the
      * specified <tt>classes</tt>
      */
-    private static BlockCipherFactory[] createBlockCipherFactories(
+    private static StreamCipherFactory[] createStreamCipherFactories(
             Class<?>[] classes)
     {
-        BlockCipherFactory[] factories = new BlockCipherFactory[classes.length];
+        StreamCipherFactory[] factories = new StreamCipherFactory[classes.length];
         int i = 0;
 
         for (Class<?> clazz : classes)
         {
             try
             {
-                if (BlockCipherFactory.class.isAssignableFrom(clazz))
+                if (StreamCipherFactory.class.isAssignableFrom(clazz))
                 {
-                    BlockCipherFactory factory;
+                    StreamCipherFactory factory;
 
-                    if (BouncyCastleBlockCipherFactory.class.equals(clazz))
+                    if (BouncyCastleStreamCipherFactory.class.equals(clazz))
                         factory = BOUNCYCASTLE_FACTORY;
                     else
-                        factory = (BlockCipherFactory) clazz.getConstructor().newInstance();
+                        factory = (StreamCipherFactory) clazz.getConstructor().newInstance();
 
                     factories[i++] = factory;
                 }
@@ -493,47 +490,47 @@ public class Aes
     }
 
     /**
-     * Gets a <tt>BlockCipherFactory</tt> instance to be used by the
+     * Gets a <tt>StreamCipherFactory</tt> instance to be used by the
      * <tt>Aes</tt> class to initialize <tt>BlockCipher</tt>s.
      *
      * <p>
-     * Benchmarks the well-known <tt>BlockCipherFactory</tt> implementations and
+     * Benchmarks the well-known <tt>StreamCipherFactory</tt> implementations and
      * returns the fastest one. 
      * </p>
      * @param keySize AES key size (16, 24, 32 bytes)
      *
-     * @return a <tt>BlockCipherFactory</tt> instance to be used by the
+     * @return a <tt>StreamCipherFactory</tt> instance to be used by the
      * <tt>Aes</tt> class to initialize <tt>BlockCipher</tt>s
      */
-    private static BlockCipherFactory getBlockCipherFactory(int keySize)
+    private static StreamCipherFactory getBlockCipherFactory(int keySize)
     {
-        BlockCipherFactory[] factories = Aes.factories;
+        StreamCipherFactory[] factories = Aes.factories;
 
         if (factories == null)
         {
-            // A single instance of each well-known BlockCipherFactory
+            // A single instance of each well-known StreamCipherFactory
             // implementation will be initialized i.e. the attempt to initialize
-            // BlockCipherFactory instances will be made once only.
-            Aes.factories = factories = createBlockCipherFactories();
+            // StreamCipherFactory instances will be made once only.
+            Aes.factories = factories = createStreamCipherFactories();
         }
 
         // Benchmark the BlockCiphers provided by the available
         // BlockCipherFactories in order to select the fastest-performing
-        // BlockCipherFactory.
-        BlockCipherFactory minFactory = benchmark(factories, keySize);
+        // StreamCipherFactory.
+        StreamCipherFactory minFactory = benchmark(factories, keySize);
 
-        // The user may have specified a specific BlockCipherFactory class
+        // The user may have specified a specific StreamCipherFactory class
         // (name) through setFactoryClassName(String), Practically, FACTORY_CLASS_NAME may override
         // minFactory and, consequently, it may appear that the benchmark is
-        // unnecessary. Technically though, the specified BlockCipherFactory may
+        // unnecessary. Technically though, the specified StreamCipherFactory may
         // malfunction. That is why FACTORY_CLASS_NAME is selected after it has
         // proven itself functional.
         {
-            Class<? extends BlockCipherFactory> factoryClass = Aes.factoryClass;
+            Class<? extends StreamCipherFactory> factoryClass = Aes.factoryClass;
 
             if (factoryClass != null)
             {
-                for (BlockCipherFactory factory : factories)
+                for (StreamCipherFactory factory : factories)
                 {
                     if ((factory != null)
                             && factory.getClass().equals(factoryClass))
@@ -550,16 +547,16 @@ public class Aes
 
     /**
      * Gets the simple name of the runtime <tt>Class</tt> of a specific
-     * <tt>BlockCipherFactory</tt> to be used for display purposes of brevity
+     * <tt>StreamCipherFactory</tt> to be used for display purposes of brevity
      * and readability.
      *
-     * @param factory the <tt>BlockCipherFactory</tt> for which a simple class
+     * @param factory the <tt>StreamCipherFactory</tt> for which a simple class
      * name is to be returned
      * @return the simple name of the runtime <tt>Class</tt> of the specified
      * <tt>factory</tt> to be used for display purposes of brevity and
      * readability
      */
-    private static String getSimpleClassName(BlockCipherFactory factory)
+    private static String getSimpleClassName(StreamCipherFactory factory)
     {
         Class<?> clazz = factory.getClass();
         String className = clazz.getSimpleName();
@@ -567,7 +564,7 @@ public class Aes
         if (className == null || className.length() == 0)
             className = clazz.getName();
 
-        String suffix = BLOCK_CIPHER_FACTORY_SIMPLE_CLASS_NAME;
+        String suffix = STREAM_CIPHER_FACTORY_SIMPLE_CLASS_NAME;
 
         if (className.endsWith(suffix))
         {
@@ -599,50 +596,48 @@ public class Aes
     }
 
     /**
-     * Implements <tt>BlockCipherFactory</tt> using BouncyCastle.
+     * Implements <tt>StreamCipherFactory</tt> using BouncyCastle.
      *
      * @author Lyubomir Marinov
      */
-    public static class BouncyCastleBlockCipherFactory
-        implements BlockCipherFactory
+    public static class BouncyCastleStreamCipherFactory
+        implements StreamCipherFactory
     {
         /**
          * {@inheritDoc}
          */
         @Override
-        public BlockCipher createBlockCipher(int keySize)
+        public StreamCipher createStreamCipher(int keySize)
             throws Exception
         {
-            // The value of keySize can be ignored for BouncyCastle, it
-            // determines the AES algorithm to be used with the KeyParameter.
-            return new AESEngine();
+            return new SICBlockCipher(new AESEngine());
         }
     }
 
     /**
-     * Implements <tt>BlockCipherFactory</tt> using Sun JCE.
+     * Implements <tt>StreamCipherFactory</tt> using Sun JCE.
      *
      * @author Lyubomir Marinov
      */
-    public static class SunJCEBlockCipherFactory
-        extends SecurityProviderBlockCipherFactory
+    public static class SunJCEStreamCipherFactory
+        extends SecurityProviderStreamCipherFactory
     {
         /**
-         * Initializes a new <tt>SunJCEBlockCipherFactory</tt> instance.
+         * Initializes a new <tt>SunJCEStreamCipherFactory</tt> instance.
          */
-        public SunJCEBlockCipherFactory()
+        public SunJCEStreamCipherFactory()
         {
-            super("AES_<size>/ECB/NoPadding", "SunJCE", logger);
+            super("AES/CTR/NoPadding", "SunJCE", logger);
         }
     }
 
     /**
-     * Implements <tt>BlockCipherFactory</tt> using Sun PKCS#11.
+     * Implements <tt>StreamCipherFactory</tt> using Sun PKCS#11.
      *
      * @author Lyubomir Marinov
      */
-    public static class SunPKCS11BlockCipherFactory
-        extends SecurityProviderBlockCipherFactory
+    public static class SunPKCS11StreamCipherFactory
+        extends SecurityProviderStreamCipherFactory
     {
         /**
          * The <tt>java.security.Provider</tt> instance (to be) employed for an
@@ -669,7 +664,7 @@ public class Aes
         private static synchronized Provider getProvider()
             throws Exception
         {
-            Provider provider = SunPKCS11BlockCipherFactory.provider;
+            Provider provider = SunPKCS11StreamCipherFactory.provider;
 
             if ((provider == null) && useProvider)
             {
@@ -706,22 +701,22 @@ public class Aes
                     if (provider == null)
                         useProvider = false;
                     else
-                        SunPKCS11BlockCipherFactory.provider = provider;
+                        SunPKCS11StreamCipherFactory.provider = provider;
                 }
             }
             return provider;
         }
 
         /**
-         * Initializes a new <tt>SunPKCS11BlockCipherFactory</tt> instance.
+         * Initializes a new <tt>SunPKCS11StreamCipherFactory</tt> instance.
          *
          * @throws Exception if anything goes wrong while initializing a new
-         * <tt>SunPKCS11BlockCipherFactory</tt> instance
+         * <tt>SunPKCS11StreamCipherFactory</tt> instance
          */
-        public SunPKCS11BlockCipherFactory()
+        public SunPKCS11StreamCipherFactory()
             throws Exception
         {
-            super("AES_<size>/ECB/NoPadding", getProvider(), logger);
+            super("AES/CTR/NoPadding", getProvider(), logger);
         }
     }
 }

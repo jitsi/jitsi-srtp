@@ -19,20 +19,20 @@ import org.bouncycastle.crypto.*;
 
 /**
  * Defines the application programming interface (API) of a factory of
- * <tt>org.bouncycastle.crypto.BlockCipher</tt> instances.
+ * <tt>org.bouncycastle.crypto.StreamCipher</tt> instances.
  *
  * @author Lyubomir Marinov
  */
-public interface BlockCipherFactory
+public interface StreamCipherFactory
 {
     /**
-     * Initializes a new <tt>BlockCipher</tt> instance.
+     * Initializes a new <tt>StreamCipher</tt> instance.
      * @param keySize AES key size (16, 24, 32 bytes)
      *
-     * @return a new <tt>BlockCipher</tt> instance
+     * @return a new <tt>StreamCipher</tt> instance
      * @throws Exception if anything goes wrong while initializing a new
-     * <tt>BlockCipher</tt> instance
+     * <tt>StreamCipher</tt> instance
      */
-    public BlockCipher createBlockCipher(int keySize)
+    public StreamCipher createStreamCipher(int keySize)
         throws Exception;
 }
