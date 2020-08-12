@@ -104,22 +104,34 @@ public class Aes
     private static long factoryTimestamp;
 
     /**
+     * The size of the data to be used for AES cipher benchmarks.
+     * This is chosen to be comparable in size to an SRTP packet.
+     */
+    private static final int BENCHMARK_SIZE = 1500;
+
+    /**
+     * The number of times to pre-execute the benchmark before executing it for real,
+     * to give the JVM time to run JITs and the like.
+     */
+    private static final int NUM_WARMUPS = 1000;
+
+    /**
      * The input buffer to be used for the benchmarking of {@link #factories}.
      * It consists of blocks and its length specifies the number of blocks to
      * process for the purposes of the benchmark.
      */ 
-    private static final byte[] in = new byte[BLOCK_SIZE * 1024];
+    private static final byte[] in = new byte[BENCHMARK_SIZE];
+
+    /**
+     * The output buffer to be used for the benchmarking of {@link #factories}.
+     */
+    private static final byte[] out = new byte[BENCHMARK_SIZE];
 
     /**
      * The <tt>Logger</tt> used by the <tt>Aes</tt> class to print out debug
      * information.
      */
     private static final Logger logger = new LoggerImpl(Aes.class.getName());
-
-    /**
-     * The output buffer to be used for the benchmarking of {@link #factories}.
-     */
-    private static final byte[] out = new byte[BLOCK_SIZE * 1024];
 
     /**
      * The random number generator which generates keys and inputs for the
@@ -185,9 +197,17 @@ public class Aes
                 }
                 else
                 {
-                    cipher.init(true, params);
+                    /* Let the JVM "warm up" (do JIT compilation and the like) */
+
+                    for (int i = 0; i < NUM_WARMUPS; i++) {
+                        cipher.init(true, params);
+
+                        cipher.processBytes(in, 0, in.length, out, 0);
+                    }
 
                     long startTime = System.nanoTime();
+
+                    cipher.init(true, params);
 
                     cipher.processBytes(in, 0, in.length, out, 0);
 
