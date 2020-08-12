@@ -159,8 +159,6 @@ public class Aes
         random.nextBytes(in);
 
         CipherParameters params = new ParametersWithIV(new KeyParameter(key), iv);
-        int blockSize = BLOCK_SIZE;
-        int inEnd = in.length - blockSize + 1;
         byte[] out = Aes.out;
         long minTime = Long.MAX_VALUE;
         StreamCipherFactory minFactory = null;

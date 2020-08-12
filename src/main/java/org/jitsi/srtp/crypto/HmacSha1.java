@@ -17,6 +17,8 @@ package org.jitsi.srtp.crypto;
 
 import org.bouncycastle.crypto.digests.*;
 import org.bouncycastle.crypto.macs.*;
+import org.jitsi.utils.logging2.*;
+
 import javax.crypto.*;
 import java.security.*;
 
@@ -27,6 +29,12 @@ import java.security.*;
  */
 public class HmacSha1
 {
+    /**
+     * The <tt>Logger</tt> used by the <tt>Aes</tt> class to print out debug
+     * information.
+     */
+    private static final Logger logger = new LoggerImpl(HmacSha1.class.getName());
+
     /**
      * Initializes a new <tt>org.bouncycastle.crypto.Mac</tt> instance which
      * implements a keyed-hash message authentication code (HMAC) with SHA-1.
@@ -45,11 +53,13 @@ public class HmacSha1
             // Fallback to JCE.
             try
             {
-                return new MacAdapter(Mac.getInstance("HmacSHA1"));
+                Mac mac = Mac.getInstance("HmacSHA1");
+                logger.info("Using HmacSHA1 from provider " + mac.getProvider().getName());
+                return new MacAdapter(mac);
             }
             catch (NoSuchAlgorithmException e) {
-                /* Boom */
-                throw new IllegalStateException(e);
+                // Fallback to BouncyCastle
+                return new HMac(new SHA1Digest());
             }
         }
     }
