@@ -200,13 +200,9 @@ public class BaseSrtpCryptoContext
         case SrtpPolicy.NULL_ENCRYPTION:
             break;
 
-            /* TODO */
-        /*
         case SrtpPolicy.AESF8_ENCRYPTION:
-            cipherF8 = new SrtpCipherF8(Aes.createStreamCipher(encKeyLength));
+            cipherF8 = new SrtpCipherF8(Aes.createBlockCipher(encKeyLength));
             //$FALL-THROUGH$
-            */
-
 
         case SrtpPolicy.AESCM_ENCRYPTION:
             // use OpenSSL if available and AES128 is in use

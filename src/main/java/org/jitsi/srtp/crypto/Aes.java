@@ -20,10 +20,15 @@ import java.security.*;
 import java.util.*;
 
 import org.bouncycastle.crypto.*;
+import org.bouncycastle.crypto.digests.*;
 import org.bouncycastle.crypto.engines.*;
+import org.bouncycastle.crypto.macs.*;
 import org.bouncycastle.crypto.modes.*;
 import org.bouncycastle.crypto.params.*;
 import org.jitsi.utils.logging2.*;
+
+import javax.crypto.*;
+import javax.crypto.Mac;
 
 /**
  * Implements a factory for an AES/CTR <tt>StreamCipher</tt>.
@@ -252,12 +257,38 @@ public class Aes
     }
 
     /**
+     * Initializes a new <tt>Blockipher</tt> instance which implements Advanced
+     * Encryption Standard (AES) ECB mode.
+     * @param keySize length of the AES key (16, 24, 32 bytes)
+     *
+     * @return a new <tt>StreamCipher</tt> instance which implements Advanced
+     * Encryption Standard (AES) in ECB mode
+     */
+    public static BlockCipher createBlockCipher(int keySize)
+    {
+        /* Note: Since jitsi-srtp only uses this mode for the AES-F8 cipher,
+         * which is pretty obscure, we don't do the whole benchmarking logic
+         * like we do for createStreamCipher; instead, we just use the provider
+         * chosen by JCE, or BouncyCastle if none.
+         */
+        try
+        {
+            Cipher cipher = Cipher.getInstance("AES/ECB/NoPadding");
+            return new BlockCipherAdapter(cipher, logger);
+        }
+        catch (NoSuchAlgorithmException | NoSuchPaddingException e) {
+            // Fallback to BouncyCastle
+            return new AESEngine();
+        }
+    }
+
+    /**
      * Initializes a new <tt>StreamCipher</tt> instance which implements Advanced
      * Encryption Standard (AES) CTR mode.
      * @param keySize length of the AES key (16, 24, 32 bytes)
      *
      * @return a new <tt>StreamCipher</tt> instance which implements Advanced
-     * Encryption Standard (AES) in the specified mode
+     * Encryption Standard (AES) in CTR mode
      */
     public static StreamCipher createStreamCipher(int keySize)
     {
