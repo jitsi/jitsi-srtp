@@ -119,7 +119,7 @@ public class Aes
     /**
      * The output buffer to be used for the benchmarking of {@link #factories}.
      */
-    private static final byte[] out = new byte[BLOCK_SIZE];
+    private static final byte[] out = new byte[BLOCK_SIZE * 1024];
 
     /**
      * The random number generator which generates keys and inputs for the
@@ -151,12 +151,14 @@ public class Aes
     {
         Random random = Aes.random;
         byte[] key = new byte[keySize];
+        byte[] iv = new byte[BLOCK_SIZE];
         byte[] in = Aes.in;
 
         random.nextBytes(key);
+        random.nextBytes(iv);
         random.nextBytes(in);
 
-        CipherParameters params = new KeyParameter(key);
+        CipherParameters params = new ParametersWithIV(new KeyParameter(key), iv);
         int blockSize = BLOCK_SIZE;
         int inEnd = in.length - blockSize + 1;
         byte[] out = Aes.out;
