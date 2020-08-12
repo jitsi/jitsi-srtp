@@ -54,7 +54,6 @@ public class HmacSha1
             try
             {
                 Mac mac = Mac.getInstance("HmacSHA1");
-                logger.info("Using HmacSHA1 from provider " + mac.getProvider().getName());
                 return new MacAdapter(mac);
             }
             catch (NoSuchAlgorithmException e) {

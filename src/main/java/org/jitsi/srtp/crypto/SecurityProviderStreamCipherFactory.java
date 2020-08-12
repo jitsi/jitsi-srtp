@@ -25,7 +25,7 @@ import org.jitsi.utils.logging2.*;
 
 /**
  * Implements a <tt>StreamCipherFactory</tt> which initializes
- * <tt>BlockCipher</tt>s that are implemented by a
+ * <tt>StreamCipher</tt>s that are implemented by a
  * <tt>java.security.Provider</tt>.
  *
  * @author Lyubomir Marinov
@@ -35,7 +35,7 @@ public class SecurityProviderStreamCipherFactory
 {
     /**
      * The <tt>java.security.Provider</tt> which provides the implementations of
-     * the <tt>BlockCipher</tt>s to be initialized by this instance.
+     * the <tt>StreamCipher</tt>s to be initialized by this instance.
      */
     private final Provider provider;
 
@@ -52,12 +52,12 @@ public class SecurityProviderStreamCipherFactory
 
     /**
      * Initializes a new <tt>SecurityProvider</tt> instance which is to
-     * initialize <tt>BlockCipher</tt>s that are implemented by a specific
+     * initialize <tt>StreamCipher</tt>s that are implemented by a specific
      * <tt>java.security.Provider</tt>.
      *
      * @param transformation the name of the transformation
      * @param provider the <tt>java.security.Provider</tt> which provides the
-     * implementations of the <tt>BlockCipher</tt>s to be initialized by the new
+     * implementations of the <tt>StreamCipher</tt>s to be initialized by the new
      * instance
      */
     public SecurityProviderStreamCipherFactory(
@@ -79,12 +79,12 @@ public class SecurityProviderStreamCipherFactory
 
     /**
      * Initializes a new <tt>SecurityProvider</tt> instance which is to
-     * initialize <tt>BlockCipher</tt>s that are implemented by a specific
+     * initialize <tt>StreamCipher</tt>s that are implemented by a specific
      * <tt>java.security.Provider</tt>.
      *
      * @param transformation the name of the transformation
      * @param providerName the name of the <tt>java.security.Provider</tt> which
-     * provides the implementations of the <tt>BlockCipher</tt>s to be
+     * provides the implementations of the <tt>StreamCipher</tt>s to be
      * initialized by the new instance
      */
     public SecurityProviderStreamCipherFactory(
@@ -105,11 +105,7 @@ public class SecurityProviderStreamCipherFactory
     {
         return
             new StreamCipherAdapter(
-                    Cipher.getInstance(
-                            transformation.replaceFirst(
-                                    "<size>",
-                                    Integer.toString(keySize * 8)),
-                            provider),
+                    Cipher.getInstance(transformation, provider),
                 logger);
     }
 }

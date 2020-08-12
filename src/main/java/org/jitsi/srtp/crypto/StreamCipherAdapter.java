@@ -25,9 +25,7 @@ import java.security.*;
 
 /**
  * Adapts the {@link javax.crypto.Cipher} class to the
- * {@link org.bouncycastle.crypto.BlockCipher} interface.
- *
- * @author Lyubomir Marinov
+ * {@link org.bouncycastle.crypto.StreamCipher} interface.
  */
 public class StreamCipherAdapter
     implements StreamCipher

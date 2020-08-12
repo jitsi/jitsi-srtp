@@ -34,7 +34,7 @@ public class Aes
 {
     /**
      * The block size in bytes of the AES algorithm (implemented by the
-     * <tt>BlockCipher</tt>s initialized by the <tt>Aes</tt> class).
+     * <tt>StreamCipher</tt>s initialized by the <tt>Aes</tt> class).
      */
     private static final int BLOCK_SIZE = 16;
 
@@ -61,14 +61,14 @@ public class Aes
 
     /**
      * The <tt>StreamCipherFactory</tt> implementation which is (to be) used by
-     * the class <tt>Aes</tt> to initialize <tt>BlockCipher</tt>s.
+     * the class <tt>Aes</tt> to initialize <tt>StreamCipher</tt>s.
      */
     private static StreamCipherFactory factory;
 
     /**
      * The name of the class to instantiate as a <tt>StreamCipherFactory</tt>
      * implementation to be used by the class <tt>Aes</tt> to initialize
-     * <tt>BlockCipher</tt>s.
+     * <tt>StreamCipher</tt>s.
      */
     private static String FACTORY_CLASS_NAME = null;
 
@@ -91,7 +91,7 @@ public class Aes
 
     /**
      * The class to instantiate as a <tt>StreamCipherFactory</tt> implementation
-     * to be used to initialized <tt>BlockCipher</tt>s.
+     * to be used to initialized <tt>StreamCipher</tt>s.
      *
      * @see #FACTORY_CLASS_NAME
      */
@@ -191,7 +191,7 @@ public class Aes
                 if (cipher == null)
                 {
                     // The StreamCipherFactory failed to initialize a new
-                    // BlockCipher instance. We will not use it again because
+                    // StreamCipher instance. We will not use it again because
                     // the failure may persist.
                     factories[f] = null;
                 }
@@ -256,7 +256,7 @@ public class Aes
      * Encryption Standard (AES) CTR mode.
      * @param keySize length of the AES key (16, 24, 32 bytes)
      *
-     * @return a new <tt>BlockCipher</tt> instance which implements Advanced
+     * @return a new <tt>StreamCipher</tt> instance which implements Advanced
      * Encryption Standard (AES) in the specified mode
      */
     public static StreamCipher createStreamCipher(int keySize)
@@ -274,7 +274,7 @@ public class Aes
             {
                 try
                 {
-                    factory = getBlockCipherFactory(keySize);
+                    factory = getStreamCipherFactory(keySize);
                 }
                 catch (Throwable t)
                 {
@@ -511,7 +511,7 @@ public class Aes
 
     /**
      * Gets a <tt>StreamCipherFactory</tt> instance to be used by the
-     * <tt>Aes</tt> class to initialize <tt>BlockCipher</tt>s.
+     * <tt>Aes</tt> class to initialize <tt>StreamCipher</tt>s.
      *
      * <p>
      * Benchmarks the well-known <tt>StreamCipherFactory</tt> implementations and
@@ -520,9 +520,9 @@ public class Aes
      * @param keySize AES key size (16, 24, 32 bytes)
      *
      * @return a <tt>StreamCipherFactory</tt> instance to be used by the
-     * <tt>Aes</tt> class to initialize <tt>BlockCipher</tt>s
+     * <tt>Aes</tt> class to initialize <tt>StreamCipher</tt>s
      */
-    private static StreamCipherFactory getBlockCipherFactory(int keySize)
+    private static StreamCipherFactory getStreamCipherFactory(int keySize)
     {
         StreamCipherFactory[] factories = Aes.factories;
 
@@ -534,8 +534,8 @@ public class Aes
             Aes.factories = factories = createStreamCipherFactories();
         }
 
-        // Benchmark the BlockCiphers provided by the available
-        // BlockCipherFactories in order to select the fastest-performing
+        // Benchmark the StreamCiphers provided by the available
+        // StreamCipherFactories in order to select the fastest-performing
         // StreamCipherFactory.
         StreamCipherFactory minFactory = benchmark(factories, keySize);
 
