@@ -26,7 +26,6 @@ import org.bouncycastle.crypto.params.*;
  */
 public class SrtpCipherCtrJava extends SrtpCipherCtr
 {
-    private final byte[] tmpCipherBlock = new byte[BLKLEN];
     private final StreamCipher cipher;
 
     private static final byte[] zeroIV = new byte[BLKLEN];
