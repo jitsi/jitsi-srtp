@@ -257,7 +257,7 @@ public class Aes
     }
 
     /**
-     * Initializes a new <tt>Blockipher</tt> instance which implements Advanced
+     * Initializes a new <tt>BlockCipher</tt> instance which implements Advanced
      * Encryption Standard (AES) ECB mode.
      * @param keySize length of the AES key (16, 24, 32 bytes)
      *
