@@ -113,8 +113,8 @@ public class SrtpPerfTest {
 
     private static final int DEFAULT_NUM_TESTS = 100000;
     private static final int DEFAULT_PAYLOAD_SIZE = 1250;
+    /* 10000 is is the threshold for full (C2) JIT optimization. */
     private static final int DEFAULT_NUM_WARMUPS = 20000;
-    /* Allegedly, 10000 is is the threshold for JIT optimization */
 
     @Test
     public void srtpPerf()
