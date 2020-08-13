@@ -28,7 +28,6 @@ import org.bouncycastle.crypto.params.*;
 import org.jitsi.utils.logging2.*;
 
 import javax.crypto.*;
-import javax.crypto.Mac;
 
 /**
  * Implements a factory for an AES/CTR <tt>StreamCipher</tt>.
