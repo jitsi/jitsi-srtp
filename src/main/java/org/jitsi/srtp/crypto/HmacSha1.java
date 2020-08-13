@@ -53,8 +53,7 @@ public class HmacSha1
             // Fallback to JCE.
             try
             {
-                Mac mac = Mac.getInstance("HmacSHA1");
-                return new MacAdapter(mac);
+                return new MacAdapter(javax.crypto.Mac.getInstance("HmacSHA1"));
             }
             catch (NoSuchAlgorithmException e) {
                 // Fallback to BouncyCastle
