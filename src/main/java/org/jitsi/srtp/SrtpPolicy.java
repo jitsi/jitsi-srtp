@@ -34,6 +34,11 @@ public class SrtpPolicy
     public final static int AESCM_ENCRYPTION = 1;
 
     /**
+     * Galois/Counter Mode AES Cipher, defined in RFC 7714
+     */
+    public final static int AESGCM_ENCRYPTION = 5;
+
+    /**
      * Counter Mode TwoFish Cipher
      */
     public final static int TWOFISH_ENCRYPTION = 3;
@@ -47,8 +52,11 @@ public class SrtpPolicy
      * F8 Mode TwoFish Cipher
      */
     public final static int TWOFISHF8_ENCRYPTION = 4;
+
     /**
      * Null Authentication, no authentication
+     *
+     * This should be set if GCM or other AEAD encryption is used.
      */
     public final static int NULL_AUTHENTICATION = 0;
 
@@ -83,7 +91,7 @@ public class SrtpPolicy
     private int authKeyLength;
 
     /**
-     * SRTP authentication tag length
+     * SRTP authentication tag length.  Also used for GCM tag.
      */
     private int authTagLength;
 

@@ -37,6 +37,7 @@ package org.jitsi.srtp;
 import java.util.*;
 
 import org.bouncycastle.crypto.params.*;
+import org.jitsi.srtp.crypto.*;
 import org.jitsi.srtp.utils.*;
 import org.jitsi.utils.*;
 import org.jitsi.utils.logging2.*;
@@ -268,7 +269,7 @@ public class SrtpCryptoContext
         kdf.deriveSessionKey(saltKey, SrtpKdf.LABEL_RTP_SALT);
 
         // compute the session encryption key
-        if (cipherCtr != null)
+        if (cipherCtr != null || cipherGcm != null)
         {
             byte[] encKey = new byte[policy.getEncKeyLength()];
             kdf.deriveSessionKey(encKey, SrtpKdf.LABEL_RTP_ENCRYPTION);
@@ -277,7 +278,14 @@ public class SrtpCryptoContext
             {
                 cipherF8.init(encKey, saltKey);
             }
-            cipherCtr.init(encKey);
+            if (cipherCtr != null)
+            {
+                cipherCtr.init(encKey);
+            }
+            if (cipherGcm != null)
+            {
+                cipherGcm.init(encKey, policy.getAuthTagLength() * 8);
+            }
             Arrays.fill(encKey, (byte) 0);
         }
 
@@ -369,6 +377,58 @@ public class SrtpCryptoContext
                 pkt.getOffset() + rtpHeaderLength,
                 pkt.getLength() - rtpHeaderLength,
                 ivStore);
+    }
+
+    private SrtpErrorStatus processPacketAesGcm(ByteArrayBuffer pkt, boolean forEncryption)
+    {
+        int ssrc = SrtpPacketUtils.getSsrc(pkt);
+        int seqNo = SrtpPacketUtils.getSequenceNumber(pkt);
+        long index = (((long) guessedROC) << 16) | seqNo;
+
+        ivStore[0] = saltKey[0];
+        ivStore[1] = saltKey[1];
+
+        int i;
+
+        for (i = 2; i < 6; i++)
+        {
+            ivStore[i] = (byte)
+                (
+                    (0xFF & (ssrc >> ((5 - i) * 8)))
+                        ^
+                        saltKey[i]
+                );
+        }
+
+        for (i = 6; i < 12; i++)
+        {
+            ivStore[i] = (byte)
+                (
+                    (0xFF & (byte) (index >> ((11 - i) * 8)))
+                        ^
+                        saltKey[i]
+                );
+        }
+
+        ivStore[12] = ivStore[13] = ivStore[14] = ivStore[15] = 0;
+
+        cipherGcm.reset(forEncryption, ivStore);
+
+        int rtpHeaderLength = SrtpPacketUtils.getTotalHeaderLength(pkt);
+
+        cipherGcm.processAad(pkt.getBuffer(), pkt.getOffset(), rtpHeaderLength);
+
+        try
+        {
+            cipherGcm.process(
+                pkt.getBuffer(),
+                pkt.getOffset() + rtpHeaderLength,
+                pkt.getLength() - rtpHeaderLength);
+        }
+        catch (SrtpCipherGcm.BadAuthTag e) {
+            return SrtpErrorStatus.AUTH_FAIL;
+        }
+        return SrtpErrorStatus.OK;
     }
 
     /**
@@ -465,6 +525,10 @@ public class SrtpCryptoContext
                         processPacketAesCm(pkt);
                         break;
 
+                    case SrtpPolicy.AESGCM_ENCRYPTION:
+                        err = processPacketAesGcm(pkt, false);
+                        break;
+
                     // Decrypt the packet using F8 Mode encryption.
                     case SrtpPolicy.AESF8_ENCRYPTION:
                     case SrtpPolicy.TWOFISHF8_ENCRYPTION:
@@ -473,11 +537,17 @@ public class SrtpCryptoContext
                     }
                 }
 
-                // Update the rollover counter and highest sequence number if
-                // necessary.
-                update(seqNo, guessedIndex);
-
-                ret = SrtpErrorStatus.OK;
+                if (err == SrtpErrorStatus.OK)
+                {
+                    // Update the rollover counter and highest sequence number if
+                    // necessary.
+                    update(seqNo, guessedIndex);
+                }
+                else
+                {
+                    logger.debug(() -> "SRTP auth failed for SSRC " + ssrc);
+                }
+                ret = err;
             }
             else
             {
@@ -505,7 +575,8 @@ public class SrtpCryptoContext
     /**
      * Transforms an RTP packet into an SRTP packet. The method is called when a
      * normal RTP packet ready to be sent. Operations done by the transformation
-     * may include: encryption, using either Counter Mode encryption, or F8 Mode
+     * may include: encryption, using either Counter Mode encryption,
+     * Galois/Counter mode encryption, or F8 Mode
      * encryption, adding authentication tag, currently HMC SHA1 method. Both
      * encryption and authentication functionality can be turned off as long as
      * the SrtpPolicy used in this SrtpCryptoContext is requires no encryption
@@ -545,6 +616,10 @@ public class SrtpCryptoContext
         case SrtpPolicy.AESCM_ENCRYPTION:
         case SrtpPolicy.TWOFISH_ENCRYPTION:
             processPacketAesCm(pkt);
+            break;
+
+        case SrtpPolicy.AESGCM_ENCRYPTION:
+            processPacketAesGcm(pkt, true);
             break;
 
         // Encrypt the packet using F8 Mode encryption.

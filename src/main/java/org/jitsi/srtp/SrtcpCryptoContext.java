@@ -18,6 +18,7 @@ package org.jitsi.srtp;
 import java.util.*;
 
 import org.bouncycastle.crypto.params.*;
+import org.jitsi.srtp.crypto.*;
 import org.jitsi.srtp.utils.*;
 import org.jitsi.utils.*;
 import org.jitsi.utils.logging2.*;
@@ -134,7 +135,7 @@ public class SrtcpCryptoContext
         kdf.deriveSessionKey(saltKey, SrtpKdf.LABEL_RTCP_SALT);
 
         // compute the session encryption key
-        if (cipherCtr != null)
+        if (cipherCtr != null || cipherGcm != null)
         {
             byte[] encKey = new byte[policy.getEncKeyLength()];
             kdf.deriveSessionKey(encKey, SrtpKdf.LABEL_RTCP_ENCRYPTION);
@@ -143,7 +144,14 @@ public class SrtcpCryptoContext
             {
                 cipherF8.init(encKey, saltKey);
             }
-            cipherCtr.init(encKey);
+            if (cipherCtr != null)
+            {
+                cipherCtr.init(encKey);
+            }
+            if (cipherGcm != null)
+            {
+                cipherGcm.init(encKey, policy.getAuthTagLength() * 8);
+            }
             Arrays.fill(encKey, (byte) 0);
         }
 
@@ -205,6 +213,60 @@ public class SrtcpCryptoContext
         cipherCtr.process(
                 pkt.getBuffer(), pkt.getOffset() + payloadOffset, payloadLength,
                 ivStore);
+    }
+
+    private SrtpErrorStatus processPacketAesGcm(ByteArrayBuffer pkt, int index, boolean forEncryption)
+    {
+        int ssrc = SrtcpPacketUtils.getSenderSsrc(pkt);
+
+        /* Compute the CM IV (refer to chapter 4.1.1 in RFC 3711):
+         *
+         * k_s   XX XX XX XX XX XX XX XX XX XX XX XX XX XX
+         * SSRC              XX XX XX XX
+         * index                               XX XX XX XX
+         * ------------------------------------------------------XOR
+         * IV    XX XX XX XX XX XX XX XX XX XX XX XX XX XX 00 00
+         *        0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15
+         */
+        ivStore[0] = saltKey[0];
+        ivStore[1] = saltKey[1];
+
+        // The shifts transform the ssrc and index into network order
+        ivStore[2] = (byte) (((ssrc >> 24) & 0xff) ^ saltKey[4]);
+        ivStore[3] = (byte) (((ssrc >> 16) & 0xff) ^ saltKey[5]);
+        ivStore[4] = (byte) (((ssrc >> 8) & 0xff) ^ saltKey[6]);
+        ivStore[5] = (byte) ((ssrc & 0xff) ^ saltKey[7]);
+
+        ivStore[6] = saltKey[8];
+        ivStore[7] = saltKey[9];
+
+        ivStore[8] = (byte) (((index >> 24) & 0xff) ^ saltKey[10]);
+        ivStore[9] = (byte) (((index >> 16) & 0xff) ^ saltKey[11]);
+        ivStore[10] = (byte) (((index >> 8) & 0xff) ^ saltKey[12]);
+        ivStore[11] = (byte) ((index & 0xff) ^ saltKey[13]);
+
+        ivStore[12] = ivStore[13] = ivStore[14] = ivStore[15] = 0;
+
+        cipherGcm.reset(forEncryption, ivStore);
+
+        // Encrypted part excludes fixed header (8 bytes)
+        int payloadOffset = 8;
+
+        cipherGcm.processAad(pkt.getBuffer(), pkt.getOffset(), payloadOffset);
+        writeRoc(index);
+        cipherGcm.processAad(rbStore, 0, 4);
+
+        try
+        {
+            cipherGcm.process(
+                pkt.getBuffer(),
+                pkt.getOffset() + payloadOffset,
+                pkt.getLength() - payloadOffset);
+        }
+        catch (SrtpCipherGcm.BadAuthTag e) {
+            return SrtpErrorStatus.AUTH_FAIL;
+        }
+        return SrtpErrorStatus.OK;
     }
 
     /**
@@ -315,11 +377,26 @@ public class SrtcpCryptoContext
                 processPacketAesCm(pkt, index);
             }
 
+            else if (policy.getEncType() == SrtpPolicy.AESGCM_ENCRYPTION) {
+                err = processPacketAesGcm(pkt, index, false);
+                if (err != SrtpErrorStatus.OK)
+                {
+                    return err;
+                }
+            }
+
             /* Decrypt the packet using F8 Mode encryption */
             else if (policy.getEncType() == SrtpPolicy.AESF8_ENCRYPTION
                     || policy.getEncType() == SrtpPolicy.TWOFISHF8_ENCRYPTION)
             {
                 processPacketAesF8(pkt, index);
+            }
+        }
+        else if (policy.getEncType() == SrtpPolicy.AESGCM_ENCRYPTION) {
+            err = processPacketAesGcm(pkt, index, false);
+            if (err != SrtpErrorStatus.OK)
+            {
+                return err;
             }
         }
         update(index);
@@ -344,13 +421,26 @@ public class SrtcpCryptoContext
      */
     synchronized public SrtpErrorStatus transformPacket(ByteArrayBuffer pkt)
     {
-        boolean encrypt = false;
+        boolean encrypt = (policy.getEncType() != SrtpPolicy.NULL_ENCRYPTION);
+        int index = sentIndex | (encrypt ? 0x80000000 : 0);
+
+        // Grow packet storage in one step
+        pkt.grow(4 + policy.getAuthTagLength());
+
         /* Encrypt the packet using Counter Mode encryption */
         if (policy.getEncType() == SrtpPolicy.AESCM_ENCRYPTION ||
                 policy.getEncType() == SrtpPolicy.TWOFISH_ENCRYPTION)
         {
             processPacketAesCm(pkt, sentIndex);
-            encrypt = true;
+        }
+
+        else if (policy.getEncType() == SrtpPolicy.AESGCM_ENCRYPTION) {
+            /* N.B.: we have no way to indicate in policy that we want to send
+             * non-encrypted RTCP authenticated with GCM, but that's not generally
+             * a thing one wants to do anyway.
+             */
+            processPacketAesGcm(pkt, sentIndex, true);
+            pkt.append(rbStore, 4);
         }
 
         /* Encrypt the packet using F8 Mode encryption */
@@ -358,14 +448,8 @@ public class SrtcpCryptoContext
                 policy.getEncType() == SrtpPolicy.TWOFISHF8_ENCRYPTION)
         {
             processPacketAesF8(pkt, sentIndex);
-            encrypt = true;
         }
-        int index = 0;
-        if (encrypt)
-            index = sentIndex | 0x80000000;
 
-        // Grow packet storage in one step
-        pkt.grow(4 + policy.getAuthTagLength());
 
         // Authenticate the packet
         // The authenticate method gets the index via parameter and stores

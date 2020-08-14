@@ -79,6 +79,11 @@ public class BaseSrtpCryptoContext
     protected final SrtpCipherCtr cipherCtr;
 
     /**
+     * GCM cipher
+     */
+    protected final SrtpCipherGcm cipherGcm;
+
+    /**
      * F8 mode cipher
      */
     protected final SrtpCipherF8 cipherF8;
@@ -140,6 +145,7 @@ public class BaseSrtpCryptoContext
         this.ssrc = ssrc;
 
         cipherCtr = null;
+        cipherGcm = null;
         cipherF8 = null;
         mac = null;
         policy = null;
@@ -192,6 +198,7 @@ public class BaseSrtpCryptoContext
         }
 
         SrtpCipherCtr cipherCtr = null;
+        SrtpCipherGcm cipherGcm = null;
         SrtpCipherF8 cipherF8 = null;
         byte[] saltKey = null;
 
@@ -218,6 +225,11 @@ public class BaseSrtpCryptoContext
             saltKey = new byte[saltKeyLength];
             break;
 
+        case SrtpPolicy.AESGCM_ENCRYPTION:
+            /* TODO choose implementation */
+            cipherGcm = new SrtpCipherGcmBC(new GCMBlockCipher(new AESEngine()));
+            break;
+
         case SrtpPolicy.TWOFISHF8_ENCRYPTION:
             cipherF8 = new SrtpCipherF8(new TwofishEngine());
             //$FALL-THROUGH$
@@ -228,6 +240,7 @@ public class BaseSrtpCryptoContext
             break;
         }
         this.cipherCtr = cipherCtr;
+        this.cipherGcm = cipherGcm;
         this.cipherF8 = cipherF8;
         this.saltKey = saltKey;
 
@@ -257,6 +270,17 @@ public class BaseSrtpCryptoContext
     }
 
     /**
+     * Writes roc / index to the rbStore buffer.
+     */
+    protected void writeRoc(int rocIn)
+    {
+        rbStore[0] = (byte) (rocIn >> 24);
+        rbStore[1] = (byte) (rocIn >> 16);
+        rbStore[2] = (byte) (rocIn >> 8);
+        rbStore[3] = (byte) rocIn;
+    }
+
+    /**
      * Authenticates a packet. Calculated authentication tag is returned/stored
      * in {@link #tagStore}.
      *
@@ -266,10 +290,7 @@ public class BaseSrtpCryptoContext
     synchronized protected void authenticatePacketHmac(ByteArrayBuffer pkt, int rocIn)
     {
         mac.update(pkt.getBuffer(), pkt.getOffset(), pkt.getLength());
-        rbStore[0] = (byte) (rocIn >> 24);
-        rbStore[1] = (byte) (rocIn >> 16);
-        rbStore[2] = (byte) (rocIn >> 8);
-        rbStore[3] = (byte) rocIn;
+        writeRoc(rocIn);
         mac.update(rbStore, 0, rbStore.length);
         mac.doFinal(tagStore, 0);
     }
