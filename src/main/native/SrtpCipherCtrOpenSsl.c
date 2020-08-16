@@ -14,19 +14,19 @@
  * limitations under the License.
  */
 
-#include "org_jitsi_srtp_crypto_SrtpCipherCtrOpenSsl.h"
+#include "org_jitsi_srtp_crypto_OpenSslAesCipherSpi.h"
 
 #include <openssl/evp.h>
 #include <stdint.h>
 #include <stdlib.h>
 
 /*
- * Class:     org_jitsi_srtp_SrtpCipherCtrOpenSsl
- * Method:    AES128CTR_CTX_create
+ * Class:     org_jitsi_srtp_OpenSslAesCipherSpi
+ * Method:    AES_CTR_CTX_create
  * Signature: ()J
  */
 JNIEXPORT jlong JNICALL
-Java_org_jitsi_srtp_crypto_SrtpCipherCtrOpenSsl_AES128CTR_1CTX_1create
+Java_org_jitsi_srtp_crypto_OpenSslAesCipherSpi_AES_1CTR_1CTX_1create
   (JNIEnv *env, jclass clazz)
 {
     EVP_CIPHER_CTX *ctx = EVP_CIPHER_CTX_new();
@@ -35,12 +35,12 @@ Java_org_jitsi_srtp_crypto_SrtpCipherCtrOpenSsl_AES128CTR_1CTX_1create
 }
 
 /*
- * Class:     org_jitsi_srtp_SrtpCipherCtrOpenSsl
- * Method:    AES128CTR_CTX_destroy
+ * Class:     org_jitsi_srtp_OpenSslAesCipherSpi
+ * Method:    AES_CTR_CTX_destroy
  * Signature: (J)V
  */
 JNIEXPORT void JNICALL
-Java_org_jitsi_srtp_crypto_SrtpCipherCtrOpenSsl_AES128CTR_1CTX_1destroy
+Java_org_jitsi_srtp_crypto_OpenSslAesCipherSpi_AES_1CTR_1CTX_1destroy
   (JNIEnv *env, jclass clazz, jlong ctx)
 {
     if (ctx) {
@@ -50,34 +50,53 @@ Java_org_jitsi_srtp_crypto_SrtpCipherCtrOpenSsl_AES128CTR_1CTX_1destroy
 }
 
 /*
- * Class:     org_jitsi_srtp_SrtpCipherCtrOpenSsl
- * Method:    AES128CTR_CTX_init
+ * Class:     org_jitsi_srtp_OpenSslAesCipherSpi
+ * Method:    AES_CTR_CTX_init
  * Signature: (J[B)Z
  */
 JNIEXPORT jboolean JNICALL
-Java_org_jitsi_srtp_crypto_SrtpCipherCtrOpenSsl_AES128CTR_1CTX_1init
+Java_org_jitsi_srtp_crypto_OpenSslAesCipherSpi_AES_1CTR_1CTX_1init
   (JNIEnv *env, jclass clazz, jlong ctx, jbyteArray key)
 {
-    unsigned char key_[16];
-    (*env)->GetByteArrayRegion(env, key, 0, 16, key_);
-    return EVP_CipherInit_ex((EVP_CIPHER_CTX *) (intptr_t) ctx, EVP_aes_128_ctr(), NULL, key_, NULL, 1);
+    jboolean r = JNI_FALSE;
+    unsigned char *key_ = (unsigned char*)(*env)->GetPrimitiveArrayCritical(env, key, NULL);
+    if (!key_)
+      goto exit;
+
+    jsize keySize = (*env)->GetArrayLength(env, key);
+    switch (keySize)
+    {
+    case 16:
+      r = EVP_CipherInit_ex((EVP_CIPHER_CTX *) (intptr_t) ctx, EVP_aes_128_ctr(), NULL, key_, NULL, 1);
+      break;
+    case 24:
+      r = EVP_CipherInit_ex((EVP_CIPHER_CTX *) (intptr_t) ctx, EVP_aes_192_ctr(), NULL, key_, NULL, 1);
+      break;
+    case 32:
+      r = EVP_CipherInit_ex((EVP_CIPHER_CTX *) (intptr_t) ctx, EVP_aes_256_ctr(), NULL, key_, NULL, 1);
+      break;
+    }
+
+exit:
+    if (key_)
+        (*env)->ReleasePrimitiveArrayCritical(env, key, key_, 0);
+    return r;
 }
 
 /*
- * Class:     org_jitsi_srtp_SrtpCipherCtrOpenSsl
- * Method:    AES128CTR_CTX_process
+ * Class:     org_jitsi_srtp_OpenSslAesCipherSpi
+ * Method:    AES_CTR_CTX_process
  * Signature: (J[B[BII)Z
  */
 JNIEXPORT jboolean JNICALL
-Java_org_jitsi_srtp_crypto_SrtpCipherCtrOpenSsl_AES128CTR_1CTX_1process
+Java_org_jitsi_srtp_crypto_OpenSslAesCipherSpi_AES_1CTR_1CTX_1process
   (JNIEnv *env, jclass clazz, jlong ctx, jbyteArray iv, jbyteArray inOut, jint offset, jint len)
 {
     int ok = 0;
     unsigned char iv_[16];
-    (*env)->GetByteArrayRegion(env, iv, 0, 16, iv_);
-    jbyte *inOut_;
-    inOut_ = (*env)->GetPrimitiveArrayCritical(env, inOut, NULL);
-    if (!inOut)
+    (*env)->GetByteArrayRegion(env, iv, 0, 16, (jbyte*)iv_);
+    unsigned char *inOut_ = (unsigned char*)(*env)->GetPrimitiveArrayCritical(env, inOut, NULL);
+    if (!inOut_)
         goto exit;
 
     ok = EVP_CipherInit_ex(
@@ -102,4 +121,3 @@ exit:
 
     return ok;
 }
-

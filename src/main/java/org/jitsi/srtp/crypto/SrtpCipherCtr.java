@@ -1,5 +1,5 @@
 /*
- * Copyright @ 2016 - present 8x8, Inc
+ * Copyright @ 2015 - present 8x8, Inc
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,57 +15,45 @@
  */
 package org.jitsi.srtp.crypto;
 
+import java.security.*;
+import javax.crypto.*;
+import javax.crypto.spec.*;
+
 /**
- * SrtpCipherCtr implementations implement SRTP Counter Mode Encryption.
- *
- * SRTP Counter Mode is standard block cipher counter mode with special key and
- * special counter initial value (iv). We only increment last 16 bits of the
- * counter, so we can only encrypt 2^16 * <tt>BLKLEN</tt> of data.
- *
- * SRTP Counter Mode AES Encryption algorithm is defined in RFC3711, section
- * 4.1.1.
+ * SRTP encryption in CTR mode.
  */
-public abstract class SrtpCipherCtr
+public class SrtpCipherCtr
+    extends SrtpCipher
 {
-    protected static final int BLKLEN = 16;
+    private static final IvParameterSpec zeroIV =
+        new IvParameterSpec(new byte[16]);
 
-    /**
-     * (Re)Initialize the cipher with key
-     *
-     * @param key the key. key.length == BLKLEN
-     */
-    public abstract void init(byte[] key);
+    private SecretKeySpec key = null;
 
-    /**
-     * Process (encrypt/decrypt) data from offset for len bytes iv can be
-     * modified by this function but you MUST never reuse an IV so it's ok
-     *
-     * @param data byte array to be processed
-     * @param off the offset
-     * @param len the length
-     * @param iv initial value of the counter (can be modified).
-     *           iv.length == BLKLEN
-     */
-    public abstract void process(byte[] data, int off, int len, byte[] iv);
-
-    /**
-     * Check the validity of process function arguments
-     */
-    protected static void checkProcessArgs(byte[] data, int off, int len, byte[] iv)
+    public SrtpCipherCtr(Cipher cipher)
     {
-        if (iv.length != BLKLEN)
-            throw new IllegalArgumentException("iv.length != BLKLEN");
-        if (off < 0)
-            throw new IllegalArgumentException("off < 0");
-        if (len < 0)
-            throw new IllegalArgumentException("len < 0");
-        if (off + len > data.length)
-            throw new IllegalArgumentException("off + len > data.length");
-        /*
-         * we increment only the last 16 bits of the iv, so we can encrypt
-         * a maximum of 2^16 blocks, ie 1048576 bytes
-         */
-        if (data.length > 1048576)
-            throw new IllegalArgumentException("data.length > 1048576");
+        super(cipher);
+    }
+
+    @Override
+    public void init(byte[] key, byte[] saltKey)
+        throws GeneralSecurityException
+    {
+        if (key.length != 16 && key.length != 24 && key.length != 32)
+        {
+            throw new IllegalArgumentException("Invalid key length");
+        }
+
+        this.key = getSecretKey(key);
+        cipher.init(Cipher.ENCRYPT_MODE, this.key, zeroIV);
+    }
+
+    @Override
+    public void process(byte[] data, int off, int len, byte[] iv)
+        throws GeneralSecurityException
+    {
+        checkProcessArgs(data, off, len, iv);
+        cipher.init(Cipher.ENCRYPT_MODE, key, new IvParameterSpec(iv));
+        cipher.update(data, off, len, data, off);
     }
 }

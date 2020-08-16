@@ -16,6 +16,7 @@
 package org.jitsi.srtp;
 
 import gnu.getopt.*;
+import java.security.*;
 import org.jitsi.srtp.crypto.*;
 import org.jitsi.utils.*;
 import org.jitsi.utils.logging2.*;
@@ -69,6 +70,7 @@ public class SrtpPerfTest {
     private SrtpCryptoContext context;
 
     private void createContext(SrtpPolicy policy)
+        throws GeneralSecurityException
     {
         Logger logger = new LoggerImpl(getClass().getName());
         factory = new SrtpContextFactory(true, test_key, test_key_salt, policy, policy, logger);
@@ -76,6 +78,7 @@ public class SrtpPerfTest {
     }
 
     public void doEncrypt(int num, int payloadSize)
+        throws GeneralSecurityException
     {
         for (int i = 0; i < num; i++)
         {
@@ -85,6 +88,7 @@ public class SrtpPerfTest {
     }
 
     public void doPerfTest(int num, int payloadSize, int numWarmups)
+        throws GeneralSecurityException
     {
         SrtpPolicy policy =
                 new SrtpPolicy(SrtpPolicy.AESCM_ENCRYPTION, 128/8,
@@ -118,6 +122,7 @@ public class SrtpPerfTest {
 
     @Test
     public void srtpPerf()
+        throws GeneralSecurityException
     {
         doPerfTest(DEFAULT_NUM_TESTS, DEFAULT_PAYLOAD_SIZE, DEFAULT_NUM_WARMUPS);
     }
@@ -131,6 +136,7 @@ public class SrtpPerfTest {
     }
 
     public static void main(String[] args)
+        throws GeneralSecurityException
     {
         int numTests = DEFAULT_NUM_TESTS;
         int payloadSize = DEFAULT_PAYLOAD_SIZE;

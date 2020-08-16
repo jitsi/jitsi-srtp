@@ -67,7 +67,7 @@ public class SrtpValidationTest {
 					     "54d6c1230798");
 
     @Test
-    public void srtpValidate()
+    public void srtpValidate() throws Exception
     {
         Logger logger = new LoggerImpl(getClass().getName());
 
@@ -115,16 +115,12 @@ public class SrtpValidationTest {
         assertEquals(rtcpPkt.getLength(), rtcp_plaintext_ref.length);
         assertArrayEquals(Arrays.copyOf(rtcpPkt.getBuffer(), rtcpPkt.getLength()), rtcp_plaintext_ref);
 
-        rtpSend.close();
-        rtpRecv.close();
-        rtcpSend.close();
-        rtcpRecv.close();
         senderFactory.close();
         receiverFactory.close();
     }
 
     @Test
-    public void rejectInvalid()
+    public void rejectInvalid() throws Exception
     {
         Logger logger = new LoggerImpl(getClass().getName());
 
@@ -144,11 +140,11 @@ public class SrtpValidationTest {
 
             if (len == srtp_ciphertext.length)
             {
-                assertEquals(status, SrtpErrorStatus.OK, "Rejected valid SRTP packet");
+                assertEquals(SrtpErrorStatus.OK, status, "Rejected valid SRTP packet");
             }
             else
             {
-                assertNotEquals(status, SrtpErrorStatus.OK, "Accepted truncated SRTP packet");
+                assertNotEquals(SrtpErrorStatus.OK, status, "Accepted truncated SRTP packet");
             }
         }
 
@@ -167,11 +163,11 @@ public class SrtpValidationTest {
 
             if (len == srtcp_ciphertext.length)
             {
-                assertEquals(status, SrtpErrorStatus.OK, "Rejected valid SRTCP packet");
+                assertEquals(SrtpErrorStatus.OK, status, "Rejected valid SRTCP packet");
             }
             else
             {
-                assertNotEquals(status, SrtpErrorStatus.OK, "Accepted truncated SRTCP packet");
+                assertNotEquals(SrtpErrorStatus.OK, status, "Accepted truncated SRTCP packet");
             }
         }
     }

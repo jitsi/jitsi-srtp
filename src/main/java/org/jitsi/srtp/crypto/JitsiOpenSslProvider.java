@@ -15,17 +15,19 @@
  */
 package org.jitsi.srtp.crypto;
 
+import java.security.*;
 import org.jitsi.utils.*;
 import org.jitsi.utils.logging2.*;
 
-public class OpenSslWrapperLoader
+public class JitsiOpenSslProvider
+    extends Provider
 {
     /**
      * The <tt>Logger</tt> used by the <tt>OpenSslWrapperLoader</tt> class to
      * print out debug information.
      */
     private static final Logger logger =
-        new LoggerImpl(OpenSslWrapperLoader.class.getName());
+        new LoggerImpl(JitsiOpenSslProvider.class.getName());
 
     /**
      * The indicator which determines whether OpenSSL (Crypto) library wrapper
@@ -33,23 +35,14 @@ public class OpenSslWrapperLoader
      */
     private static boolean libraryLoaded = false;
 
-    private static native boolean OpenSSL_Init();
-
     static
     {
         try
         {
             JNIUtils.loadLibrary("jitsisrtp",
-                OpenSslWrapperLoader.class.getClassLoader());
-            if (OpenSSL_Init())
-            {
-                logger.info(() -> "jitsisrtp successfully loaded");
-                libraryLoaded = true;
-            }
-            else
-            {
-                logger.warn(() -> "OpenSSL_Init failed");
-            }
+                JitsiOpenSslProvider.class.getClassLoader());
+            logger.info(() -> "jitsisrtp successfully loaded");
+            libraryLoaded = true;
         }
         catch (Throwable t)
         {
@@ -60,5 +53,13 @@ public class OpenSslWrapperLoader
     public static boolean isLoaded()
     {
         return libraryLoaded;
+    }
+
+    public JitsiOpenSslProvider()
+    {
+        super("JitsiOpenSslProvider", 1,
+            "Jitsi OpenSSL SRTP security provider");
+        put("Cipher.AES/CTR/NoPadding", OpenSslAesCipherSpi.class.getName());
+        put("MAC.HMAC-SHA1", OpenSslHmacSpi.class.getName());
     }
 }

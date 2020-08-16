@@ -17,21 +17,16 @@ package org.jitsi.srtp.crypto;
 
 import java.security.*;
 
+import java.util.*;
 import javax.crypto.*;
 
-import org.bouncycastle.crypto.*;
-import org.jetbrains.annotations.*;
-import org.jitsi.utils.logging2.*;
-
 /**
- * Implements a <tt>StreamCipherFactory</tt> which initializes
- * <tt>StreamCipher</tt>s that are implemented by a
- * <tt>java.security.Provider</tt>.
+ * Factory which initializes {@link Cipher}s that are implemented by a {@link
+ * java.security.Provider}.
  *
  * @author Lyubomir Marinov
  */
-public class SecurityProviderStreamCipherFactory
-    implements StreamCipherFactory
+public class CipherFactory
 {
     /**
      * The <tt>java.security.Provider</tt> which provides the implementations of
@@ -45,12 +40,6 @@ public class SecurityProviderStreamCipherFactory
     private final String transformation;
 
     /**
-     * The <tt>Logger</tt> used by the
-     * instance to print out debug information.
-     */
-    private final Logger logger;
-
-    /**
      * Initializes a new <tt>SecurityProvider</tt> instance which is to
      * initialize <tt>StreamCipher</tt>s that are implemented by a specific
      * <tt>java.security.Provider</tt>.
@@ -60,21 +49,10 @@ public class SecurityProviderStreamCipherFactory
      * implementations of the <tt>StreamCipher</tt>s to be initialized by the new
      * instance
      */
-    public SecurityProviderStreamCipherFactory(
-            String transformation,
-            Provider provider,
-            @NotNull Logger parentLogger)
+    public CipherFactory(String transformation, Provider provider)
     {
-        if (transformation == null)
-            throw new NullPointerException("transformation");
-        if (transformation.length() == 0)
-            throw new IllegalArgumentException("transformation");
-        if (provider == null)
-            throw new NullPointerException("provider");
-
-        logger = parentLogger.createChildLogger(getClass().getName());
-        this.transformation = transformation;
-        this.provider = provider;
+        this.transformation = Objects.requireNonNull(transformation);
+        this.provider = Objects.requireNonNull(provider);
     }
 
     /**
@@ -87,25 +65,14 @@ public class SecurityProviderStreamCipherFactory
      * provides the implementations of the <tt>StreamCipher</tt>s to be
      * initialized by the new instance
      */
-    public SecurityProviderStreamCipherFactory(
-            String transformation,
-            String providerName,
-            @NotNull Logger parentLogger)
+    public CipherFactory(String transformation, String providerName)
     {
-        this(transformation, Security.getProvider(providerName), parentLogger);
+        this(transformation, Security.getProvider(providerName));
     }
 
-    /**
-     * {@inheritDoc}
-     * @return
-     */
-    @Override
-    public StreamCipher createStreamCipher(int keySize)
+    public Cipher createCipher()
         throws Exception
     {
-        return
-            new StreamCipherAdapter(
-                    Cipher.getInstance(transformation, provider),
-                logger);
+        return Cipher.getInstance(transformation, provider);
     }
 }

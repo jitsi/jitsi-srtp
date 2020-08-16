@@ -15,6 +15,7 @@
  */
 package org.jitsi.srtp;
 
+import java.security.*;
 import org.jitsi.utils.logging2.*;
 
 import java.util.*;
@@ -157,6 +158,7 @@ public class SrtpContextFactory
      * @return a new SrtpCryptoContext with all relevant data set.
      */
     public SrtpCryptoContext deriveContext(int ssrc, int roc)
+        throws GeneralSecurityException
     {
         return
             new SrtpCryptoContext(
@@ -180,6 +182,7 @@ public class SrtpContextFactory
      * @return a new SrtcpCryptoContext with all relevant data set.
      */
     public SrtcpCryptoContext deriveControlContext(int ssrc)
+        throws GeneralSecurityException
     {
         return
             new SrtcpCryptoContext(
