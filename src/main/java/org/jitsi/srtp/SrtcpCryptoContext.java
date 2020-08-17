@@ -258,10 +258,12 @@ public class SrtcpCryptoContext
 
         try
         {
-            cipherGcm.process(
+            int lenDelta = cipherGcm.process(
                 pkt.getBuffer(),
                 pkt.getOffset() + payloadOffset,
                 pkt.getLength() - payloadOffset);
+
+            pkt.setLength(pkt.getLength() + lenDelta);
         }
         catch (SrtpCipherGcm.BadAuthTag e) {
             return SrtpErrorStatus.AUTH_FAIL;

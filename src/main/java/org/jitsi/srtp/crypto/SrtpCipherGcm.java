@@ -52,12 +52,13 @@ public interface SrtpCipherGcm
     /**
      * Process (encrypt/decrypt) data from offset for len bytes, then
      * add auth tag (encrypt) or verify auth tag (decrypt).
-     *
      * @param data byte array to be processed
      * @param off the offset
      * @param len the length
+     * @return The delta in total length, after the auth tag is added or removed.
+     * @throws BadAuthTag if the auth tag is incorrect for decryption.
      */
-    void process(byte[] data, int off, int len) throws BadAuthTag;
+    int process(byte[] data, int off, int len) throws BadAuthTag;
 
     class BadAuthTag extends Exception
     {

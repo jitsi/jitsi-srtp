@@ -19,8 +19,6 @@ import org.bouncycastle.crypto.*;
 import org.bouncycastle.crypto.modes.*;
 import org.bouncycastle.crypto.params.*;
 
-import javax.crypto.spec.*;
-
 /**
  * Implement the SrtpCipherGcm interface using a BouncyCastle AEADCipher
  */
@@ -57,14 +55,15 @@ public class SrtpCipherGcmBC implements SrtpCipherGcm
     }
 
     @Override
-    public void process(byte[] data, int off, int len)
+    public int process(byte[] data, int off, int len)
         throws BadAuthTag
     {
         int written = cipher.processBytes(data, off, len, data, off);
 
         try
         {
-            cipher.doFinal(data, off + written);
+            written += cipher.doFinal(data, off + written);
+            return written - len;
         }
         catch (InvalidCipherTextException e)
         {

@@ -420,10 +420,12 @@ public class SrtpCryptoContext
 
         try
         {
-            cipherGcm.process(
+            int lenDelta = cipherGcm.process(
                 pkt.getBuffer(),
                 pkt.getOffset() + rtpHeaderLength,
                 pkt.getLength() - rtpHeaderLength);
+
+            pkt.setLength(pkt.getLength() + lenDelta);
         }
         catch (SrtpCipherGcm.BadAuthTag e) {
             return SrtpErrorStatus.AUTH_FAIL;
