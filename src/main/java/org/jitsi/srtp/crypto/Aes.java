@@ -27,60 +27,59 @@ import org.jitsi.utils.logging2.*;
 import javax.crypto.*;
 
 /**
- * Implements a factory for an AES/CTR <tt>StreamCipher</tt>.
+ * Implements a factory for an AES/CTR {@link Cipher}.
  *
  * @author Lyubomir Marinov
  */
 public class Aes
 {
     /**
-     * The <tt>Logger</tt> used by the <tt>Aes</tt> class to print out debug
+     * The {@link Logger} used by the {@link Aes} class to print out debug
      * information.
      */
     private static final Logger logger = new LoggerImpl(Aes.class.getName());
 
     /**
      * The block size in bytes of the AES algorithm (implemented by the
-     * <tt>StreamCipher</tt>s initialized by the <tt>Aes</tt> class).
+     * {@link Cipher}s initialized by the {@link Aes} class).
      */
     private static final int BLOCK_SIZE = 16;
 
     /**
-     * The simple name of the <tt>StreamCipherFactory</tt> class/interface which
+     * The simple name of the {@link CipherFactory} class/interface which
      * is used as a class name suffix by the well-known
-     * <tt>StreamCipherFactory</tt> implementations.
+     * {@link CipherFactory} implementations.
      */
     private static final String CIPHER_FACTORY_SIMPLE_CLASS_NAME
         = CipherFactory.class.getSimpleName();
 
     /**
-     * The <tt>StreamCipherFactory</tt> implemented with BouncyCastle. It is the
-     * well-known fallback.
+     * The default {@link CipherFactory} which is used as fallback.
      */
     private static final CipherFactory DEFAULT_FACTORY
         = new SunJCECipherFactory();
 
     /**
-     * The <tt>StreamCipherFactory</tt> implementations known to the <tt>Aes</tt>
+     * The {@link CipherFactory} implementations known to the {@link Aes}
      * class among which the fastest is to be elected as {@link #factory}.
      */
     private static CipherFactory[] factories;
 
     /**
-     * The <tt>StreamCipherFactory</tt> implementation which is (to be) used by
-     * the class <tt>Aes</tt> to initialize <tt>StreamCipher</tt>s.
+     * The {@link CipherFactory} implementation which is (to be) used by
+     * the class {@link Aes} to initialize {@link Cipher}s.
      */
     private static CipherFactory factory;
 
     /**
-     * The name of the class to instantiate as a <tt>StreamCipherFactory</tt>
-     * implementation to be used by the class <tt>Aes</tt> to initialize
-     * <tt>StreamCipher</tt>s.
+     * The name of the class to instantiate as a {@link CipherFactory}
+     * implementation to be used by the class {@link Aes} to initialize
+     * {@link Cipher}s.
      */
     private static String FACTORY_CLASS_NAME = null;
 
     /**
-     * The <tt>Class</tt>es of the well-known <tt>StreamCipherFactory</tt>
+     * The {@link Class}es of the well-known {@link CipherFactory}
      * implementations.
      */
     private static final Class<?>[] FACTORY_CLASSES
@@ -98,8 +97,8 @@ public class Aes
     public static final long FACTORY_TIMEOUT = TimeUnit.SECONDS.toNanos(60);
 
     /**
-     * The class to instantiate as a <tt>StreamCipherFactory</tt> implementation
-     * to be used to initialized <tt>StreamCipher</tt>s.
+     * The class to instantiate as a {@link CipherFactory} implementation
+     * to be used to initialized {@link Cipher}s.
      *
      * @see #FACTORY_CLASS_NAME
      */
@@ -137,7 +136,7 @@ public class Aes
 
     /**
      * The random number generator which generates keys and inputs for the
-     * benchmarking of the <tt>StreamCipherFactory</tt> implementations.
+     * benchmarking of the {@link CipherFactory} implementations.
      */
     private static final Random random = new Random();
 
@@ -151,13 +150,13 @@ public class Aes
     }
 
     /**
-     * Benchmarks a specific array/list of <tt>StreamCipherFactory</tt> instances
+     * Benchmarks a specific array/list of {@link CipherFactory} instances
      * and returns the fastest-performing element.
      *
-     * @param factories the <tt>StreamCipherFactory</tt> instances to benchmark
+     * @param factories the {@link CipherFactory} instances to benchmark
      * @param keySize AES key size (16, 24, 32 bytes)
-     * @return the fastest-performing <tt>StreamCipherFactory</tt> among the
-     * specified <tt>factories</tt>
+     * @return the fastest-performing {@link CipherFactory} among the
+     * specified {@code factories}
      */
     private static CipherFactory benchmark(
             CipherFactory[] factories,
@@ -193,7 +192,7 @@ public class Aes
 
                 if (cipher == null)
                 {
-                    // The StreamCipherFactory failed to initialize a new
+                    // The CipherFactory failed to initialize a new
                     // StreamCipher instance. We will not use it again because
                     // the failure may persist.
                     factories[f] = null;
@@ -252,11 +251,11 @@ public class Aes
     }
 
     /**
-     * Initializes a new <tt>StreamCipher</tt> instance which implements Advanced
+     * Initializes a new {@link Cipher} instance which implements Advanced
      * Encryption Standard (AES) CTR mode.
      * @param keySize length of the AES key (16, 24, 32 bytes)
      *
-     * @return a new <tt>StreamCipher</tt> instance which implements Advanced
+     * @return a new {@link Cipher} instance which implements Advanced
      * Encryption Standard (AES) in CTR mode
      */
     public static Cipher createStreamCipher(int keySize)
@@ -274,7 +273,7 @@ public class Aes
             {
                 try
                 {
-                    factory = getStreamCipherFactory(keySize);
+                    factory = getCipherFactory(keySize);
                 }
                 catch (Throwable t)
                 {
@@ -307,7 +306,7 @@ public class Aes
                     if (Aes.factory != factory)
                     {
                         Aes.factory = factory;
-                        // Simplify the name of the StreamCipherFactory class to
+                        // Simplify the name of the CipherFactory class to
                         // be employed for the purposes of brevity and ease.
                         logger.info(() ->
                                 "Will employ AES implemented by "
@@ -339,7 +338,7 @@ public class Aes
             return null;
         }
         // Support specifying FACTORY_CLASS_NAME without a package and
-        // without StreamCipherFactory at the end for the purposes of
+        // without CipherFactory at the end for the purposes of
         // brevity and ease.
         if (Character.isUpperCase(factoryClassName.charAt(0))
             && !factoryClassName.contains(".")
@@ -354,22 +353,22 @@ public class Aes
     }
 
     /**
-     * Initializes the <tt>StreamCipherFactory</tt> instances to be benchmarked
-     * by the class <tt>Aes</tt> and among which the fastest-performing one is
+     * Initializes the {@link CipherFactory} instances to be benchmarked
+     * by the class {@link Aes} and among which the fastest-performing one is
      * to be selected.
      * 
-     * @return the <tt>StreamCipherFactory</tt> instances to be benchmarked by
-     * the class <tt>Aes</tt> and among which the fastest-performing one is to
+     * @return the {@link CipherFactory} instances to be benchmarked by
+     * the class {@link Aes} and among which the fastest-performing one is to
      * be selected
      */
     @SuppressWarnings("unchecked")
     private static CipherFactory[] createCipherFactories()
     {
-        // The user may have specified a specific StreamCipherFactory class
+        // The user may have specified a specific CipherFactory class
         // (name) through setFactoryClassName(String). Practically, the specified FACTORY_CLASS_NAME
         // will override all other FACTORY_CLASSES and, consequently, it does
         // not seem necessary to try FACTORY_CLASSES at all. Technically though,
-        // the specified StreamCipherFactory may malfunction. That is why all
+        // the specified CipherFactory may malfunction. That is why all
         // FACTORY_CLASSES are tried as well and FACTORY_CLASS_NAME is selected
         // later on after it has proven itself functional.
         Class<? extends CipherFactory> factoryClass = Aes.factoryClass;
@@ -469,12 +468,12 @@ public class Aes
     }
 
     /**
-     * Initializes <tt>StreamCipherFactory</tt> instances of specific
-     * <tt>Class</tt>es.
+     * Initializes {@link CipherFactory} instances of specific
+     * {@link Class}es.
      *
-     * @param classes the runtime <tt>Class</tt>es to instantiate
-     * @return the <tt>StreamCipherFactory</tt> instances initialized by the
-     * specified <tt>classes</tt>
+     * @param classes the runtime {@link Class}es to instantiate
+     * @return the {@link CipherFactory} instances initialized by the
+     * specified {@code classes}
      */
     private static CipherFactory[] createCipherFactories(
             Class<?>[] classes)
@@ -510,39 +509,39 @@ public class Aes
     }
 
     /**
-     * Gets a <tt>StreamCipherFactory</tt> instance to be used by the
-     * <tt>Aes</tt> class to initialize <tt>StreamCipher</tt>s.
+     * Gets a {@link CipherFactory} instance to be used by the
+     * {@link Aes} class to initialize {@link Cipher}s.
      *
      * <p>
-     * Benchmarks the well-known <tt>StreamCipherFactory</tt> implementations and
+     * Benchmarks the well-known {@link CipherFactory} implementations and
      * returns the fastest one. 
      * </p>
      * @param keySize AES key size (16, 24, 32 bytes)
      *
-     * @return a <tt>StreamCipherFactory</tt> instance to be used by the
-     * <tt>Aes</tt> class to initialize <tt>StreamCipher</tt>s
+     * @return a {@link CipherFactory} instance to be used by the
+     * {@link Aes} class to initialize {@link Cipher}s
      */
-    private static CipherFactory getStreamCipherFactory(int keySize)
+    private static CipherFactory getCipherFactory(int keySize)
     {
         CipherFactory[] factories = Aes.factories;
 
         if (factories == null)
         {
-            // A single instance of each well-known StreamCipherFactory
+            // A single instance of each well-known CipherFactory
             // implementation will be initialized i.e. the attempt to initialize
-            // StreamCipherFactory instances will be made once only.
+            // CipherFactory instances will be made once only.
             Aes.factories = factories = createCipherFactories();
         }
 
         // Benchmark the StreamCiphers provided by the available
         // StreamCipherFactories in order to select the fastest-performing
-        // StreamCipherFactory.
+        // CipherFactory.
         CipherFactory minFactory = benchmark(factories, keySize);
 
-        // The user may have specified a specific StreamCipherFactory class
+        // The user may have specified a specific CipherFactory class
         // (name) through setFactoryClassName(String), Practically, FACTORY_CLASS_NAME may override
         // minFactory and, consequently, it may appear that the benchmark is
-        // unnecessary. Technically though, the specified StreamCipherFactory may
+        // unnecessary. Technically though, the specified CipherFactory may
         // malfunction. That is why FACTORY_CLASS_NAME is selected after it has
         // proven itself functional.
         {
@@ -566,14 +565,14 @@ public class Aes
     }
 
     /**
-     * Gets the simple name of the runtime <tt>Class</tt> of a specific
-     * <tt>StreamCipherFactory</tt> to be used for display purposes of brevity
+     * Gets the simple name of the runtime {@link Class} of a specific
+     * {@link CipherFactory} to be used for display purposes of brevity
      * and readability.
      *
-     * @param factory the <tt>StreamCipherFactory</tt> for which a simple class
+     * @param factory the {@link CipherFactory} for which a simple class
      * name is to be returned
-     * @return the simple name of the runtime <tt>Class</tt> of the specified
-     * <tt>factory</tt> to be used for display purposes of brevity and
+     * @return the simple name of the runtime {@link Class} of the specified
+     * {@code factory} to be used for display purposes of brevity and
      * readability
      */
     private static String getSimpleClassName(CipherFactory factory)
@@ -616,7 +615,7 @@ public class Aes
     }
 
     /**
-     * Implements <tt>StreamCipherFactory</tt> using Jitsi SRTP's OpenSSL.
+     * Implements {@link CipherFactory} using Jitsi SRTP's OpenSSL.
      *
      * @author Lyubomir Marinov
      */
@@ -630,7 +629,7 @@ public class Aes
     }
 
     /**
-     * Implements <tt>StreamCipherFactory</tt> using BouncyCastle.
+     * Implements {@link CipherFactory} using BouncyCastle.
      *
      * @author Lyubomir Marinov
      */
@@ -644,7 +643,7 @@ public class Aes
     }
 
     /**
-     * Implements <tt>StreamCipherFactory</tt> using Sun JCE.
+     * Implements {@link CipherFactory} using Sun JCE.
      *
      * @author Lyubomir Marinov
      */
@@ -658,7 +657,7 @@ public class Aes
     }
 
     /**
-     * Implements <tt>StreamCipherFactory</tt> using Sun PKCS#11.
+     * Implements {@link CipherFactory} using Sun PKCS#11.
      *
      * @author Lyubomir Marinov
      */
@@ -666,25 +665,25 @@ public class Aes
         extends CipherFactory
     {
         /**
-         * The <tt>java.security.Provider</tt> instance (to be) employed for an
-         * (optimized) AES implementation.
+         * The {@link Provider} instance (to be) employed for an (optimized) AES
+         * implementation.
          */
         private static Provider provider;
 
         /**
          * The indicator which determines whether {@link #provider} is to be
-         * used. If <tt>true</tt>, an attempt will be made to initialize a
-         * <tt>java.security.Provider</tt> instance. If the attempt fails,
-         * <tt>false</tt> will be assigned in order to not repeatedly attempt
-         * the initialization which is known to have failed.
+         * used. If {@code true}, an attempt will be made to initialize a {@link
+         * Provider} instance. If the attempt fails, {@code false} will be
+         * assigned in order to not repeatedly attempt the initialization which
+         * is known to have failed.
          */
         private static boolean useProvider = true;
 
         /**
-         * Gets the <tt>java.security.Provider</tt> instance (to be) employed
+         * Gets the {@code java.security.Provider} instance (to be) employed
          * for an (optimized) AES implementation.
          *
-         * @return the <tt>java.security.Provider</tt> instance (to be) employed
+         * @return the {@code java.security.Provider} instance (to be) employed
          * for an (optimized) AES implementation
          */
         private static synchronized Provider getProvider()
@@ -734,10 +733,10 @@ public class Aes
         }
 
         /**
-         * Initializes a new <tt>SunPKCS11StreamCipherFactory</tt> instance.
+         * Initializes a new instance of this class.
          *
          * @throws Exception if anything goes wrong while initializing a new
-         * <tt>SunPKCS11StreamCipherFactory</tt> instance
+         *                   instance
          */
         public SunPKCS11CipherFactory()
             throws Exception

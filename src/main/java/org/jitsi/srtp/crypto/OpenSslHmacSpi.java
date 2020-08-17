@@ -72,8 +72,7 @@ public class OpenSslHmacSpi
     private final long md;
 
     /**
-     * Initializes a new <tt>OpenSslHmac</tt> instance with a specific digest
-     * algorithm.
+     * Initializes a new of this class for {@code HMAC-SHA1}.
      */
     public OpenSslHmacSpi()
     {

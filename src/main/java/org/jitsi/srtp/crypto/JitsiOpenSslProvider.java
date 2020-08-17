@@ -22,10 +22,6 @@ import org.jitsi.utils.logging2.*;
 public class JitsiOpenSslProvider
     extends Provider
 {
-    /**
-     * The <tt>Logger</tt> used by the <tt>OpenSslWrapperLoader</tt> class to
-     * print out debug information.
-     */
     private static final Logger logger =
         new LoggerImpl(JitsiOpenSslProvider.class.getName());
 

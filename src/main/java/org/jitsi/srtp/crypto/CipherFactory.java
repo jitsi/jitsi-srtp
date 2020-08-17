@@ -21,16 +21,16 @@ import java.util.*;
 import javax.crypto.*;
 
 /**
- * Factory which initializes {@link Cipher}s that are implemented by a {@link
- * java.security.Provider}.
+ * Factory which initializes a {@link Cipher} that is implemented by a {@link
+ * Provider}.
  *
  * @author Lyubomir Marinov
  */
 public class CipherFactory
 {
     /**
-     * The <tt>java.security.Provider</tt> which provides the implementations of
-     * the <tt>StreamCipher</tt>s to be initialized by this instance.
+     * The {@link Provider} which provides the implementations of the {@link
+     * Cipher}s to be initialized by this instance.
      */
     private final Provider provider;
 
@@ -40,14 +40,13 @@ public class CipherFactory
     private final String transformation;
 
     /**
-     * Initializes a new <tt>SecurityProvider</tt> instance which is to
-     * initialize <tt>StreamCipher</tt>s that are implemented by a specific
-     * <tt>java.security.Provider</tt>.
+     * Initializes a new {@link CipherFactory} instance which is to
+     * initialize {@link Cipher}s that are implemented by a specific
+     * {@link Provider}.
      *
      * @param transformation the name of the transformation
-     * @param provider the <tt>java.security.Provider</tt> which provides the
-     * implementations of the <tt>StreamCipher</tt>s to be initialized by the new
-     * instance
+     * @param provider the {@link Provider} which provides the
+     * implementations of the {@link Cipher} to be initialized.
      */
     public CipherFactory(String transformation, Provider provider)
     {
@@ -56,14 +55,14 @@ public class CipherFactory
     }
 
     /**
-     * Initializes a new <tt>SecurityProvider</tt> instance which is to
-     * initialize <tt>StreamCipher</tt>s that are implemented by a specific
-     * <tt>java.security.Provider</tt>.
+     * Initializes a new {@link CipherFactory} instance which is to
+     * initialize {@link Cipher}s that are implemented by a specific
+     * {@link Provider}.
      *
      * @param transformation the name of the transformation
-     * @param providerName the name of the <tt>java.security.Provider</tt> which
-     * provides the implementations of the <tt>StreamCipher</tt>s to be
-     * initialized by the new instance
+     * @param providerName the name of the {@link Provider} which
+     * provides the implementations of the {@link Cipher} to be
+     * initialized
      */
     public CipherFactory(String transformation, String providerName)
     {

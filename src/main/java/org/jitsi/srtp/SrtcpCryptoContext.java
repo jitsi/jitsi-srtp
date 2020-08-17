@@ -240,8 +240,8 @@ public class SrtcpCryptoContext
      * managed transportation) instead.
      *
      * @param pkt the received RTCP packet
-     * @return <tt>SrtpErrorStatus#OK</tt> if the packet can be accepted or another
-     * error status if authentication or replay check failed
+     * @return {@link SrtpErrorStatus#OK} if the packet can be accepted or
+     * another error status if authentication or replay check failed
      */
     synchronized public SrtpErrorStatus reverseTransformPacket(ByteArrayBuffer pkt)
         throws GeneralSecurityException
