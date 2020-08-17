@@ -31,14 +31,23 @@ public class JitsiOpenSslProvider
      */
     private static boolean libraryLoaded = false;
 
+    private static native boolean OpenSSL_Init();
+
     static
     {
         try
         {
             JNIUtils.loadLibrary("jitsisrtp",
                 JitsiOpenSslProvider.class.getClassLoader());
-            logger.info(() -> "jitsisrtp successfully loaded");
-            libraryLoaded = true;
+            if (OpenSSL_Init())
+            {
+                logger.info(() -> "jitsisrtp successfully loaded");
+                libraryLoaded = true;
+            }
+            else
+            {
+                logger.warn(() -> "OpenSSL_Init failed");
+            }
         }
         catch (Throwable t)
         {
