@@ -686,7 +686,7 @@ public class Aes
          * @return the {@code java.security.Provider} instance (to be) employed
          * for an (optimized) AES implementation
          */
-        private static synchronized Provider getProvider()
+        public static synchronized Provider getProvider()
             throws Exception
         {
             Provider provider = SunPKCS11CipherFactory.provider;

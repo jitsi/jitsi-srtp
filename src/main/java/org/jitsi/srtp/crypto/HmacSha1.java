@@ -19,6 +19,7 @@ import java.security.*;
 import java.util.*;
 import javax.crypto.Mac;
 import org.bouncycastle.jce.provider.*;
+import org.jitsi.srtp.crypto.Aes.*;
 import org.jitsi.utils.logging2.*;
 
 /**
@@ -43,7 +44,20 @@ public class HmacSha1
         {
             providers.add(new JitsiOpenSslProvider());
         }
+
         providers.add(Security.getProvider("SunJCE"));
+        try
+        {
+            Provider pkcs11Provider = SunPKCS11CipherFactory.getProvider();
+            if (pkcs11Provider != null)
+            {
+                providers.add(pkcs11Provider);
+            }
+        }
+        catch (Exception e)
+        {
+            parentLogger.debug(() -> "PKCS#11 provider not available for HMAC: " + e.getMessage());
+        }
         providers.add(new BouncyCastleProvider());
 
         // Try providers in order
