@@ -251,52 +251,72 @@ public class SrtpPolicy
 
     /**
      * Set whether send-side RTP replay protection is to be enabled.
+     * <p>
+     * Turn this off if you need to send identical packets more than once (e.g.,
+     * retransmission to a peer that does not support the rtx payload.)
+     * <b>Note</b>: Never re-send a packet with a different payload!
      *
-     * Turn this off if you need to send identical packets more than once (e.g., retransmission to
-     * a peer that does not support the rtx payload.)  <b>Note</b>: Never re-send a packet with a different
-     * payload!
-     *
-     * @param enabled <tt>true</tt> if send-side replay protection is to be enabled; <tt>false</tt> if not.
+     * @param enabled {@code true} if send-side replay protection is to be
+     *                enabled; {@code false} if not.
      */
-    public void setSendReplayEnabled(boolean enabled) { sendReplayEnabled = enabled; }
+    public void setSendReplayEnabled(boolean enabled)
+    {
+        sendReplayEnabled = enabled;
+    }
 
     /**
      * Get whether send-side RTP replay protection is enabled.
      *
      * @see #isSendReplayDisabled
      */
-    public boolean isSendReplayEnabled() { return sendReplayEnabled; }
+    public boolean isSendReplayEnabled()
+    {
+        return sendReplayEnabled;
+    }
 
     /**
      * Get whether send-side RTP replay protection is disabled.
      *
      * @see #isSendReplayEnabled
      */
-    public boolean isSendReplayDisabled() { return !sendReplayEnabled; }
+    public boolean isSendReplayDisabled()
+    {
+        return !sendReplayEnabled;
+    }
 
     /**
      * Set whether receive-side RTP replay protection is to be enabled.
-     *
-     * Turn this off if you need to be able to receive identical packets more than once (e.g., if you are
-     * an RTP translator, with peers that are doing retransmission without using the rtx payload.)
+     * <p>
+     * Turn this off if you need to be able to receive identical packets more
+     * than once (e.g., if you are an RTP translator, with peers that are doing
+     * retransmission without using the rtx payload.)
      * <b>Note</b>: You must make sure your packet handling is idempotent!
      *
-     * @param enabled <tt>true</tt> if receive-side replay protection is to be enabled; <tt>false</tt> if not.
+     * @param enabled {@code true} if receive-side replay protection is to be
+     *                enabled; {@code false} if not.
      */
-    public void setReceiveReplayEnabled(boolean enabled) { receiveReplayEnabled = enabled; }
+    public void setReceiveReplayEnabled(boolean enabled)
+    {
+        receiveReplayEnabled = enabled;
+    }
 
     /**
      * Get whether receive-side RTP replay protection is enabled.
      *
      * @see #isReceiveReplayDisabled
      */
-    public boolean isReceiveReplayEnabled() { return receiveReplayEnabled; }
+    public boolean isReceiveReplayEnabled()
+    {
+        return receiveReplayEnabled;
+    }
 
     /**
      * Get whether receive-side RTP replay protection is enabled.
      *
      * @see #isReceiveReplayEnabled
      */
-    public boolean isReceiveReplayDisabled() { return !receiveReplayEnabled; }
-
+    public boolean isReceiveReplayDisabled()
+    {
+        return !receiveReplayEnabled;
+    }
 }

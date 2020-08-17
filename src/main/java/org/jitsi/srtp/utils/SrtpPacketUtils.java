@@ -38,12 +38,12 @@ public class SrtpPacketUtils
 
 
     /**
-     * Returns <tt>true</tt> if the extension bit of an SRTP packet has been set
-     * and <tt>false</tt> otherwise.
+     * Returns {@code true} if the extension bit of an SRTP packet has been set
+     * and {@code false} otherwise.
      *
      * @param buf The SRTP packet.
-     * @return  <tt>true</tt> if the extension bit of this packet has been set
-     * and <tt>false</tt> otherwise.
+     * @return  {@code true} if the extension bit of this packet has been set
+     * and {@code false} otherwise.
      */
     static boolean getExtensionBit(ByteArrayBuffer buf)
     {
