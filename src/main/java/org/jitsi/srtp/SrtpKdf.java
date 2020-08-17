@@ -79,6 +79,7 @@ class SrtpKdf
         {
         case SrtpPolicy.AESF8_ENCRYPTION:
         case SrtpPolicy.AESCM_ENCRYPTION:
+        case SrtpPolicy.AESGCM_ENCRYPTION:
             // use OpenSSL if available and AES128 is in use
             if (OpenSslWrapperLoader.isLoaded() && encKeyLength == 16)
             {
@@ -127,12 +128,15 @@ class SrtpKdf
             return;
         }
 
-        assert(masterSalt.length == 14);
+        assert(masterSalt.length < ivStore.length);
         System.arraycopy(masterSalt, 0, ivStore, 0, masterSalt.length);
 
         ivStore[7] ^= label;
-        ivStore[14] = 0;
-        ivStore[15] = 0;
+        for (int i = masterSalt.length; i < ivStore.length; i++)
+        {
+            ivStore[i] = 0;
+            ivStore[i] = 0;
+        }
 
         Arrays.fill(sessKey, (byte)0);
         cipherCtr.process(sessKey, 0, sessKey.length, ivStore);
