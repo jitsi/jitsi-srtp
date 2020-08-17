@@ -228,6 +228,7 @@ public class BaseSrtpCryptoContext
         case SrtpPolicy.AESGCM_ENCRYPTION:
             /* TODO choose implementation */
             cipherGcm = new SrtpCipherGcmBC(new GCMBlockCipher(new AESEngine()));
+            saltKey = new byte[saltKeyLength];
             break;
 
         case SrtpPolicy.TWOFISHF8_ENCRYPTION:
