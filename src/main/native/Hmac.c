@@ -54,7 +54,19 @@ JNIEXPORT jlong JNICALL
 Java_org_jitsi_srtp_crypto_OpenSslHmacSpi_HMAC_1CTX_1create
     (JNIEnv *env, jclass clazz)
 {
+/* OpenSSL 1.1.0 made HMAC_CTX an opaque structure, which must be allocated
+   using HMAC_CTX_new.  But this function doesn't exist in OpenSSL 1.0.x. */
+#if OPENSSL_VERSION_NUMBER < 0x10100000L || (LIBRESSL_VERSION_NUMBER && LIBRESSL_VERSION_NUMBER < 0x20700000L)
+    HMAC_CTX *ctx = malloc(sizeof(HMAC_CTX));
+
+    if (ctx)
+        HMAC_CTX_init(ctx);
+
+#else
     HMAC_CTX *ctx = HMAC_CTX_new();
+
+#endif
+
     return (jlong) (intptr_t) ctx;
 }
 
@@ -68,7 +80,15 @@ Java_org_jitsi_srtp_crypto_OpenSslHmacSpi_HMAC_1CTX_1destroy
     (JNIEnv *env, jclass clazz, jlong ctx)
 {
     HMAC_CTX *ctx_ = (HMAC_CTX *) (intptr_t) ctx;
+
+#if OPENSSL_VERSION_NUMBER < 0x10100000L  || (LIBRESSL_VERSION_NUMBER && LIBRESSL_VERSION_NUMBER < 0x20700000L)
+    HMAC_CTX_cleanup(ctx_);
+    free(ctx_);
+
+#else
     HMAC_CTX_free(ctx_);
+
+#endif
 }
 
 /*

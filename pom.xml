@@ -158,6 +158,8 @@
                                     <directory>src/main/native</directory>
                                     <fileNames>
                                         <fileName>Hmac.c</fileName>
+                                        <fileName>JitsiOpenSslProvider.c
+                                        </fileName>
                                         <fileName>SrtpCipherCtrOpenSsl.c
                                         </fileName>
                                     </fileNames>
