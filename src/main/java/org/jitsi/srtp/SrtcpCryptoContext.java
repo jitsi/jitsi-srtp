@@ -215,7 +215,8 @@ public class SrtcpCryptoContext
                 ivStore);
     }
 
-    private SrtpErrorStatus processPacketAesGcm(ByteArrayBuffer pkt, int index, boolean forEncryption)
+    private SrtpErrorStatus processPacketAesGcm(ByteArrayBuffer pkt, int index,
+        boolean encrypt, boolean forEncryption)
     {
         int ssrc = SrtcpPacketUtils.getSenderSsrc(pkt);
 
@@ -232,41 +233,63 @@ public class SrtcpCryptoContext
         ivStore[1] = saltKey[1];
 
         // The shifts transform the ssrc and index into network order
-        ivStore[2] = (byte) (((ssrc >> 24) & 0xff) ^ saltKey[4]);
-        ivStore[3] = (byte) (((ssrc >> 16) & 0xff) ^ saltKey[5]);
-        ivStore[4] = (byte) (((ssrc >> 8) & 0xff) ^ saltKey[6]);
-        ivStore[5] = (byte) ((ssrc & 0xff) ^ saltKey[7]);
+        ivStore[2] = (byte) (((ssrc >> 24) & 0xff) ^ saltKey[2]);
+        ivStore[3] = (byte) (((ssrc >> 16) & 0xff) ^ saltKey[3]);
+        ivStore[4] = (byte) (((ssrc >> 8) & 0xff) ^ saltKey[4]);
+        ivStore[5] = (byte) ((ssrc & 0xff) ^ saltKey[5]);
 
-        ivStore[6] = saltKey[8];
-        ivStore[7] = saltKey[9];
+        ivStore[6] = saltKey[6];
+        ivStore[7] = saltKey[7];
 
-        ivStore[8] = (byte) (((index >> 24) & 0xff) ^ saltKey[10]);
-        ivStore[9] = (byte) (((index >> 16) & 0xff) ^ saltKey[11]);
-        ivStore[10] = (byte) (((index >> 8) & 0xff) ^ saltKey[12]);
-        ivStore[11] = (byte) ((index & 0xff) ^ saltKey[13]);
-
-        ivStore[12] = ivStore[13] = ivStore[14] = ivStore[15] = 0;
+        ivStore[8] = (byte) (((index >> 24) & 0xff) ^ saltKey[8]);
+        ivStore[9] = (byte) (((index >> 16) & 0xff) ^ saltKey[9]);
+        ivStore[10] = (byte) (((index >> 8) & 0xff) ^ saltKey[10]);
+        ivStore[11] = (byte) ((index & 0xff) ^ saltKey[11]);
 
         cipherGcm.reset(forEncryption, ivStore);
 
-        // Encrypted part excludes fixed header (8 bytes)
-        int payloadOffset = 8;
-
-        cipherGcm.processAad(pkt.getBuffer(), pkt.getOffset(), payloadOffset);
-        writeRoc(index);
-        cipherGcm.processAad(rbStore, 0, 4);
-
-        try
+        if (encrypt)
         {
-            int lenDelta = cipherGcm.process(
-                pkt.getBuffer(),
-                pkt.getOffset() + payloadOffset,
-                pkt.getLength() - payloadOffset);
+            // Need the encryption flag
+            index = index | 0x80000000;
 
-            pkt.setLength(pkt.getLength() + lenDelta);
+            // Encrypted part excludes fixed header (8 bytes)
+            int payloadOffset = 8;
+
+            cipherGcm.processAad(pkt.getBuffer(), pkt.getOffset(), payloadOffset);
+            writeRoc(index);
+            cipherGcm.processAad(rbStore, 0, 4);
+
+            try
+            {
+                int lenDelta = cipherGcm.process(
+                    pkt.getBuffer(),
+                    pkt.getOffset() + payloadOffset,
+                    pkt.getLength() - payloadOffset);
+
+                pkt.setLength(pkt.getLength() + lenDelta);
+            }
+            catch (SrtpCipherGcm.BadAuthTag e)
+            {
+                return SrtpErrorStatus.AUTH_FAIL;
+            }
         }
-        catch (SrtpCipherGcm.BadAuthTag e) {
-            return SrtpErrorStatus.AUTH_FAIL;
+        else {
+            cipherGcm.processAad(pkt.getBuffer(), pkt.getOffset(), pkt.getLength());
+            writeRoc(index);
+            cipherGcm.processAad(rbStore, 0, 4);
+
+            try
+            {
+                int lenDelta = cipherGcm.process(
+                    pkt.getBuffer(), pkt.getLength(), 0);
+
+                pkt.setLength(pkt.getLength() + lenDelta);
+            }
+            catch (SrtpCipherGcm.BadAuthTag e)
+            {
+                return SrtpErrorStatus.AUTH_FAIL;
+            }
         }
         return SrtpErrorStatus.OK;
     }
@@ -331,7 +354,17 @@ public class SrtcpCryptoContext
             /* Too short to be a valid SRTCP packet */
             return SrtpErrorStatus.INVALID_PACKET;
 
-        int indexEflag = SrtcpPacketUtils.getIndex(pkt, tagLength);
+        int indexEflag;
+
+        if (policy.getEncType() == SrtpPolicy.AESGCM_ENCRYPTION)
+        {
+            /* For GCM the index is after the tag, rather than before it. */
+            indexEflag = SrtcpPacketUtils.getIndex(pkt, 0);
+        }
+        else
+        {
+            indexEflag = SrtcpPacketUtils.getIndex(pkt, tagLength);
+        }
 
         if ((indexEflag & 0x80000000) == 0x80000000)
             decrypt = true;
@@ -380,7 +413,8 @@ public class SrtcpCryptoContext
             }
 
             else if (policy.getEncType() == SrtpPolicy.AESGCM_ENCRYPTION) {
-                err = processPacketAesGcm(pkt, index, false);
+                pkt.shrink(4); /* Index is processed separately as part of AAD. */
+                err = processPacketAesGcm(pkt, index, true, false);
                 if (err != SrtpErrorStatus.OK)
                 {
                     return err;
@@ -395,7 +429,7 @@ public class SrtcpCryptoContext
             }
         }
         else if (policy.getEncType() == SrtpPolicy.AESGCM_ENCRYPTION) {
-            err = processPacketAesGcm(pkt, index, false);
+            err = processPacketAesGcm(pkt, index, false, false);
             if (err != SrtpErrorStatus.OK)
             {
                 return err;
@@ -441,7 +475,7 @@ public class SrtcpCryptoContext
              * non-encrypted RTCP authenticated with GCM, but that's not generally
              * a thing one wants to do anyway.
              */
-            processPacketAesGcm(pkt, sentIndex, true);
+            processPacketAesGcm(pkt, sentIndex, true, true);
             pkt.append(rbStore, 4);
         }
 

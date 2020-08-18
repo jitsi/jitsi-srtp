@@ -91,7 +91,7 @@ public class BaseSrtpCryptoContext
     /**
      * Temp store.
      */
-    protected final byte[] ivStore = new byte[16];
+    protected final byte[] ivStore;
 
     /**
      * The HMAC object we used to do packet authentication
@@ -147,6 +147,7 @@ public class BaseSrtpCryptoContext
         cipherCtr = null;
         cipherGcm = null;
         cipherF8 = null;
+        ivStore = null;
         mac = null;
         policy = null;
         saltKey = null;
@@ -201,6 +202,7 @@ public class BaseSrtpCryptoContext
         SrtpCipherGcm cipherGcm = null;
         SrtpCipherF8 cipherF8 = null;
         byte[] saltKey = null;
+        byte[] ivStore = null;
 
         switch (policy.getEncType())
         {
@@ -222,12 +224,14 @@ public class BaseSrtpCryptoContext
                 cipherCtr
                     = new SrtpCipherCtrJava(Aes.createStreamCipher(encKeyLength));
             }
+            ivStore = new byte[16];
             saltKey = new byte[saltKeyLength];
             break;
 
         case SrtpPolicy.AESGCM_ENCRYPTION:
             /* TODO choose implementation */
             cipherGcm = new SrtpCipherGcmBC(new GCMBlockCipher(new AESEngine()));
+            ivStore = new byte[12];
             saltKey = new byte[saltKeyLength];
             break;
 
@@ -237,12 +241,14 @@ public class BaseSrtpCryptoContext
 
         case SrtpPolicy.TWOFISH_ENCRYPTION:
             cipherCtr = new SrtpCipherCtrJava(new SICBlockCipher(new TwofishEngine()));
+            ivStore = new byte[16];
             saltKey = new byte[saltKeyLength];
             break;
         }
         this.cipherCtr = cipherCtr;
         this.cipherGcm = cipherGcm;
         this.cipherF8 = cipherF8;
+        this.ivStore = ivStore;
         this.saltKey = saltKey;
 
         Mac mac;

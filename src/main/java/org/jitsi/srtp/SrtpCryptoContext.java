@@ -410,8 +410,6 @@ public class SrtpCryptoContext
                 );
         }
 
-        ivStore[12] = ivStore[13] = ivStore[14] = ivStore[15] = 0;
-
         cipherGcm.reset(forEncryption, ivStore);
 
         int rtpHeaderLength = SrtpPacketUtils.getTotalHeaderLength(pkt);
