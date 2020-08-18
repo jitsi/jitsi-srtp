@@ -91,7 +91,7 @@ public class OpenSslAesCipherSpi
     @Override
     protected int engineGetOutputSize(int inputLen)
     {
-        return BLKLEN;
+        return inputLen;
     }
 
     @Override
