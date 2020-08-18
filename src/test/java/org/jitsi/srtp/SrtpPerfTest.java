@@ -71,7 +71,10 @@ public class SrtpPerfTest {
     private void createContext(SrtpPolicy policy)
     {
         Logger logger = new LoggerImpl(getClass().getName());
-        factory = new SrtpContextFactory(true, test_key, test_key_salt, policy, policy, logger);
+        factory = new SrtpContextFactory(true,
+            Arrays.copyOf(test_key, policy.getEncKeyLength()),
+            Arrays.copyOf(test_key_salt, policy.getSaltKeyLength()),
+            policy, policy, logger);
         context = factory.deriveContext(0xcafebabe, 0);
     }
 
@@ -84,13 +87,8 @@ public class SrtpPerfTest {
         }
     }
 
-    public void doPerfTest(int num, int payloadSize, int numWarmups)
+    public void doPerfTest(SrtpPolicy policy, String desc, int num, int payloadSize, int numWarmups)
     {
-        SrtpPolicy policy =
-                new SrtpPolicy(SrtpPolicy.AESCM_ENCRYPTION, 128/8,
-                        SrtpPolicy.HMACSHA1_AUTHENTICATION, 160/8,
-                        80/8, 112/8 );
-
         createContext(policy);
         setupPacket(payloadSize, policy);
 
@@ -107,8 +105,28 @@ public class SrtpPerfTest {
         Duration elapsed = Duration.between(startTime, endTime);
         Duration average = elapsed.dividedBy(num);
 
-        System.out.printf("Executed %d SRTP enc/auth (%d byte payload) in %s: %.3f µs/pkt\n",
-                num, payloadSize, elapsed.toString(), average.toNanos() / 1000.0);
+        System.out.printf("Executed %d SRTP %s (%d byte payload) in %s: %.3f µs/pkt\n",
+                num, desc, payloadSize, elapsed.toString(), average.toNanos() / 1000.0);
+    }
+
+    public void doCtrPerfTest(int num, int payloadSize, int numWarmups)
+    {
+        SrtpPolicy policy =
+            new SrtpPolicy(SrtpPolicy.AESCM_ENCRYPTION, 128/8,
+                SrtpPolicy.HMACSHA1_AUTHENTICATION, 160/8,
+                80/8, 112/8 );
+
+        doPerfTest(policy, "CTR/HMAC", num, payloadSize, numWarmups);
+    }
+
+    public void doGcmPerfTest(int num, int payloadSize, int numWarmups)
+    {
+        SrtpPolicy policy =
+            new SrtpPolicy(SrtpPolicy.AESGCM_ENCRYPTION, 128/8,
+                SrtpPolicy.NULL_AUTHENTICATION, 0,
+                128/8, 96/8 );
+
+        doPerfTest(policy, "GCM", num, payloadSize, numWarmups);
     }
 
     private static final int DEFAULT_NUM_TESTS = 100000;
@@ -119,7 +137,13 @@ public class SrtpPerfTest {
     @Test
     public void srtpPerf()
     {
-        doPerfTest(DEFAULT_NUM_TESTS, DEFAULT_PAYLOAD_SIZE, DEFAULT_NUM_WARMUPS);
+        doCtrPerfTest(DEFAULT_NUM_TESTS, DEFAULT_PAYLOAD_SIZE, DEFAULT_NUM_WARMUPS);
+    }
+
+    @Test
+    public void srtpPerfGcm()
+    {
+        doGcmPerfTest(DEFAULT_NUM_TESTS, DEFAULT_PAYLOAD_SIZE, DEFAULT_NUM_WARMUPS);
     }
 
     private static final String progName = "SrtpPerfTest";
@@ -210,6 +234,7 @@ public class SrtpPerfTest {
         }
 
         SrtpPerfTest test = new SrtpPerfTest();
-        test.doPerfTest(numTests, payloadSize, numWarmups);
+        test.doCtrPerfTest(numTests, payloadSize, numWarmups);
+        test.doGcmPerfTest(numTests, payloadSize, numWarmups);
     }
 }
