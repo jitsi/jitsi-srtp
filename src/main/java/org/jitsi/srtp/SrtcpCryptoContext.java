@@ -186,9 +186,9 @@ public class SrtcpCryptoContext
         int payloadOffset = 8;
         int payloadLength = pkt.getLength() - payloadOffset;
 
+        cipher.setIV(ivStore, true);
         cipher.process(
-                pkt.getBuffer(), pkt.getOffset() + payloadOffset, payloadLength,
-                ivStore);
+                pkt.getBuffer(), pkt.getOffset() + payloadOffset, payloadLength);
     }
 
     /**
@@ -223,9 +223,9 @@ public class SrtcpCryptoContext
         int payloadOffset = 8;
         int payloadLength = pkt.getLength() - (4 + policy.getAuthTagLength());
 
+        cipher.setIV(ivStore, true);
         cipher.process(
-                pkt.getBuffer(), pkt.getOffset() + payloadOffset, payloadLength,
-                ivStore);
+                pkt.getBuffer(), pkt.getOffset() + payloadOffset, payloadLength);
     }
 
     /**

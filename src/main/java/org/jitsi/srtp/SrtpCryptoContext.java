@@ -343,11 +343,12 @@ public class SrtpCryptoContext
 
         int rtpHeaderLength = SrtpPacketUtils.getTotalHeaderLength(pkt);
 
+        cipher.setIV(ivStore, true);
+
         cipher.process(
                 pkt.getBuffer(),
                 pkt.getOffset() + rtpHeaderLength,
-                pkt.getLength() - rtpHeaderLength,
-                ivStore);
+                pkt.getLength() - rtpHeaderLength);
     }
 
     /**
@@ -373,11 +374,12 @@ public class SrtpCryptoContext
 
         int rtpHeaderLength = SrtpPacketUtils.getTotalHeaderLength(pkt);
 
+        cipher.setIV(ivStore, true);
+
         cipher.process(
                 pkt.getBuffer(),
                 pkt.getOffset() + rtpHeaderLength,
-                pkt.getLength() - rtpHeaderLength,
-                ivStore);
+                pkt.getLength() - rtpHeaderLength);
     }
 
     /**
@@ -400,6 +402,10 @@ public class SrtpCryptoContext
     synchronized public SrtpErrorStatus reverseTransformPacket(ByteArrayBuffer pkt, boolean skipDecryption)
         throws GeneralSecurityException
     {
+        if (sender)
+        {
+            throw new IllegalStateException("reverseTransformPacket called on SRTP sender");
+        }
         if (!SrtpPacketUtils.validatePacketLength(pkt, policy.getAuthTagLength()))
         {
             /* Too short to be a valid SRTP packet */
@@ -500,6 +506,10 @@ public class SrtpCryptoContext
     synchronized public SrtpErrorStatus transformPacket(ByteArrayBuffer pkt)
         throws GeneralSecurityException
     {
+        if (!sender)
+        {
+            throw new IllegalStateException("transformPacket called on SRTP receiver");
+        }
         int seqNo = SrtpPacketUtils.getSequenceNumber(pkt);
 
         if (!seqNumSet)

@@ -49,11 +49,35 @@ public class SrtpCipherCtr
     }
 
     @Override
-    public void process(byte[] data, int off, int len, byte[] iv)
+    public void setIV(byte[] iv, boolean enc) throws GeneralSecurityException
+    {
+        if (iv.length != cipher.getBlockSize())
+        {
+            throw new IllegalArgumentException("iv.length != BLKLEN");
+        }
+
+        int mode = enc ? Cipher.ENCRYPT_MODE : Cipher.DECRYPT_MODE;
+        cipher.init(mode, key, new IvParameterSpec(iv));
+    }
+
+    @Override
+    public void processAAD(byte[] data, int off, int len)
         throws GeneralSecurityException
     {
-        checkProcessArgs(data, off, len, iv);
-        cipher.init(Cipher.ENCRYPT_MODE, key, new IvParameterSpec(iv));
-        cipher.update(data, off, len, data, off);
+        throw new IllegalStateException("CTR mode does not accept AAD");
+    }
+
+    @Override
+    public int process(byte[] data, int off, int len)
+        throws GeneralSecurityException
+    {
+        return cipher.update(data, off, len, data, off);
+    }
+
+    @Override
+    public int finish(byte[] data, int off) throws GeneralSecurityException
+    {
+        /* Should be a no-op for CTR mode */
+        return cipher.doFinal(null, 0, 0, data, off);
     }
 }

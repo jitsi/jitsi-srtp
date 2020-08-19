@@ -54,12 +54,14 @@ public class SrtpCipherCtrTest
 
         Arrays.fill(data, (byte) 0);
         byte[] iv = Arrays.copyOf(TV_IV_1, TV_IV_1.length);
-        cipher.process(data, 0, data.length, iv);
+        cipher.setIV(iv, true);
+        cipher.process(data, 0, data.length);
         assertArrayEquals(TV_Cipher_AES_1, data);
 
         Arrays.fill(data, (byte) 0);
         iv = Arrays.copyOf(TV_IV_2, TV_IV_2.length);
-        cipher.process(data, 0, data.length, iv);
+        cipher.setIV(iv, true);
+        cipher.process(data, 0, data.length);
         assertArrayEquals(TV_Cipher_AES_2, data);
     }
 
@@ -84,12 +86,14 @@ public class SrtpCipherCtrTest
 
         Arrays.fill(data, (byte) 0);
         byte[] iv = Arrays.copyOf(TV_IV_1, TV_IV_1.length);
-        cipher.process(data, 0, data.length, iv);
+        cipher.setIV(iv, true);
+        cipher.process(data, 0, data.length);
         assertArrayEquals(TV_Cipher_AES_1, data);
 
         Arrays.fill(data, (byte) 0);
         iv = Arrays.copyOf(TV_IV_2, TV_IV_2.length);
-        cipher.process(data, 0, data.length, iv);
+        cipher.setIV(iv, true);
+        cipher.process(data, 0, data.length);
         assertArrayEquals(TV_Cipher_AES_2, data);
     }
 }

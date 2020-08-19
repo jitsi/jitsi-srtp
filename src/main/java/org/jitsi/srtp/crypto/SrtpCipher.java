@@ -42,30 +42,17 @@ public abstract class SrtpCipher
     public abstract void init(byte[] k_e, byte[] k_s)
         throws GeneralSecurityException;
 
-    public abstract void process(byte[] data, int off, int len, byte[] iv)
+    public abstract void setIV(byte[] iv, boolean enc)
         throws GeneralSecurityException;
 
-    /**
-     * Check the validity of process function arguments
-     */
-    protected void checkProcessArgs(byte[] data, int off, int len, byte[] iv)
-    {
-        if (iv.length != cipher.getBlockSize())
-            throw new IllegalArgumentException("iv.length != BLKLEN");
-        if (off < 0)
-            throw new IllegalArgumentException("off < 0");
-        if (len < 0)
-            throw new IllegalArgumentException("len < 0");
-        if (off + len > data.length)
-            throw new IllegalArgumentException("off + len > data.length");
+    public abstract void processAAD(byte[] data, int off, int len)
+        throws GeneralSecurityException;
 
-        // we increment only the last 16 bits of the iv, so we can encrypt
-        // a maximum of 2^16 blocks, ie 1048576 bytes
-        if (data.length > 1048576)
-        {
-            throw new IllegalArgumentException("data.length > 1048576");
-        }
-    }
+    public abstract int process(byte[] data, int off, int len)
+        throws GeneralSecurityException;
+
+    public abstract int finish(byte[] data, int off)
+        throws GeneralSecurityException;
 
     protected SecretKeySpec getSecretKey(byte[] key)
     {

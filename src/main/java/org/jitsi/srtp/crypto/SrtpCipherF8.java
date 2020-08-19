@@ -71,6 +71,8 @@ public class SrtpCipherF8 extends SrtpCipher
      */
     private SecretKeySpec maskedKey;
 
+    private F8Context f8ctx;
+
     public SrtpCipherF8(Cipher cipher)
     {
         super(cipher);
@@ -102,16 +104,18 @@ public class SrtpCipherF8 extends SrtpCipher
     }
 
     @Override
-    public void process(byte[] data, int off, int len, byte[] iv)
-        throws InvalidKeyException, ShortBufferException
+    public void setIV(byte[] iv, boolean enc) throws GeneralSecurityException
     {
-        checkProcessArgs(data, off, len, iv);
+        if (iv.length != cipher.getBlockSize())
+        {
+            throw new IllegalArgumentException("iv.length != BLKLEN");
+        }
 
         /*
          * RFC 3711 says we should not encrypt more than 2^32 blocks which is
          * way more than java array max size, so no checks needed here
          */
-        F8Context f8ctx = new F8Context();
+        f8ctx = new F8Context();
 
         /*
          * Get memory for the derived IV (IV')
@@ -131,7 +135,19 @@ public class SrtpCipherF8 extends SrtpCipher
 
         f8ctx.J = 0; // initialize the counter
         f8ctx.S = new byte[BLKLEN]; // get the key stream buffer
+    }
 
+    @Override
+    public void processAAD(byte[] data, int off, int len)
+        throws GeneralSecurityException
+    {
+        throw new IllegalStateException("F8 mode does not accept AAD");
+    }
+
+    @Override
+    public int process(byte[] data, int off, int len)
+        throws GeneralSecurityException
+    {
         int inLen = len;
 
         while (inLen >= BLKLEN)
@@ -145,6 +161,17 @@ public class SrtpCipherF8 extends SrtpCipher
         {
             processBlock(f8ctx, data, off, inLen);
         }
+
+        return len;
+    }
+
+    @Override
+    public int finish(byte[] data, int off) throws GeneralSecurityException
+    {
+        /* NO-op for f8, just clear state */
+        cipher.doFinal(null, 0, 0, data, off);
+        f8ctx = null;
+        return 0;
     }
 
     /**
