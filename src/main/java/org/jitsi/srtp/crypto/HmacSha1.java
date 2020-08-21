@@ -17,7 +17,8 @@ package org.jitsi.srtp.crypto;
 
 import java.security.*;
 import java.util.*;
-import javax.crypto.Mac;
+import javax.crypto.*;
+
 import org.bouncycastle.jce.provider.*;
 import org.jitsi.srtp.crypto.Aes.*;
 import org.jitsi.utils.logging2.*;
@@ -29,6 +30,39 @@ import org.jitsi.utils.logging2.*;
  */
 public class HmacSha1
 {
+    private static List<Provider> providers;
+    private static Provider jitsiProvider;
+
+    private static synchronized List<Provider> getProviders(Logger logger)
+    {
+        if (providers == null)
+        {
+            providers = new ArrayList<>(3);
+            if (JitsiOpenSslProvider.isLoaded())
+            {
+                jitsiProvider = new JitsiOpenSslProvider();
+                providers.add(jitsiProvider);
+            }
+
+            providers.add(Security.getProvider("SunJCE"));
+            try
+            {
+                Provider pkcs11Provider = SunPKCS11CipherFactory.getProvider();
+                if (pkcs11Provider != null)
+                {
+                    providers.add(pkcs11Provider);
+                }
+            }
+            catch (Exception e)
+            {
+                logger.debug(() -> "PKCS#11 provider not available for HMAC: " + e.getMessage());
+            }
+            providers.add(new BouncyCastleProvider());
+        }
+
+        return providers;
+    }
+
     /**
      * Initializes a new {@link Mac} instance which implements a keyed-hash
      * message authentication code (HMAC) with SHA-1.
@@ -39,33 +73,23 @@ public class HmacSha1
      */
     public static Mac createMac(Logger parentLogger)
     {
-        List<Provider> providers = new ArrayList<>(3);
-        if (JitsiOpenSslProvider.isLoaded())
-        {
-            providers.add(new JitsiOpenSslProvider());
-        }
-
-        providers.add(Security.getProvider("SunJCE"));
-        try
-        {
-            Provider pkcs11Provider = SunPKCS11CipherFactory.getProvider();
-            if (pkcs11Provider != null)
-            {
-                providers.add(pkcs11Provider);
-            }
-        }
-        catch (Exception e)
-        {
-            parentLogger.debug(() -> "PKCS#11 provider not available for HMAC: " + e.getMessage());
-        }
-        providers.add(new BouncyCastleProvider());
-
         // Try providers in order
-        for (Provider p : providers)
+        for (Provider p : getProviders(parentLogger))
         {
             try
             {
-                Mac mac = Mac.getInstance("HmacSHA1", p);
+                Mac mac;
+                if (p == jitsiProvider)
+                {
+                    /* Work around the fact that we can't install our own security
+                     * providers on Oracle JVMs.
+                     */
+                    mac = new MacWrapper(new OpenSslHmacSpi(), p, "HmacSHA1");
+                }
+                else
+                {
+                    mac = Mac.getInstance("HmacSHA1", p);
+                }
                 parentLogger.debug(() -> "Using " + p.getName() + " for HMAC");
                 return mac;
             }
@@ -76,5 +100,13 @@ public class HmacSha1
         }
 
         throw new RuntimeException("No HmacSHA1 provider found");
+    }
+
+    private static class MacWrapper extends Mac
+    {
+        public MacWrapper(MacSpi macSpi, Provider provider, String s)
+        {
+            super(macSpi, provider, s);
+        }
     }
 }

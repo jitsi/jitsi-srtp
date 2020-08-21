@@ -78,7 +78,7 @@ public class SrtpCipherCtrTest
             return;
         }
 
-        SrtpCipherCtr cipher = new SrtpCipherCtr(Cipher.getInstance("AES/CTR/NoPadding", new JitsiOpenSslProvider()));
+        SrtpCipherCtr cipher = new SrtpCipherCtr(new Aes.JitsiCipherFactory().createCipher());
         cipher.init(TV_Key, null);
         byte[] data = new byte[TV_Cipher_AES_1.length];
 

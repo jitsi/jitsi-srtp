@@ -616,8 +616,6 @@ public class Aes
 
     /**
      * Implements {@link CipherFactory} using Jitsi SRTP's OpenSSL.
-     *
-     * @author Lyubomir Marinov
      */
     public static class JitsiCipherFactory
         extends CipherFactory
@@ -625,6 +623,47 @@ public class Aes
         public JitsiCipherFactory()
         {
             super("AES/CTR/NoPadding", new JitsiOpenSslProvider());
+        }
+
+        private Constructor<Cipher> cipherConstructor;
+        private Field cipherProviderField;
+
+        private synchronized void getMethods()
+            throws NoSuchAlgorithmException
+        {
+            if (cipherConstructor == null || cipherProviderField == null)
+            {
+                try
+                {
+                    cipherConstructor = Cipher.class
+                        .getDeclaredConstructor(CipherSpi.class, String.class);
+                    cipherConstructor.setAccessible(true);
+                    cipherProviderField =
+                        Cipher.class.getDeclaredField("provider");
+                    cipherProviderField.setAccessible(true);
+                }
+                catch (NoSuchMethodException | NoSuchFieldException e)
+                {
+                    cipherConstructor = null;
+                    cipherProviderField = null;
+                    throw new NoSuchAlgorithmException(
+                        "Cannot instantiate OpenSSL Cipher");
+                }
+            }
+        }
+
+        @Override
+        public Cipher createCipher() throws Exception
+        {
+            getMethods();
+
+            /* Work around the fact that we can't install our own security
+             * providers on Oracle JVMs.
+             */
+            Cipher cipher = cipherConstructor.newInstance(new OpenSslAesCipherSpi(), transformation);
+            cipherProviderField.set(cipher, provider);
+
+            return cipher;
         }
     }
 

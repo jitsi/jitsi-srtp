@@ -32,12 +32,12 @@ public class CipherFactory
      * The {@link Provider} which provides the implementations of the {@link
      * Cipher}s to be initialized by this instance.
      */
-    private final Provider provider;
+    protected final Provider provider;
 
     /**
      * The name of the transformation.
      */
-    private final String transformation;
+    protected final String transformation;
 
     /**
      * Initializes a new {@link CipherFactory} instance which is to
