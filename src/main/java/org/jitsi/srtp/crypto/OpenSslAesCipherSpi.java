@@ -29,16 +29,24 @@ public class OpenSslAesCipherSpi
 {
     private static final int BLKLEN = 16;
 
-    private Key key;
+    private static native long EVP_aes_128_ctr();
+    private static native long EVP_aes_192_ctr();
+    private static native long EVP_aes_256_ctr();
 
-    private static native long AES_CTR_CTX_create();
+    private static native long EVP_CIPHER_CTX_new();
 
-    private static native void AES_CTR_CTX_destroy(long ctx);
+    private static native void EVP_CIPHER_CTX_free(long ctx);
 
-    private static native boolean AES_CTR_CTX_init(long ctx, byte[] key);
+    private static native boolean EVP_CipherInit(long ctx, long type,
+        byte[] key, byte[] iv, int enc);
 
-    private static native boolean AES_CTR_CTX_process(long ctx, byte[] iv,
+    private static native boolean EVP_CipherUpdate(long ctx,
         byte[] inOut, int offset, int len);
+
+    private static native boolean EVP_CipherFinal(long ctx,
+        byte[] out, int offset);
+
+    private Key key;
 
     /**
      * the OpenSSL AES_CTR context
@@ -56,7 +64,7 @@ public class OpenSslAesCipherSpi
             throw new RuntimeException("OpenSSL wrapper not loaded");
         }
 
-        ctx = AES_CTR_CTX_create();
+        ctx = EVP_CIPHER_CTX_new();
         if (ctx == 0)
         {
             throw new RuntimeException("CIPHER_CTX_create");
@@ -156,6 +164,19 @@ public class OpenSslAesCipherSpi
                     + " " + key.getAlgorithm() + "/" + key.getFormat());
         }
 
+        int enc;
+        switch (opmode)
+        {
+        case Cipher.ENCRYPT_MODE:
+            enc = 1;
+            break;
+        case Cipher.DECRYPT_MODE:
+            enc = 0;
+            break;
+        default:
+            throw new InvalidAlgorithmParameterException("Unsupported opmode " + opmode);
+        }
+
         try
         {
             this.iv = params.getParameterSpec(IvParameterSpec.class).getIV();
@@ -166,13 +187,17 @@ public class OpenSslAesCipherSpi
         }
 
         this.parameters = params;
+        byte[] keyParam = null;
+        long cipherType = 0;
         if (key != this.key)
         {
             this.key = key;
-            if (!AES_CTR_CTX_init(ctx, key.getEncoded()))
-            {
-                throw new InvalidKeyException("AES_CTR_CTX_init");
-            }
+            keyParam = key.getEncoded();
+            cipherType = getCTRCipher(key);
+        }
+        if (!EVP_CipherInit(ctx, cipherType, keyParam, this.iv, enc))
+        {
+            throw new InvalidKeyException("AES_CTR_CTX_init");
         }
     }
 
@@ -210,7 +235,7 @@ public class OpenSslAesCipherSpi
         byte[] output, int outputOffset) throws
         ShortBufferException
     {
-        if (!AES_CTR_CTX_process(ctx, iv, input, inputOffset, inputLen))
+        if (!EVP_CipherUpdate(ctx, input, inputOffset, inputLen))
         {
             throw new ShortBufferException("AES_CTR_CTX_process");
         }
@@ -231,13 +256,31 @@ public class OpenSslAesCipherSpi
             // the time of this writing but it is a start.
             if (ctx != 0)
             {
-                AES_CTR_CTX_destroy(ctx);
+                EVP_CIPHER_CTX_free(ctx);
                 ctx = 0;
             }
         }
         finally
         {
             super.finalize();
+        }
+    }
+
+    /** Get the appropriate OpenSSL cipher for CTR mode. */
+    private static long getCTRCipher(Key key)
+        throws InvalidKeyException
+    {
+        switch (key.getEncoded().length)
+        {
+        case 16:
+            return EVP_aes_128_ctr();
+        case 24:
+            return EVP_aes_192_ctr();
+        case 32:
+            return EVP_aes_256_ctr();
+        default:
+            throw new InvalidKeyException("Invalid AES key length: "
+                + key.getEncoded().length + " bytes");
         }
     }
 }
