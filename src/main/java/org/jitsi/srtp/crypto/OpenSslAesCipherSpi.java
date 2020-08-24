@@ -46,6 +46,12 @@ public class OpenSslAesCipherSpi
     private static native boolean EVP_CipherFinal(long ctx,
         byte[] out, int offset);
 
+    private static native boolean EVP_CipherSetTag(long ctx,
+        byte[] tag, int offset, int taglen);
+
+    private static native boolean EVP_CipherGetTag(long ctx,
+        byte[] tag, int offset, int taglen);
+
     private Key key;
 
     /**

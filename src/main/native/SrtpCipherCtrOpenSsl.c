@@ -184,3 +184,57 @@ exit:
 
     return ok;
 }
+
+/*
+ * Class:     org_jitsi_srtp_crypto_OpenSslAesCipherSpi
+ * Method:    EVP_CipherSetTag
+ * Signature: (J[BII)Z
+ */
+JNIEXPORT jboolean JNICALL Java_org_jitsi_srtp_crypto_OpenSslAesCipherSpi_EVP_1CipherSetTag
+  (JNIEnv *env, jclass clazz, jlong ctx, jbyteArray tag, jint offset, jint taglen)
+{
+    int ok = 0;
+
+    unsigned char *tag_ = (unsigned char*)(*env)->GetPrimitiveArrayCritical(env, tag, NULL);
+    if (!tag_)
+        goto exit;
+
+    ok = EVP_CIPHER_CTX_ctrl(
+                (EVP_CIPHER_CTX *) (intptr_t) ctx,
+                EVP_CTRL_AEAD_SET_TAG,
+                taglen,
+                (unsigned char *) (tag_ + offset));
+
+exit:
+    if (tag_ != NULL)
+        (*env)->ReleasePrimitiveArrayCritical(env, tag, tag_, 0);
+
+    return ok;
+}
+
+/*
+ * Class:     org_jitsi_srtp_crypto_OpenSslAesCipherSpi
+ * Method:    EVP_CipherGetTag
+ * Signature: (J[BII)Z
+ */
+JNIEXPORT jboolean JNICALL Java_org_jitsi_srtp_crypto_OpenSslAesCipherSpi_EVP_1CipherGetTag
+  (JNIEnv *env, jclass clazz, jlong ctx, jbyteArray tag, jint offset, jint taglen)
+{
+    int ok = 0;
+
+    unsigned char *tag_ = (unsigned char*)(*env)->GetPrimitiveArrayCritical(env, tag, NULL);
+    if (!tag_)
+        goto exit;
+
+    ok = EVP_CIPHER_CTX_ctrl(
+                (EVP_CIPHER_CTX *) (intptr_t) ctx,
+                EVP_CTRL_AEAD_GET_TAG,
+                taglen,
+                (unsigned char *) (tag_ + offset));
+
+exit:
+    if (tag_ != NULL)
+        (*env)->ReleasePrimitiveArrayCritical(env, tag, tag_, 0);
+
+    return ok;
+}
