@@ -625,6 +625,7 @@ public class Aes
             super("AES/CTR/NoPadding", new JitsiOpenSslProvider());
         }
 
+        private boolean trySuperApi = true;
         private Constructor<Cipher> cipherConstructor;
         private Field cipherProviderField;
 
@@ -655,11 +656,24 @@ public class Aes
         @Override
         public Cipher createCipher() throws Exception
         {
-            getMethods();
-
+            if (trySuperApi)
+            {
+                try
+                {
+                    return super.createCipher();
+                }
+                catch (SecurityException e)
+                {
+                    trySuperApi = false;
+                }
+            }
             /* Work around the fact that we can't install our own security
              * providers on Oracle JVMs.
+             *
+             * Note this will trigger a illegal reflective access warning on JVM 11+.
              */
+            getMethods();
+
             Cipher cipher = cipherConstructor.newInstance(new OpenSslAesCipherSpi(), transformation);
             cipherProviderField.set(cipher, provider);
 
