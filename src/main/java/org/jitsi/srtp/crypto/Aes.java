@@ -157,12 +157,14 @@ public class Aes
      *
      * @param factories the {@link CipherFactory} instances to benchmark
      * @param keySize AES key size (16, 24, 32 bytes)
+     * @param transformation String describing transformation to be created.
      * @return the fastest-performing {@link CipherFactory} among the
      * specified {@code factories}
      */
     private static CipherFactory benchmark(
             CipherFactory[] factories,
-            int keySize)
+            int keySize,
+            String transformation)
     {
         Random random = Aes.random;
         byte[] key = new byte[keySize];
@@ -190,7 +192,7 @@ public class Aes
 
             try
             {
-                Cipher cipher = factory.createCipher();
+                Cipher cipher = factory.createCipher(transformation);
 
                 if (cipher == null)
                 {
@@ -254,13 +256,14 @@ public class Aes
 
     /**
      * Initializes a new {@link Cipher} instance which implements Advanced
-     * Encryption Standard (AES) CTR mode.
-     * @param keySize length of the AES key (16, 24, 32 bytes)
+     * Encryption Standard (AES) in some mode.
+     * @param transformation String describing transformation to be created. Must
+     *                       be an AES variant.
      *
      * @return a new {@link Cipher} instance which implements Advanced
      * Encryption Standard (AES) in CTR mode
      */
-    public static Cipher createStreamCipher(int keySize)
+    public static Cipher createCipher(String transformation)
     {
         CipherFactory factory;
 
@@ -275,7 +278,7 @@ public class Aes
             {
                 try
                 {
-                    factory = getCipherFactory(keySize);
+                    factory = getCipherFactory(transformation);
                 }
                 catch (Throwable t)
                 {
@@ -320,7 +323,7 @@ public class Aes
 
         try
         {
-            return factory.createCipher();
+            return factory.createCipher(transformation);
         }
         catch (Exception ex)
         {
@@ -518,14 +521,16 @@ public class Aes
      * Benchmarks the well-known {@link CipherFactory} implementations and
      * returns the fastest one. 
      * </p>
-     * @param keySize AES key size (16, 24, 32 bytes)
+     * @param transformation The transformation for which to get a factory.
      *
      * @return a {@link CipherFactory} instance to be used by the
      * {@link Aes} class to initialize {@link Cipher}s
      */
-    private static CipherFactory getCipherFactory(int keySize)
+    private static CipherFactory getCipherFactory(String transformation)
     {
         CipherFactory[] factories = Aes.factories;
+        /* TODO: figure out keysize for transformation? */
+        final int keySize = 16;
 
         if (factories == null)
         {
@@ -538,7 +543,7 @@ public class Aes
         // Benchmark the StreamCiphers provided by the available
         // StreamCipherFactories in order to select the fastest-performing
         // CipherFactory.
-        CipherFactory minFactory = benchmark(factories, keySize);
+        CipherFactory minFactory = benchmark(factories, keySize, transformation);
 
         // The user may have specified a specific CipherFactory class
         // (name) through setFactoryClassName(String), Practically, FACTORY_CLASS_NAME may override
@@ -624,7 +629,7 @@ public class Aes
     {
         public OpenSSLCipherFactory()
         {
-            super("AES/CTR/NoPadding", new JitsiOpenSslProvider());
+            super(new JitsiOpenSslProvider());
         }
 
         private boolean trySuperApi = true;
@@ -656,13 +661,13 @@ public class Aes
         }
 
         @Override
-        public Cipher createCipher() throws Exception
+        public Cipher createCipher(String transformation) throws Exception
         {
             if (trySuperApi)
             {
                 try
                 {
-                    return super.createCipher();
+                    return super.createCipher(transformation);
                 }
                 catch (SecurityException e)
                 {
@@ -693,7 +698,7 @@ public class Aes
     {
         public BouncyCastleCipherFactory()
         {
-            super("AES/CTR/NoPadding", new BouncyCastleProvider());
+            super(new BouncyCastleProvider());
         }
     }
 
@@ -707,7 +712,7 @@ public class Aes
     {
         public SunJCECipherFactory()
         {
-            super("AES/CTR/NoPadding", "SunJCE");
+            super("SunJCE");
         }
     }
 
@@ -796,7 +801,7 @@ public class Aes
         public SunPKCS11CipherFactory()
             throws Exception
         {
-            super("AES/CTR/NoPadding", getProvider());
+            super(getProvider());
         }
     }
 }

@@ -18,7 +18,7 @@ package org.jitsi.srtp;
 
 import java.security.*;
 import javax.crypto.*;
-import javax.crypto.spec.*;
+
 import org.jitsi.srtp.crypto.*;
 
 import java.util.*;
@@ -81,7 +81,7 @@ class SrtpKdf
         {
         case SrtpPolicy.AESF8_ENCRYPTION:
         case SrtpPolicy.AESCM_ENCRYPTION:
-            cipherCtr = new SrtpCipherCtr(Aes.createStreamCipher(encKeyLength));
+            cipherCtr = new SrtpCipherCtr(Aes.createCipher("AES/CTR/NoPadding"));
             break;
 
         case SrtpPolicy.TWOFISHF8_ENCRYPTION:

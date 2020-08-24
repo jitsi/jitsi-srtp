@@ -170,10 +170,10 @@ public class BaseSrtpCryptoContext
         switch (policy.getEncType())
         {
         case SrtpPolicy.AESCM_ENCRYPTION:
-            cipher = new SrtpCipherCtr(Aes.createStreamCipher(encKeyLength));
+            cipher = new SrtpCipherCtr(Aes.createCipher("AES/CTR/NoPadding"));
             break;
         case SrtpPolicy.AESF8_ENCRYPTION:
-            cipher = new SrtpCipherF8(Cipher.getInstance("AES/ECB/NoPadding"));
+            cipher = new SrtpCipherF8(Aes.createCipher("AES/ECB/NoPadding"));
             break;
         case SrtpPolicy.TWOFISHF8_ENCRYPTION:
             cipher = new SrtpCipherF8(Cipher.getInstance("Twofish/ECB/NoPadding"));

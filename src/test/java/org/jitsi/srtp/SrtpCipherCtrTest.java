@@ -80,7 +80,7 @@ public class SrtpCipherCtrTest
             return;
         }
 
-        SrtpCipherCtr cipher = new SrtpCipherCtr(new Aes.OpenSSLCipherFactory().createCipher());
+        SrtpCipherCtr cipher = new SrtpCipherCtr(new Aes.OpenSSLCipherFactory().createCipher("AES/CTR/NoPadding"));
         cipher.init(TV_Key, null);
         byte[] data = new byte[TV_Cipher_AES_1.length];
 

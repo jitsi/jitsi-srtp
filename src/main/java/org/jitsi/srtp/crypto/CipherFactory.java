@@ -35,22 +35,15 @@ public class CipherFactory
     protected final Provider provider;
 
     /**
-     * The name of the transformation.
-     */
-    protected final String transformation;
-
-    /**
      * Initializes a new {@link CipherFactory} instance which is to
      * initialize {@link Cipher}s that are implemented by a specific
      * {@link Provider}.
      *
-     * @param transformation the name of the transformation
      * @param provider the {@link Provider} which provides the
      * implementations of the {@link Cipher} to be initialized.
      */
-    public CipherFactory(String transformation, Provider provider)
+    public CipherFactory(Provider provider)
     {
-        this.transformation = Objects.requireNonNull(transformation);
         this.provider = Objects.requireNonNull(provider);
     }
 
@@ -59,17 +52,23 @@ public class CipherFactory
      * initialize {@link Cipher}s that are implemented by a specific
      * {@link Provider}.
      *
-     * @param transformation the name of the transformation
      * @param providerName the name of the {@link Provider} which
      * provides the implementations of the {@link Cipher} to be
      * initialized
      */
-    public CipherFactory(String transformation, String providerName)
+    public CipherFactory(String providerName)
     {
-        this(transformation, Security.getProvider(providerName));
+        this(Security.getProvider(providerName));
     }
 
-    public Cipher createCipher()
+    /**
+     * Creates a cipher with the factory
+     *
+     * @param transformation the name of the transformation
+     * @return The selected cipher
+     * @throws Exception On failure
+     */
+    public Cipher createCipher(String transformation)
         throws Exception
     {
         return Cipher.getInstance(transformation, provider);
