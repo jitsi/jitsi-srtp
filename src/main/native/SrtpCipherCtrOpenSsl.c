@@ -131,21 +131,27 @@ JNIEXPORT jboolean JNICALL Java_org_jitsi_srtp_crypto_OpenSslAesCipherSpi_EVP_1C
     {
         out_ = in_;
     }
-    else
+    else if (out != NULL)
     {
         out_ = (unsigned char*)(*env)->GetPrimitiveArrayCritical(env, out, NULL);
         if (!out_)
+            goto exit;
+    }
+    else
+    {
+        /* If out is null make sure outOffset is, too (AAD mode). */
+        if (outOffset != 0)
             goto exit;
     }
 
     int len_ = len;
     ok = EVP_CipherUpdate(
                 (EVP_CIPHER_CTX *) (intptr_t) ctx,
-                (unsigned char *) (in_ + inOffset), &len_,
-                (unsigned char *) (out_ + outOffset), len);
+                (unsigned char *) (out_ + outOffset), &len_,
+                (unsigned char *) (in_ + inOffset), len);
 
 exit:
-    if (out_ != NULL && in != out)
+    if (in != out && out != NULL && out_ != NULL)
         (*env)->ReleasePrimitiveArrayCritical(env, out, out_, 0);
     if (in_ != NULL)
         (*env)->ReleasePrimitiveArrayCritical(env, in, in_, 0);
