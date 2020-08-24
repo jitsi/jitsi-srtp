@@ -119,8 +119,10 @@ public class Aes
     /**
      * The number of times to pre-execute the benchmark before executing it for real,
      * to give the JVM time to run JITs and the like.
+     *
+     * 10000 is the threshold to trigger "C2" compilation in the OpenJDK JVM.
      */
-    private static final int NUM_WARMUPS = 1000;
+    private static final int NUM_WARMUPS = 10000;
 
     /**
      * The input buffer to be used for the benchmarking of {@link #factories}.
