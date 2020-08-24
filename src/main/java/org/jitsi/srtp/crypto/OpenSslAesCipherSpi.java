@@ -41,7 +41,7 @@ public class OpenSslAesCipherSpi
         byte[] key, byte[] iv, int enc);
 
     private static native boolean EVP_CipherUpdate(long ctx,
-        byte[] inOut, int offset, int len);
+        byte[] in, int inOffset, int len, byte[] out, int outOffset);
 
     private static native boolean EVP_CipherFinal(long ctx,
         byte[] out, int offset);
@@ -235,9 +235,9 @@ public class OpenSslAesCipherSpi
         byte[] output, int outputOffset) throws
         ShortBufferException
     {
-        if (!EVP_CipherUpdate(ctx, input, inputOffset, inputLen))
+        if (!EVP_CipherUpdate(ctx, input, inputOffset, inputLen, output, outputOffset))
         {
-            throw new ShortBufferException("AES_CTR_CTX_process");
+            throw new ShortBufferException("EVP_CipherUpdate");
         }
 
         return inputLen;

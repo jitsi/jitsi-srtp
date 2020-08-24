@@ -120,22 +120,35 @@ exit:
  * Signature: (J[BII)Z
  */
 JNIEXPORT jboolean JNICALL Java_org_jitsi_srtp_crypto_OpenSslAesCipherSpi_EVP_1CipherUpdate
-  (JNIEnv *env, jclass clazz, jlong ctx, jbyteArray inOut, jint offset, jint len)
+  (JNIEnv *env, jclass clazz, jlong ctx, jbyteArray in, jint inOffset, jint len, jbyteArray out, jint outOffset)
 {
     int ok = 0;
-    unsigned char *inOut_ = (unsigned char*)(*env)->GetPrimitiveArrayCritical(env, inOut, NULL);
-    if (!inOut_)
+    unsigned char *in_ = (unsigned char*)(*env)->GetPrimitiveArrayCritical(env, in, NULL);
+    unsigned char *out_ = NULL;
+    if (!in_)
         goto exit;
+    if (in == out)
+    {
+        out_ = in_;
+    }
+    else
+    {
+        out_ = (unsigned char*)(*env)->GetPrimitiveArrayCritical(env, out, NULL);
+        if (!out_)
+            goto exit;
+    }
 
     int len_ = len;
     ok = EVP_CipherUpdate(
                 (EVP_CIPHER_CTX *) (intptr_t) ctx,
-                (unsigned char *) (inOut_ + offset), &len_,
-                (unsigned char *) (inOut_ + offset), len);
+                (unsigned char *) (in_ + inOffset), &len_,
+                (unsigned char *) (out_ + outOffset), len);
 
 exit:
-    if (inOut_ != NULL)
-        (*env)->ReleasePrimitiveArrayCritical(env, inOut, inOut_, 0);
+    if (out_ != NULL && in != out)
+        (*env)->ReleasePrimitiveArrayCritical(env, out, out_, 0);
+    if (in_ != NULL)
+        (*env)->ReleasePrimitiveArrayCritical(env, in, in_, 0);
 
     return ok;
 }
