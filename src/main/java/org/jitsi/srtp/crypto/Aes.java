@@ -84,7 +84,7 @@ public class Aes
      */
     private static final Class<?>[] FACTORY_CLASSES
         = {
-            JitsiCipherFactory.class,
+            OpenSSLCipherFactory.class,
             SunJCECipherFactory.class,
             BouncyCastleCipherFactory.class,
             SunPKCS11CipherFactory.class,
@@ -619,10 +619,10 @@ public class Aes
     /**
      * Implements {@link CipherFactory} using Jitsi SRTP's OpenSSL.
      */
-    public static class JitsiCipherFactory
+    public static class OpenSSLCipherFactory
         extends CipherFactory
     {
-        public JitsiCipherFactory()
+        public OpenSSLCipherFactory()
         {
             super("AES/CTR/NoPadding", new JitsiOpenSslProvider());
         }

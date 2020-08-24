@@ -67,7 +67,7 @@ public class OpenSslAesCipherSpi
         ctx = EVP_CIPHER_CTX_new();
         if (ctx == 0)
         {
-            throw new RuntimeException("CIPHER_CTX_create");
+            throw new RuntimeException("EVP_CIPHER_CTX_create");
         }
     }
 
