@@ -21,53 +21,53 @@ import org.jitsi.utils.*;
 import org.jitsi.utils.logging2.*;
 import org.junit.jupiter.api.*;
 
-import javax.xml.bind.*;
+import static javax.xml.bind.DatatypeConverter.parseHexBinary;
 import java.util.*;
 
 
 public class SrtpValidationTest {
     /* Test cases from libsrtp's srtp_driver.c. */
     private static final byte[] test_key =
-            DatatypeConverter.parseHexBinary("e1f97a0d3e018be0d64fa32c06de4139");
+            parseHexBinary("e1f97a0d3e018be0d64fa32c06de4139");
     private static final byte[] test_key_salt =
-            DatatypeConverter.parseHexBinary("0ec675ad498afeebb6960b3aabe6");
+            parseHexBinary("0ec675ad498afeebb6960b3aabe6");
 
-    private static final byte[] srtp_plaintext_ref =
-            DatatypeConverter.parseHexBinary("800f1234decafbad" +
+    private static final byte[] rtp_plaintext_ref =
+            parseHexBinary("800f1234decafbad" +
 					     "cafebabeabababab" +
 					     "abababababababab" +
 					     "abababab");
-    private static final byte[] srtp_plaintext =
-            DatatypeConverter.parseHexBinary("800f1234decafbad" +
+    private static final byte[] rtp_plaintext =
+            parseHexBinary("800f1234decafbad" +
 					     "cafebabeabababab" +
 					     "abababababababab" +
 					     "abababab00000000" +
 					     "000000000000");
     private static final byte[] srtp_ciphertext =
-            DatatypeConverter.parseHexBinary("800f1234decafbad" +
+            parseHexBinary("800f1234decafbad" +
 					     "cafebabe4e55dc4c" +
 					     "e79978d88ca4d215" +
 					     "949d2402b78d6acc" +
 					     "99ea179b8dbb");
     private static final byte[] rtcp_plaintext_ref =
-            DatatypeConverter.parseHexBinary("81c8000bcafebabe" +
+            parseHexBinary("81c8000bcafebabe" +
 					     "abababababababab" +
 					     "abababababababab");
     private static final byte[] rtcp_plaintext =
-            DatatypeConverter.parseHexBinary("81c8000bcafebabe" +
+            parseHexBinary("81c8000bcafebabe" +
 					     "abababababababab" +
 					     "abababababababab" +
 					     "0000000000000000" +
 					     "000000000000");
     private static final byte[] srtcp_ciphertext =
-            DatatypeConverter.parseHexBinary("81c8000bcafebabe" +
+            parseHexBinary("81c8000bcafebabe" +
 					     "7128035be487b9bd" +
 					     "bef89041f977a5a8" +
 					     "80000001993e08cd" +
 					     "54d6c1230798");
 
     @Test
-    public void srtpValidate() throws Exception
+    public void srtpValidateCtrHmac() throws Exception
     {
         Logger logger = new LoggerImpl(getClass().getName());
 
@@ -81,11 +81,11 @@ public class SrtpValidationTest {
 
         SrtpCryptoContext rtpSend = senderFactory.deriveContext(0xcafebabe, 0);
 
-        ByteArrayBuffer rtpPkt = new ByteArrayBufferImpl(srtp_plaintext, 0, srtp_plaintext_ref.length);
+        ByteArrayBuffer rtpPkt = new ByteArrayBufferImpl(rtp_plaintext, 0, rtp_plaintext_ref.length);
 
-        assertEquals(rtpSend.transformPacket(rtpPkt), SrtpErrorStatus.OK);
-        assertEquals(rtpPkt.getLength(), srtp_ciphertext.length);
-        assertArrayEquals(rtpPkt.getBuffer(), srtp_ciphertext);
+        assertEquals(SrtpErrorStatus.OK, rtpSend.transformPacket(rtpPkt));
+        assertEquals(srtp_ciphertext.length, rtpPkt.getLength());
+        assertArrayEquals(srtp_ciphertext, rtpPkt.getBuffer());
 
         SrtcpCryptoContext rtcpSend = senderFactory.deriveControlContext(0xcafebabe);
 
@@ -99,15 +99,15 @@ public class SrtpValidationTest {
         System.arraycopy(rtcp_plaintext_ref, 0, rtcpPkt.getBuffer(), 0, rtcp_plaintext_ref.length);
         rtcpPkt.setLength(rtcp_plaintext_ref.length);
 
-        assertEquals(rtcpSend.transformPacket(rtcpPkt), SrtpErrorStatus.OK);
-        assertEquals(rtcpPkt.getLength(), srtcp_ciphertext.length);
-        assertArrayEquals(rtcpPkt.getBuffer(), srtcp_ciphertext);
+        assertEquals(SrtpErrorStatus.OK, rtcpSend.transformPacket(rtcpPkt));
+        assertEquals(srtcp_ciphertext.length, rtcpPkt.getLength());
+        assertArrayEquals(srtcp_ciphertext, rtcpPkt.getBuffer());
 
         SrtpCryptoContext rtpRecv = receiverFactory.deriveContext(0xcafebabe, 0);
 
-        assertEquals(rtpRecv.reverseTransformPacket(rtpPkt, false), SrtpErrorStatus.OK);
-        assertEquals(rtpPkt.getLength(), srtp_plaintext_ref.length);
-        assertArrayEquals(Arrays.copyOf(rtpPkt.getBuffer(), rtpPkt.getLength()), srtp_plaintext_ref);
+        assertEquals(SrtpErrorStatus.OK, rtpRecv.reverseTransformPacket(rtpPkt, false));
+        assertEquals(rtp_plaintext_ref.length, rtpPkt.getLength());
+        assertArrayEquals(rtp_plaintext_ref, Arrays.copyOf(rtpPkt.getBuffer(), rtpPkt.getLength()));
 
         SrtcpCryptoContext rtcpRecv = receiverFactory.deriveControlContext(0xcafebabe);
 
@@ -120,17 +120,16 @@ public class SrtpValidationTest {
     }
 
     @Test
-    public void rejectInvalid() throws Exception
+    public void rejectInvalidCtrHmac() throws Exception
     {
+        SrtpPolicy policy =
+            new SrtpPolicy(SrtpPolicy.AESCM_ENCRYPTION, 128/8,
+                    SrtpPolicy.HMACSHA1_AUTHENTICATION, 160/8,
+                    80/8, 112/8 );
         Logger logger = new LoggerImpl(getClass().getName());
 
         for (int len = srtp_ciphertext.length; len > 0; len--)
         {
-            SrtpPolicy policy =
-                new SrtpPolicy(SrtpPolicy.AESCM_ENCRYPTION, 128/8,
-                        SrtpPolicy.HMACSHA1_AUTHENTICATION, 160/8,
-                        80/8, 112/8 );
-
             SrtpContextFactory receiverFactory = new SrtpContextFactory(false, test_key, test_key_salt, policy, policy, logger);
             SrtpCryptoContext rtpRecv = receiverFactory.deriveContext(0xcafebabe, 0);
 
@@ -149,17 +148,12 @@ public class SrtpValidationTest {
         }
 
         for (int len = srtcp_ciphertext.length; len > 0; len--) {
-            SrtpPolicy policy =
-                    new SrtpPolicy(SrtpPolicy.AESCM_ENCRYPTION, 128/8,
-                            SrtpPolicy.HMACSHA1_AUTHENTICATION, 160/8,
-                            80/8, 112/8 );
-
             SrtpContextFactory receiverFactory = new SrtpContextFactory(false, test_key, test_key_salt, policy, policy, logger);
             SrtcpCryptoContext rtcpRecv = receiverFactory.deriveControlContext(0xcafebabe);
 
-            ByteArrayBuffer rtpPkt = new ByteArrayBufferImpl(Arrays.copyOf(srtcp_ciphertext, len), 0, len);
+            ByteArrayBuffer rtcpPkt = new ByteArrayBufferImpl(Arrays.copyOf(srtcp_ciphertext, len), 0, len);
 
-            SrtpErrorStatus status = rtcpRecv.reverseTransformPacket(rtpPkt);
+            SrtpErrorStatus status = rtcpRecv.reverseTransformPacket(rtcpPkt);
 
             if (len == srtcp_ciphertext.length)
             {
@@ -171,5 +165,4 @@ public class SrtpValidationTest {
             }
         }
     }
-
 }
