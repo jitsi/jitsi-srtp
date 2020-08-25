@@ -53,6 +53,74 @@ JNIEXPORT jlong JNICALL Java_org_jitsi_srtp_crypto_OpenSslAesCipherSpi_EVP_1aes_
     return (jlong) (intptr_t) EVP_aes_256_ctr();
 }
 
+
+/*
+ * Class:     org_jitsi_srtp_crypto_OpenSslAesCipherSpi
+ * Method:    EVP_aes_128_gcm
+ * Signature: ()J
+ */
+JNIEXPORT jlong JNICALL Java_org_jitsi_srtp_crypto_OpenSslAesCipherSpi_EVP_1aes_1128_1gcm
+  (JNIEnv *env, jclass clazz)
+{
+    return (jlong) (intptr_t) EVP_aes_128_gcm();
+}
+
+/*
+ * Class:     org_jitsi_srtp_crypto_OpenSslAesCipherSpi
+ * Method:    EVP_aes_192_gcm
+ * Signature: ()J
+ */
+JNIEXPORT jlong JNICALL Java_org_jitsi_srtp_crypto_OpenSslAesCipherSpi_EVP_1aes_1192_1gcm
+  (JNIEnv *env, jclass clazz)
+{
+    return (jlong) (intptr_t) EVP_aes_192_gcm();
+}
+
+/*
+ * Class:     org_jitsi_srtp_crypto_OpenSslAesCipherSpi
+ * Method:    EVP_aes_256_gcm
+ * Signature: ()J
+ */
+JNIEXPORT jlong JNICALL Java_org_jitsi_srtp_crypto_OpenSslAesCipherSpi_EVP_1aes_1256_1gcm
+  (JNIEnv *env, jclass clazz)
+{
+    return (jlong) (intptr_t) EVP_aes_256_gcm();
+}
+
+/*
+ * Class:     org_jitsi_srtp_crypto_OpenSslAesCipherSpi
+ * Method:    EVP_aes_128_ecb
+ * Signature: ()J
+ */
+JNIEXPORT jlong JNICALL Java_org_jitsi_srtp_crypto_OpenSslAesCipherSpi_EVP_1aes_1128_1ecb
+  (JNIEnv *env, jclass clazz)
+{
+    return (jlong) (intptr_t) EVP_aes_128_ecb();
+}
+
+/*
+ * Class:     org_jitsi_srtp_crypto_OpenSslAesCipherSpi
+ * Method:    EVP_aes_192_ecb
+ * Signature: ()J
+ */
+JNIEXPORT jlong JNICALL Java_org_jitsi_srtp_crypto_OpenSslAesCipherSpi_EVP_1aes_1192_1ecb
+  (JNIEnv *env, jclass clazz)
+{
+    return (jlong) (intptr_t) EVP_aes_192_ecb();
+}
+
+/*
+ * Class:     org_jitsi_srtp_crypto_OpenSslAesCipherSpi
+ * Method:    EVP_aes_256_ecb
+ * Signature: ()J
+ */
+JNIEXPORT jlong JNICALL Java_org_jitsi_srtp_crypto_OpenSslAesCipherSpi_EVP_1aes_1256_1ecb
+  (JNIEnv *env, jclass clazz)
+{
+    return (jlong) (intptr_t) EVP_aes_256_ecb();
+}
+
+
 /*
  * Class:     org_jitsi_srtp_crypto_OpenSslAesCipherSpi
  * Method:    EVP_CIPHER_CTX_new

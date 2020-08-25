@@ -787,7 +787,12 @@ public class Aes
              */
             getMethods();
 
-            Cipher cipher = cipherConstructor.newInstance(new OpenSslAesCipherSpi(), transformation);
+            OpenSslAesCipherSpi spi = new OpenSslAesCipherSpi();
+            String[] parts = transformation.split("/");
+            spi.engineSetMode(parts[1]);
+            spi.engineSetPadding(parts[2]);
+
+            Cipher cipher = cipherConstructor.newInstance(spi, transformation);
             cipherProviderField.set(cipher, provider);
 
             return cipher;

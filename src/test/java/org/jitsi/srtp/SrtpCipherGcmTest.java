@@ -145,5 +145,26 @@ public class SrtpCipherGcmTest
         testGcmCipher(cipher);
     }
 
+    @Test
+    public void testSrtpCipherOpenSsl()
+        throws Exception
+    {
+        boolean haveOpenSsl = JitsiOpenSslProvider.isLoaded();
+
+        if (System.getProperty("os.name").toLowerCase().contains("linux"))
+        {
+            assertTrue(haveOpenSsl, "should always have OpenSSL on Linux");
+        }
+
+        if (!haveOpenSsl)
+        {
+            return;
+        }
+
+        SrtpCipherGcm cipher = new SrtpCipherGcm(new Aes.OpenSSLCipherFactory().createCipher("AES/GCM/NoPadding"), 128);
+
+        testGcmCipher(cipher);
+    }
+
     /* TODO add tests for other implementations as they're written */
 }

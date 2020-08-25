@@ -33,6 +33,14 @@ public class OpenSslAesCipherSpi
     private static native long EVP_aes_192_ctr();
     private static native long EVP_aes_256_ctr();
 
+    private static native long EVP_aes_128_gcm();
+    private static native long EVP_aes_192_gcm();
+    private static native long EVP_aes_256_gcm();
+
+    private static native long EVP_aes_128_ecb();
+    private static native long EVP_aes_192_ecb();
+    private static native long EVP_aes_256_ecb();
+
     private static native long EVP_CIPHER_CTX_new();
 
     private static native void EVP_CIPHER_CTX_free(long ctx);
@@ -54,14 +62,18 @@ public class OpenSslAesCipherSpi
 
     private Key key;
 
+    private static final int CTR_MODE = 1;
+    private static final int GCM_MODE = 2;
+    private static final int ECB_MODE = 3;
+
+    private int cipherMode = 0;
+
     /**
      * the OpenSSL AES_CTR context
      */
     private long ctx;
 
     private byte[] iv;
-
-    private AlgorithmParameters parameters;
 
     public OpenSslAesCipherSpi()
     {
@@ -78,16 +90,28 @@ public class OpenSslAesCipherSpi
     }
 
     @Override
-    protected void engineSetMode(String mode) throws NoSuchAlgorithmException
+    public void engineSetMode(String mode) throws NoSuchAlgorithmException
     {
-        if (!"ctr".equalsIgnoreCase(mode))
+        if ("ctr".equalsIgnoreCase(mode))
         {
-            throw new NoSuchAlgorithmException("Only CTR mode is supported");
+            cipherMode = CTR_MODE;
+        }
+        else if ("gcm".equalsIgnoreCase(mode))
+        {
+            cipherMode = GCM_MODE;
+        }
+        else if ("ecb".equalsIgnoreCase(mode))
+        {
+            cipherMode = ECB_MODE;
+        }
+        else
+        {
+            throw new NoSuchAlgorithmException("Unsupported mode " + mode);
         }
     }
 
     @Override
-    protected void engineSetPadding(String padding)
+    public void engineSetPadding(String padding)
         throws NoSuchPaddingException
     {
         if (!"nopadding".equalsIgnoreCase(padding))
@@ -117,7 +141,8 @@ public class OpenSslAesCipherSpi
     @Override
     protected AlgorithmParameters engineGetParameters()
     {
-        return parameters;
+        /* TODO: do we need this? */
+        return null;
     }
 
     @Override
@@ -126,7 +151,7 @@ public class OpenSslAesCipherSpi
     {
         try
         {
-            engineInit(opmode, key, (AlgorithmParameters) null, random);
+            engineInit(opmode, key, (AlgorithmParameterSpec) null, random);
         }
         catch (InvalidAlgorithmParameterException e)
         {
@@ -136,27 +161,7 @@ public class OpenSslAesCipherSpi
 
     @Override
     protected void engineInit(int opmode, Key key,
-        AlgorithmParameterSpec paramGenSpec, SecureRandom random)
-        throws InvalidKeyException, InvalidAlgorithmParameterException
-    {
-        AlgorithmParameters params;
-        try
-        {
-            params = AlgorithmParameters.getInstance("AES");
-            params.init(paramGenSpec);
-        }
-        catch (NoSuchAlgorithmException | InvalidParameterSpecException e)
-        {
-            throw new InvalidAlgorithmParameterException(
-                "AES params not found", e);
-        }
-
-        engineInit(opmode, key, params, random);
-    }
-
-    @Override
-    protected void engineInit(int opmode, Key key, AlgorithmParameters params,
-        SecureRandom random)
+        AlgorithmParameterSpec params, SecureRandom random)
         throws InvalidKeyException, InvalidAlgorithmParameterException
     {
         if (!key.getAlgorithm().equalsIgnoreCase("AES")
@@ -183,28 +188,105 @@ public class OpenSslAesCipherSpi
             throw new InvalidAlgorithmParameterException("Unsupported opmode " + opmode);
         }
 
-        try
+        if (params != null)
         {
-            this.iv = params.getParameterSpec(IvParameterSpec.class).getIV();
+            if (cipherMode == GCM_MODE)
+            {
+                if (params instanceof GCMParameterSpec)
+                {
+                    if (((GCMParameterSpec)params).getTLen() != 128)
+                    {
+                        throw new InvalidAlgorithmParameterException
+                            ("Unsupported GCM tag length: must be 128");
+                    }
+                    iv = ((GCMParameterSpec) params).getIV();
+                }
+                else
+                {
+                    throw new InvalidAlgorithmParameterException
+                        ("Unsupported parameter: " + params);
+                }
+            }
+            else
+            {
+                if (params instanceof IvParameterSpec)
+                {
+                    iv = ((IvParameterSpec) params).getIV();
+                    if (iv.length != BLKLEN)
+                    {
+                        throw new InvalidAlgorithmParameterException
+                            ("Unsupported IV length: must be " + BLKLEN + " bytes");
+                    }
+                }
+                else
+                {
+                    throw new InvalidAlgorithmParameterException
+                        ("Unsupported parameter: " + params);
+                }
+            }
         }
-        catch (InvalidParameterSpecException e)
+        else
         {
-            throw new InvalidAlgorithmParameterException(e);
+            iv = null;
         }
 
-        this.parameters = params;
+        if (cipherMode == ECB_MODE)
+        {
+            if (iv != null)
+            {
+                throw new InvalidAlgorithmParameterException
+                    ("ECB mode cannot use IV");
+            }
+        }
+        else if (iv == null)
+        {
+            /* According to the SPI spec we should use random to generate the
+             * IV in this case if we're encrypting, but we never want to do this for SRTP.
+             */
+            throw new InvalidAlgorithmParameterException
+                ("Parameters missing");
+        }
+
         byte[] keyParam = null;
         long cipherType = 0;
         if (key != this.key)
         {
             this.key = key;
             keyParam = key.getEncoded();
-            cipherType = getCTRCipher(key);
+            cipherType = getCipher(key);
         }
+
         if (!EVP_CipherInit(ctx, cipherType, keyParam, this.iv, enc))
         {
             throw new InvalidKeyException("AES_CTR_CTX_init");
         }
+    }
+
+    @Override
+    protected void engineInit(int opmode, Key key, AlgorithmParameters params,
+        SecureRandom random)
+        throws InvalidKeyException, InvalidAlgorithmParameterException
+    {
+        AlgorithmParameterSpec spec = null;
+        if (params != null)
+        {
+            try
+            {
+                if (cipherMode == GCM_MODE)
+                {
+                    spec = params.getParameterSpec(GCMParameterSpec.class);
+                }
+                else
+                {
+                    spec = params.getParameterSpec(IvParameterSpec.class);
+                }
+            }
+            catch (InvalidParameterSpecException e)
+            {
+                throw new InvalidAlgorithmParameterException(e);
+            }
+        }
+        engineInit(opmode, key, spec, random);
     }
 
     @Override
@@ -219,6 +301,15 @@ public class OpenSslAesCipherSpi
     {
         return engineDoFinal(input, inputOffset, inputLen, output,
             outputOffset);
+    }
+
+    @Override
+    protected void engineUpdateAAD(byte[] input, int inputOffset, int inputLen)
+    {
+        if (!EVP_CipherUpdate(ctx, input, inputOffset, inputLen, null, 0))
+        {
+            throw new IllegalStateException("EVP_CipherUpdate");
+        }
     }
 
     @Override
@@ -272,6 +363,22 @@ public class OpenSslAesCipherSpi
         }
     }
 
+    private long getCipher(Key key)
+        throws InvalidKeyException
+    {
+        switch (cipherMode)
+        {
+        case CTR_MODE:
+            return getCTRCipher(key);
+        case GCM_MODE:
+            return getGCMCipher(key);
+        case ECB_MODE:
+            return getECBCipher(key);
+        default:
+            throw new IllegalStateException("Bad cipherMode " + cipherMode);
+        }
+    }
+
     /** Get the appropriate OpenSSL cipher for CTR mode. */
     private static long getCTRCipher(Key key)
         throws InvalidKeyException
@@ -284,6 +391,42 @@ public class OpenSslAesCipherSpi
             return EVP_aes_192_ctr();
         case 32:
             return EVP_aes_256_ctr();
+        default:
+            throw new InvalidKeyException("Invalid AES key length: "
+                + key.getEncoded().length + " bytes");
+        }
+    }
+
+    /** Get the appropriate OpenSSL cipher for GCM mode. */
+    private static long getGCMCipher(Key key)
+        throws InvalidKeyException
+    {
+        switch (key.getEncoded().length)
+        {
+        case 16:
+            return EVP_aes_128_gcm();
+        case 24:
+            return EVP_aes_192_gcm();
+        case 32:
+            return EVP_aes_256_gcm();
+        default:
+            throw new InvalidKeyException("Invalid AES key length: "
+                + key.getEncoded().length + " bytes");
+        }
+    }
+
+    /** Get the appropriate OpenSSL cipher for ECB mode. */
+    private static long getECBCipher(Key key)
+        throws InvalidKeyException
+    {
+        switch (key.getEncoded().length)
+        {
+        case 16:
+            return EVP_aes_128_ecb();
+        case 24:
+            return EVP_aes_192_ecb();
+        case 32:
+            return EVP_aes_256_ecb();
         default:
             throw new InvalidKeyException("Invalid AES key length: "
                 + key.getEncoded().length + " bytes");
