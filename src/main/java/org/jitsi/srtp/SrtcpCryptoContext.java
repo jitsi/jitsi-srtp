@@ -250,12 +250,16 @@ public class SrtcpCryptoContext
             {
                 int bufferedTagLen = forEncryption ? 0 : policy.getAuthTagLength();
                 int aadLen = pkt.getLength() - bufferedTagLen;
+                if (aadLen < 0)
+                {
+                    return SrtpErrorStatus.AUTH_FAIL;
+                }
                 cipher.processAAD(pkt.getBuffer(), pkt.getOffset(), aadLen);
                 writeRoc(index);
                 cipher.processAAD(rbStore, 0, 4);
 
                 int processLen = cipher.process(
-                    pkt.getBuffer(), pkt.getLength(), bufferedTagLen);
+                    pkt.getBuffer(), aadLen, bufferedTagLen);
 
                 pkt.setLength(aadLen + processLen);
             }

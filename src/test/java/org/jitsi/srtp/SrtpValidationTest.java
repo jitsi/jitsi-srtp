@@ -195,4 +195,212 @@ public class SrtpValidationTest {
             }
         }
     }
+
+    /* GCM test cases from libsrtp's srtp_driver.c. */
+    private static final byte[] test_key_gcm =
+        parseHexBinary("0001020304050607" +
+            "08090a0b0c0d0e0f");
+
+    private static final byte[] test_key_salt_gcm =
+        parseHexBinary("a0a1a2a3a4a5a6a7" +
+            "a8a9aaab");
+
+    private static final byte[] rtp_plaintext_gcm =
+        parseHexBinary("800f1234decafbad" +
+            "cafebabeabababab" +
+            "abababababababab" +
+            "abababab00000000" +
+            "0000000000000000" +
+            "00000000");
+
+    private static final byte[] srtp_ciphertext_gcm =
+        parseHexBinary("800f1234decafbad" +
+            "cafebabec5002ede" +
+            "04cfdd2eb91159e0" +
+            "880aa06ed2976826" +
+            "f796b201df3131a1" +
+            "27e8a392");
+
+    private static final byte[] rtcp_plaintext_gcm =
+        parseHexBinary("81c8000bcafebabe" +
+            "abababababababab" +
+            "abababababababab" +
+            "0000000000000000" +
+            "0000000000000000" +
+            "00000000");
+
+
+    private static final byte[] srtcp_ciphertext_gcm =
+        parseHexBinary("81c8000bcafebabe" +
+            "c98b8b5df0392a55" +
+            "852b6c21ac8e7025" +
+            "c52c6fbea2b3b446" +
+            "ea31123ba88ce61e" +
+            "80000001");
+
+    @Test
+    public void srtpValidateGcm() throws Exception
+    {
+        Logger logger = new LoggerImpl(getClass().getName());
+
+        SrtpPolicy policy =
+            new SrtpPolicy(SrtpPolicy.AESGCM_ENCRYPTION, 128/8,
+                SrtpPolicy.NULL_AUTHENTICATION, 0,
+                128/8, 96/8 );
+
+        SrtpContextFactory senderFactory = new SrtpContextFactory(true, test_key_gcm, test_key_salt_gcm, policy, policy, logger);
+        SrtpContextFactory receiverFactory = new SrtpContextFactory(false, test_key_gcm, test_key_salt_gcm, policy, policy, logger);
+
+        SrtpCryptoContext rtpSend = senderFactory.deriveContext(0xcafebabe, 0);
+
+        ByteArrayBuffer rtpPkt = new ByteArrayBufferImpl(rtp_plaintext_gcm, 0, rtp_plaintext_ref.length);
+
+        assertEquals(SrtpErrorStatus.OK, rtpSend.transformPacket(rtpPkt));
+        assertEquals(srtp_ciphertext_gcm.length, rtpPkt.getLength());
+        assertArrayEquals(srtp_ciphertext_gcm, rtpPkt.getBuffer());
+
+        SrtcpCryptoContext rtcpSend = senderFactory.deriveControlContext(0xcafebabe);
+
+        ByteArrayBuffer rtcpPkt = new ByteArrayBufferImpl(rtcp_plaintext_gcm, 0, rtcp_plaintext_ref.length);
+        rtcpSend.transformPacket(rtcpPkt);
+
+        /* The reference srtcp buffer, above, includes an RTCP index of 1.
+         * Our implementation writes the srtcp index itself, counting from 0.
+         * Thus, reset the packet and encrypt it a second time to get the expected output.
+         */
+        System.arraycopy(rtcp_plaintext_ref, 0, rtcpPkt.getBuffer(), 0, rtcp_plaintext_ref.length);
+        rtcpPkt.setLength(rtcp_plaintext_ref.length);
+
+        assertEquals(SrtpErrorStatus.OK, rtcpSend.transformPacket(rtcpPkt));
+        assertEquals(srtcp_ciphertext_gcm.length, rtcpPkt.getLength());
+        assertArrayEquals(srtcp_ciphertext_gcm, rtcpPkt.getBuffer());
+
+        SrtpCryptoContext rtpRecv = receiverFactory.deriveContext(0xcafebabe, 0);
+
+        assertEquals(SrtpErrorStatus.OK, rtpRecv.reverseTransformPacket(rtpPkt, false));
+        assertEquals(rtp_plaintext_ref.length, rtpPkt.getLength());
+        assertArrayEquals(
+            rtp_plaintext_ref, Arrays.copyOf(rtpPkt.getBuffer(), rtpPkt.getLength()));
+
+        SrtcpCryptoContext rtcpRecv = receiverFactory.deriveControlContext(0xcafebabe);
+
+        assertEquals(SrtpErrorStatus.OK, rtcpRecv.reverseTransformPacket(rtcpPkt));
+        assertEquals(rtcp_plaintext_ref.length, rtcpPkt.getLength());
+        assertArrayEquals(rtcp_plaintext_ref, Arrays.copyOf(rtcpPkt.getBuffer(), rtcpPkt.getLength()));
+
+        senderFactory.close();
+        receiverFactory.close();
+    }
+
+    @Test
+    public void rejectInvalidGcm() throws Exception
+    {
+        Logger logger = new LoggerImpl(getClass().getName());
+
+        SrtpPolicy policy =
+            new SrtpPolicy(SrtpPolicy.AESGCM_ENCRYPTION, 128/8,
+                SrtpPolicy.NULL_AUTHENTICATION, 0,
+                128/8, 96/8 );
+
+        for (int len = srtp_ciphertext_gcm.length; len > 0; len--)
+        {
+            SrtpContextFactory receiverFactory = new SrtpContextFactory(false, test_key_gcm, test_key_salt_gcm, policy, policy, logger);
+            SrtpCryptoContext rtpRecv = receiverFactory.deriveContext(0xcafebabe, 0);
+
+            ByteArrayBuffer rtpPkt = new ByteArrayBufferImpl(Arrays.copyOf(srtp_ciphertext_gcm, len), 0, len);
+
+            SrtpErrorStatus status = rtpRecv.reverseTransformPacket(rtpPkt, false);
+
+            if (len == srtp_ciphertext_gcm.length)
+            {
+                assertEquals(SrtpErrorStatus.OK, status, "Rejected valid SRTP packet");
+            }
+            else
+            {
+                assertNotEquals(SrtpErrorStatus.OK, status, "Accepted truncated SRTP packet");
+            }
+        }
+
+        for (int i = 0; i < srtp_ciphertext_gcm.length; i++) {
+            for (int j = 0; j < 8; j++) {
+                SrtpContextFactory receiverFactory = new SrtpContextFactory(false, test_key_gcm, test_key_salt_gcm, policy, policy, logger);
+                SrtpCryptoContext rtpRecv = receiverFactory.deriveContext(0xcafebabe, 0);
+
+                ByteArrayBuffer rtpPkt = new ByteArrayBufferImpl(srtp_ciphertext_gcm.clone(), 0, srtp_ciphertext_gcm.length);
+
+                /* Flip one bit */
+                rtpPkt.getBuffer()[i] ^= (1 << j);
+
+                assertNotEquals(SrtpErrorStatus.OK, rtpRecv.reverseTransformPacket(rtpPkt, false),
+                    "Accepted RTP packet with bit flipped");
+            }
+        }
+
+        for (int len = srtp_ciphertext_gcm.length; len > 0; len--)
+        {
+            SrtpContextFactory receiverFactory = new SrtpContextFactory(false, test_key_gcm, test_key_salt_gcm, policy, policy, logger);
+            SrtpCryptoContext rtpRecv = receiverFactory.deriveContext(0xcafebabe, 0);
+
+            ByteArrayBuffer rtpPkt = new ByteArrayBufferImpl(Arrays.copyOf(srtp_ciphertext_gcm, len), 0, len);
+
+            SrtpErrorStatus status = rtpRecv.reverseTransformPacket(rtpPkt, false);
+
+            if (len == srtp_ciphertext_gcm.length)
+            {
+                assertEquals(SrtpErrorStatus.OK, status, "Rejected valid SRTP packet");
+            }
+            else
+            {
+                assertNotEquals(SrtpErrorStatus.OK, status, "Accepted truncated SRTP packet");
+            }
+        }
+
+        for (int i = 0; i < srtp_ciphertext_gcm.length; i++) {
+            for (int j = 0; j < 8; j++) {
+                SrtpContextFactory receiverFactory = new SrtpContextFactory(false, test_key_gcm, test_key_salt_gcm, policy, policy, logger);
+                SrtpCryptoContext rtpRecv = receiverFactory.deriveContext(0xcafebabe, 0);
+
+                ByteArrayBuffer rtpPkt = new ByteArrayBufferImpl(srtp_ciphertext_gcm.clone(), 0, srtp_ciphertext_gcm.length);
+
+                /* Flip one bit */
+                rtpPkt.getBuffer()[i] ^= (1 << j);
+
+                assertNotEquals(SrtpErrorStatus.OK, rtpRecv.reverseTransformPacket(rtpPkt, false),
+                    "Accepted RTP packet with bit flipped");
+            }
+        }
+
+        for (int len = srtcp_ciphertext_gcm.length; len > 0; len--) {
+            SrtpContextFactory receiverFactory = new SrtpContextFactory(false, test_key_gcm, test_key_salt_gcm, policy, policy, logger);
+            SrtcpCryptoContext rtcpRecv = receiverFactory.deriveControlContext(0xcafebabe);
+
+            ByteArrayBuffer rtpPkt = new ByteArrayBufferImpl(Arrays.copyOf(srtcp_ciphertext_gcm, len), 0, len);
+
+            SrtpErrorStatus status = rtcpRecv.reverseTransformPacket(rtpPkt);
+
+            if (len == srtcp_ciphertext_gcm.length)
+            {
+                assertEquals(SrtpErrorStatus.OK, status, "Rejected valid SRTCP packet");
+            }
+            else
+            {
+                assertNotEquals(SrtpErrorStatus.OK, status, "Accepted truncated SRTCP packet");
+            }
+        }
+
+        for (int i = 0; i < srtcp_ciphertext_gcm.length; i++) {
+            for (int j = 0; j < 8; j++) {
+                SrtpContextFactory receiverFactory = new SrtpContextFactory(false, test_key_gcm, test_key_salt_gcm, policy, policy, logger);
+                SrtcpCryptoContext rtcpRecv = receiverFactory.deriveControlContext(0xcafebabe);
+
+                ByteArrayBuffer rtcpPkt = new ByteArrayBufferImpl(srtcp_ciphertext_gcm.clone(), 0, srtcp_ciphertext_gcm.length);
+
+                /* Flip one bit */
+                rtcpPkt.getBuffer()[i] ^= (1 << j);
+
+                assertNotEquals(SrtpErrorStatus.OK, rtcpRecv.reverseTransformPacket(rtcpPkt),
+                    "Accepted RTCP packet with bit flipped");
+            }
+        }
+    }
 }
