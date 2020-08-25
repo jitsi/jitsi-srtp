@@ -61,7 +61,8 @@ public class Aes
 
     /**
      * The {@link CipherFactory} implementations known to the {@link Aes}
-     * class among which the fastest is to be elected as {@link #factory}.
+     * class among which the fastest is to be elected as {@link #factory}
+     * for each transformation.
      */
     private static CipherFactory[] factories;
 
@@ -69,7 +70,7 @@ public class Aes
      * The {@link CipherFactory} implementation which is (to be) used by
      * the class {@link Aes} to initialize {@link Cipher}s.
      */
-    private static CipherFactory factory;
+    private static final Map<String, CipherFactory> factory = new HashMap<>();
 
     /**
      * The name of the class to instantiate as a {@link CipherFactory}
@@ -106,9 +107,9 @@ public class Aes
 
     /**
      * The time in nanoseconds at which {@link #factories} were benchmarked and
-     * {@link #factory} was elected.
+     * {@link #factory} was elected for a given transformation.
      */
-    private static long factoryTimestamp;
+    private static final Map<String, Long> factoryTimestamps = new HashMap<>();
 
     /**
      * The size of the data to be used for AES cipher benchmarks.
@@ -151,6 +152,77 @@ public class Aes
         factoryClass = null;
     }
 
+    private static abstract class BenchmarkOperation
+    {
+        abstract void run(Cipher cipher) throws Exception;
+
+        static BenchmarkOperation getBenchmark(String transformation, int keySize)
+            throws Exception
+        {
+            if (transformation.contains("/CTR/"))
+            {
+                return new CtrBenchmark(keySize);
+            }
+            else if (transformation.contains("/ECB/"))
+            {
+                return new EcbBenchmark(keySize);
+            }
+            else {
+                throw new NoSuchAlgorithmException("Unsupported transformation " + transformation + " for benchmark");
+            }
+        }
+    }
+
+    private static class CtrBenchmark extends BenchmarkOperation
+    {
+
+        private final Key keySpec;
+        private final IvParameterSpec ivSpec;
+
+        public CtrBenchmark( int keySize)
+        {
+            byte[] key = new byte[keySize];
+
+            byte[] iv = new byte[BLOCK_SIZE];
+            Random random = Aes.random;
+            random.nextBytes(key);
+            random.nextBytes(iv);
+            random.nextBytes(in);
+
+            keySpec = new SecretKeySpec(key, "AES");
+            ivSpec = new IvParameterSpec(iv);
+        }
+
+        public void run(Cipher cipher) throws Exception
+        {
+            cipher.init(Cipher.ENCRYPT_MODE, keySpec, ivSpec);
+            cipher.update(in, 0, in.length, out, 0);
+        }
+    }
+
+    private static class EcbBenchmark extends BenchmarkOperation
+    {
+        private final Key keySpec;
+
+        public EcbBenchmark(int keySize)
+        {
+            byte[] key = new byte[keySize];
+
+            Random random = Aes.random;
+            random.nextBytes(key);
+            random.nextBytes(in);
+
+            keySpec = new SecretKeySpec(key, "AES");
+        }
+
+        public void run(Cipher cipher) throws Exception
+        {
+            cipher.init(Cipher.ENCRYPT_MODE, keySpec);
+            cipher.update(in, 0, in.length, out, 0);
+        }
+    }
+
+
     /**
      * Benchmarks a specific array/list of {@link CipherFactory} instances
      * and returns the fastest-performing element.
@@ -164,19 +236,10 @@ public class Aes
     private static CipherFactory benchmark(
             CipherFactory[] factories,
             int keySize,
-            String transformation)
+            String transformation,
+            boolean warmup
+        )
     {
-        Random random = Aes.random;
-        byte[] key = new byte[keySize];
-        byte[] iv = new byte[BLOCK_SIZE];
-        byte[] in = Aes.in;
-
-        random.nextBytes(key);
-        random.nextBytes(iv);
-        random.nextBytes(in);
-
-        Key keySpec = new SecretKeySpec(key, "AES");
-        IvParameterSpec ivSpec = new IvParameterSpec(iv);
         byte[] out = Aes.out;
         long minTime = Long.MAX_VALUE;
         CipherFactory minFactory = null;
@@ -203,19 +266,18 @@ public class Aes
                 }
                 else
                 {
-                    // Let the JVM "warm up" (do JIT compilation and the like)
-                    for (int i = 0; i < NUM_WARMUPS; i++)
+                    BenchmarkOperation benchmark = BenchmarkOperation.getBenchmark(transformation, keySize);
+                    if (warmup)
                     {
-                        cipher.init(Cipher.ENCRYPT_MODE, keySpec, ivSpec);
-                        cipher.update(in, 0, in.length, out, 0);
+                        // Let the JVM "warm up" (do JIT compilation and the like)
+                        for (int i = 0; i < NUM_WARMUPS; i++)
+                        {
+                            benchmark.run(cipher);
+                        }
                     }
 
                     long startTime = System.nanoTime();
-                    cipher.init(Cipher.ENCRYPT_MODE, keySpec, ivSpec);
-                    cipher.update(in, 0, in.length, out, 0);
-
-                    // We do not invoke the method StreamCipher.reset() so we do
-                    // not need to take it into account in the benchmark.
+                    benchmark.run(cipher);
 
                     long endTime = System.nanoTime();
                     long time = endTime - startTime;
@@ -248,7 +310,9 @@ public class Aes
             logger.info(() ->
                     "AES benchmark"
                         + " (of execution times expressed in nanoseconds): "
-                        + log);
+                        + log
+                        + " for " + transformation
+            );
         }
 
         return minFactory;
@@ -271,14 +335,19 @@ public class Aes
         {
             long now = System.nanoTime();
 
-            factory = Aes.factory;
+            factory = Aes.factory.getOrDefault(transformation, null);
+            long factoryTimestamp = Aes.factoryTimestamps.getOrDefault(transformation, Long.MIN_VALUE);
+            boolean warmup = true;
             if ((factory != null) && (now > factoryTimestamp + FACTORY_TIMEOUT))
+            {
                 factory = null;
+                warmup = false;
+            }
             if (factory == null)
             {
                 try
                 {
-                    factory = getCipherFactory(transformation);
+                    factory = getCipherFactory(transformation, warmup);
                 }
                 catch (Throwable t)
                 {
@@ -302,20 +371,20 @@ public class Aes
                 {
                     if (factory == null)
                     {
-                        factory = Aes.factory;
+                        factory = Aes.factory.getOrDefault(transformation, null);
                         if (factory == null)
                             factory = DEFAULT_FACTORY;
                     }
 
-                    Aes.factoryTimestamp = now;
-                    if (Aes.factory != factory)
+                    Aes.factoryTimestamps.put(transformation, now);
+                    CipherFactory oldFactory = Aes.factory.put(transformation, factory);
+                    if (oldFactory != factory)
                     {
-                        Aes.factory = factory;
                         // Simplify the name of the CipherFactory class to
                         // be employed for the purposes of brevity and ease.
-                        logger.info(() ->
-                                "Will employ AES implemented by "
-                                    + getSimpleClassName(Aes.factory) + ".");
+                        logger.info("Will employ AES implemented by "
+                                    + getSimpleClassName(factory) +
+                                    " for " + transformation + ".");
                     }
                 }
             }
@@ -526,7 +595,7 @@ public class Aes
      * @return a {@link CipherFactory} instance to be used by the
      * {@link Aes} class to initialize {@link Cipher}s
      */
-    private static CipherFactory getCipherFactory(String transformation)
+    private static CipherFactory getCipherFactory(String transformation, boolean warmup)
     {
         CipherFactory[] factories = Aes.factories;
         /* TODO: figure out keysize for transformation? */
@@ -543,7 +612,7 @@ public class Aes
         // Benchmark the StreamCiphers provided by the available
         // StreamCipherFactories in order to select the fastest-performing
         // CipherFactory.
-        CipherFactory minFactory = benchmark(factories, keySize, transformation);
+        CipherFactory minFactory = benchmark(factories, keySize, transformation, warmup);
 
         // The user may have specified a specific CipherFactory class
         // (name) through setFactoryClassName(String), Practically, FACTORY_CLASS_NAME may override

@@ -57,7 +57,7 @@ public class SrtpCipherF8Test
     public void testAESF8() throws Exception
     {
         SrtpCipherF8 cipher =
-            new SrtpCipherF8(Cipher.getInstance("AES/ECB/NoPadding"));
+            new SrtpCipherF8(Aes.createCipher("AES/ECB/NoPadding"));
         cipher.init(TV_Key, TV_Salt);
         byte[] data = Arrays.copyOf(TV_Plain, TV_Plain.length);
         byte[] iv = Arrays.copyOf(TV_IV, TV_IV.length);
