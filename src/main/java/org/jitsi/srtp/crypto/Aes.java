@@ -163,6 +163,10 @@ public class Aes
             {
                 return new CtrBenchmark(keySize);
             }
+            if (transformation.contains("/GCM/"))
+            {
+                return new CtrBenchmark(keySize);
+            }
             else if (transformation.contains("/ECB/"))
             {
                 return new EcbBenchmark(keySize);
@@ -175,11 +179,10 @@ public class Aes
 
     private static class CtrBenchmark extends BenchmarkOperation
     {
-
         private final Key keySpec;
         private final IvParameterSpec ivSpec;
 
-        public CtrBenchmark( int keySize)
+        public CtrBenchmark(int keySize)
         {
             byte[] key = new byte[keySize];
 
@@ -199,6 +202,40 @@ public class Aes
             cipher.update(in, 0, in.length, out, 0);
         }
     }
+
+    private static class GcmBenchmark extends BenchmarkOperation
+    {
+        private static final int AAD_SIZE = 20; /* RTP header plus extensions */
+
+        private final Key keySpec;
+        private final byte[] aad = new byte[AAD_SIZE];
+        private final byte[] iv = new byte[12];
+
+        public GcmBenchmark(int keySize)
+        {
+            byte[] key = new byte[keySize];
+
+            Random random = Aes.random;
+            random.nextBytes(key);
+            random.nextBytes(iv);
+            random.nextBytes(aad);
+            random.nextBytes(in);
+
+            keySpec = new SecretKeySpec(key, "AES");
+        }
+
+        public void run(Cipher cipher) throws Exception
+        {
+            /* Many GCM providers don't let us use two identical IVs in a row
+               with the same key. */
+            iv[0] ^= 1;
+            GCMParameterSpec gcmSpec = new GCMParameterSpec(128, iv);
+            cipher.init(Cipher.ENCRYPT_MODE, keySpec, gcmSpec);
+            cipher.updateAAD(aad, 0, aad.length);
+            cipher.doFinal(in, 0, in.length, out, 0);
+        }
+    }
+
 
     private static class EcbBenchmark extends BenchmarkOperation
     {

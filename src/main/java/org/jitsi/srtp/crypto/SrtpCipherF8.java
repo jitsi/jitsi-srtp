@@ -165,15 +165,6 @@ public class SrtpCipherF8 extends SrtpCipher
         return len;
     }
 
-    @Override
-    public int finish(byte[] data, int off) throws GeneralSecurityException
-    {
-        /* NO-op for f8, just clear state */
-        cipher.doFinal(null, 0, 0, data, off);
-        f8ctx = null;
-        return 0;
-    }
-
     /**
      * Encrypt / Decrypt a block using F8 Mode AES algorithm, read len bytes
      * data from in at inOff and write the output into out at outOff

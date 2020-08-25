@@ -51,9 +51,6 @@ public abstract class SrtpCipher
     public abstract int process(byte[] data, int off, int len)
         throws GeneralSecurityException;
 
-    public abstract int finish(byte[] data, int off)
-        throws GeneralSecurityException;
-
     protected SecretKeySpec getSecretKey(byte[] key)
     {
         return new SecretKeySpec(key, cipher.getAlgorithm()
