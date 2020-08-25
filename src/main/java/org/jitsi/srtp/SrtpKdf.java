@@ -81,6 +81,7 @@ class SrtpKdf
         {
         case SrtpPolicy.AESF8_ENCRYPTION:
         case SrtpPolicy.AESCM_ENCRYPTION:
+        case SrtpPolicy.AESGCM_ENCRYPTION:
             cipherCtr = new SrtpCipherCtr(Aes.createCipher("AES/CTR/NoPadding"));
             break;
 
@@ -123,12 +124,15 @@ class SrtpKdf
             return;
         }
 
-        assert(masterSalt.length == 14);
+        assert(masterSalt.length < ivStore.length);
         System.arraycopy(masterSalt, 0, ivStore, 0, masterSalt.length);
 
         ivStore[7] ^= label;
-        ivStore[14] = 0;
-        ivStore[15] = 0;
+        for (int i = masterSalt.length; i < ivStore.length; i++)
+        {
+            ivStore[i] = 0;
+            ivStore[i] = 0;
+        }
 
         Arrays.fill(sessKey, (byte)0);
         cipherCtr.setIV(ivStore, true);

@@ -123,7 +123,7 @@ public class Aes
      *
      * 10000 is the threshold to trigger "C2" compilation in the OpenJDK JVM.
      */
-    private static final int NUM_WARMUPS = 10000;
+    private static final int NUM_WARMUPS = 11000;
 
     /**
      * The input buffer to be used for the benchmarking of {@link #factories}.

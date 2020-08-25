@@ -79,7 +79,7 @@ public class BaseSrtpCryptoContext
     /**
      * Temp store.
      */
-    protected final byte[] ivStore = new byte[16];
+    protected final byte[] ivStore;
 
     /**
      * The HMAC object we used to do packet authentication
@@ -167,10 +167,16 @@ public class BaseSrtpCryptoContext
         }
 
         saltKey = new byte[saltKeyLength];
+        int ivSize = 16;
         switch (policy.getEncType())
         {
         case SrtpPolicy.AESCM_ENCRYPTION:
             cipher = new SrtpCipherCtr(Aes.createCipher("AES/CTR/NoPadding"));
+            break;
+        case SrtpPolicy.AESGCM_ENCRYPTION:
+            cipher = new SrtpCipherGcm(Aes.createCipher("AES/GCM/NoPadding"),
+                policy.getAuthTagLength() * 8);
+            ivSize = 12;
             break;
         case SrtpPolicy.AESF8_ENCRYPTION:
             cipher = new SrtpCipherF8(Aes.createCipher("AES/ECB/NoPadding"));
@@ -184,8 +190,11 @@ public class BaseSrtpCryptoContext
         case SrtpPolicy.NULL_ENCRYPTION:
         default:
             cipher = null;
+            ivSize = 0;
             break;
         }
+
+        ivStore = new byte[ivSize];
 
         Mac mac;
         switch (policy.getAuthType())
@@ -206,6 +215,18 @@ public class BaseSrtpCryptoContext
         this.mac = mac;
     }
 
+
+    /**
+     * Writes roc / index to the rbStore buffer.
+     */
+    protected void writeRoc(int rocIn)
+    {
+        rbStore[0] = (byte) (rocIn >> 24);
+        rbStore[1] = (byte) (rocIn >> 16);
+        rbStore[2] = (byte) (rocIn >> 8);
+        rbStore[3] = (byte) rocIn;
+    }
+
     /**
      * Authenticates a packet.
      *
@@ -215,10 +236,7 @@ public class BaseSrtpCryptoContext
     synchronized protected byte[] authenticatePacketHmac(ByteArrayBuffer pkt, int rocIn)
     {
         mac.update(pkt.getBuffer(), pkt.getOffset(), pkt.getLength());
-        rbStore[0] = (byte) (rocIn >> 24);
-        rbStore[1] = (byte) (rocIn >> 16);
-        rbStore[2] = (byte) (rocIn >> 8);
-        rbStore[3] = (byte) rocIn;
+        writeRoc(rocIn);
         mac.update(rbStore, 0, rbStore.length);
         return mac.doFinal();
     }
