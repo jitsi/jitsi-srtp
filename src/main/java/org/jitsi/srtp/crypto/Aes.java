@@ -135,7 +135,7 @@ public class Aes
     /**
      * The output buffer to be used for the benchmarking of {@link #factories}.
      */
-    private static final byte[] out = new byte[BENCHMARK_SIZE];
+    private static final byte[] out = new byte[BENCHMARK_SIZE + BLOCK_SIZE];
 
     /**
      * The random number generator which generates keys and inputs for the
@@ -165,7 +165,7 @@ public class Aes
             }
             if (transformation.contains("/GCM/"))
             {
-                return new CtrBenchmark(keySize);
+                return new GcmBenchmark(keySize);
             }
             else if (transformation.contains("/ECB/"))
             {

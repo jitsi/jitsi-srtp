@@ -29,7 +29,6 @@ public class SrtpCipherGcm
     private final GCMParameterSpec param;
 
     private SecretKeySpec key = null;
-    private GCMParameterSpec spec = null;
 
     public SrtpCipherGcm(Cipher cipher, int authTagBits)
     {
@@ -53,13 +52,8 @@ public class SrtpCipherGcm
     @Override
     public void setIV(byte[] iv, boolean enc) throws GeneralSecurityException
     {
-        if (iv.length != cipher.getBlockSize())
-        {
-            throw new IllegalArgumentException("iv.length != BLKLEN");
-        }
-
         int mode = enc ? Cipher.ENCRYPT_MODE : Cipher.DECRYPT_MODE;
-        cipher.init(mode, key, new IvParameterSpec(iv));
+        cipher.init(mode, key, new GCMParameterSpec(param.getTLen(), iv));
     }
 
     @Override
