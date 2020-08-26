@@ -638,4 +638,45 @@ public class OpenSslAesCipherSpi
                 + key.getEncoded().length + " bytes");
         }
     }
+
+    abstract static class Impl extends OpenSslAesCipherSpi
+    {
+        public Impl(String mode)
+        {
+            super();
+            try
+            {
+                engineSetMode(mode);
+            }
+            catch (GeneralSecurityException e)
+            {
+                throw new ProviderException("Internal Error", e);
+            }
+        }
+    }
+
+    public static final class CTR extends Impl
+    {
+        public CTR()
+        {
+            super("CTR");
+        }
+    }
+
+    public static final class GCM extends Impl
+    {
+        public GCM()
+        {
+            super("GCM");
+        }
+    }
+
+    public static final class ECB extends Impl
+    {
+        public ECB()
+        {
+            super("ECB");
+        }
+    }
+
 }
