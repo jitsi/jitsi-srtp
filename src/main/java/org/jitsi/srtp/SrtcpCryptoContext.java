@@ -196,15 +196,22 @@ public class SrtcpCryptoContext
     {
         int ssrc = SrtcpPacketUtils.getSenderSsrc(pkt);
 
-        /* Compute the CM IV (refer to chapter 4.1.1 in RFC 3711):
+        /* Compute the SRTCP GCM IV (refer to section 9.1 in RFC 7714):
          *
-         * k_s   XX XX XX XX XX XX XX XX XX XX XX XX XX XX
-         * SSRC              XX XX XX XX
-         * index                               XX XX XX XX
-         * ------------------------------------------------------XOR
-         * IV    XX XX XX XX XX XX XX XX XX XX XX XX XX XX 00 00
-         *        0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15
+         *         0  1  2  3  4  5  6  7  8  9 10 11
+         *       +--+--+--+--+--+--+--+--+--+--+--+--+
+         *       |00|00|    SSRC   |00|00|0+SRTCP Idx|---+
+         *       +--+--+--+--+--+--+--+--+--+--+--+--+   |
+         *                                               |
+         *       +--+--+--+--+--+--+--+--+--+--+--+--+   |
+         *       |         Encryption Salt           |->(+)
+         *       +--+--+--+--+--+--+--+--+--+--+--+--+   |
+         *                                               |
+         *       +--+--+--+--+--+--+--+--+--+--+--+--+   |
+         *       |       Initialization Vector       |<--+
+         *       +--+--+--+--+--+--+--+--+--+--+--+--+
          */
+
         ivStore[0] = saltKey[0];
         ivStore[1] = saltKey[1];
 

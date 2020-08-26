@@ -357,6 +357,23 @@ public class SrtpCryptoContext
         int seqNo = SrtpPacketUtils.getSequenceNumber(pkt);
         long index = (((long) guessedROC) << 16) | seqNo;
 
+        /* Compute the SRTP GCM IV (refer to section 8.1 in RFC 7714):
+         *
+         *         0  0  0  0  0  0  0  0  0  0  1  1
+         *         0  1  2  3  4  5  6  7  8  9  0  1
+         *       +--+--+--+--+--+--+--+--+--+--+--+--+
+         *       |00|00|    SSRC   |     ROC   | SEQ |---+
+         *       +--+--+--+--+--+--+--+--+--+--+--+--+   |
+         *                                               |
+         *       +--+--+--+--+--+--+--+--+--+--+--+--+   |
+         *       |         Encryption Salt           |->(+)
+         *       +--+--+--+--+--+--+--+--+--+--+--+--+   |
+         *                                               |
+         *       +--+--+--+--+--+--+--+--+--+--+--+--+   |
+         *       |       Initialization Vector       |<--+
+         *       +--+--+--+--+--+--+--+--+--+--+--+--+
+         */
+
         ivStore[0] = saltKey[0];
         ivStore[1] = saltKey[1];
 
