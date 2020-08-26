@@ -75,6 +75,26 @@ public class OpenSslAesCipherSpi
 
     private byte[] iv;
 
+    /**
+     * The Cipher operation mode with which the cipher was initialized.
+     */
+    private int opmode = 0;
+
+    /**
+     * Buffer of bytes that might include the GCM tag when decrypting.
+     */
+    private byte[] buffer;
+
+    /**
+     * The number of bytes buffered.
+     */
+    private int buffered = 0;
+
+    /**
+     * For GCM, the size of the authentication tag, in bytes.
+     */
+    private int tagLen;
+
     public OpenSslAesCipherSpi()
     {
         if (!JitsiOpenSslProvider.isLoaded())
@@ -126,10 +146,36 @@ public class OpenSslAesCipherSpi
         return BLKLEN;
     }
 
+    private int getOutputSize(int inputLen, boolean forFinal)
+    {
+        if (cipherMode != GCM_MODE)
+        {
+            return inputLen;
+        }
+        if (opmode == Cipher.ENCRYPT_MODE) {
+            if (forFinal)
+            {
+                return inputLen + tagLen;
+            }
+            else
+            {
+                return inputLen;
+            }
+        }
+        else {
+            int len = buffered + inputLen - tagLen;
+            if (len < 0)
+            {
+                return 0;
+            }
+            return len;
+        }
+    }
+
     @Override
     protected int engineGetOutputSize(int inputLen)
     {
-        return inputLen;
+        return getOutputSize(inputLen, true);
     }
 
     @Override
@@ -187,6 +233,7 @@ public class OpenSslAesCipherSpi
         default:
             throw new InvalidAlgorithmParameterException("Unsupported opmode " + opmode);
         }
+        this.opmode = opmode;
 
         if (params != null)
         {
@@ -196,9 +243,11 @@ public class OpenSslAesCipherSpi
                 {
                     if (((GCMParameterSpec)params).getTLen() != 128)
                     {
+                        /* ?? Do we need to enforce this? */
                         throw new InvalidAlgorithmParameterException
                             ("Unsupported GCM tag length: must be 128");
                     }
+                    tagLen = ((GCMParameterSpec)params).getTLen() / 8;
                     iv = ((GCMParameterSpec) params).getIV();
                 }
                 else
@@ -244,7 +293,7 @@ public class OpenSslAesCipherSpi
              * IV in this case if we're encrypting, but we never want to do this for SRTP.
              */
             throw new InvalidAlgorithmParameterException
-                ("Parameters missing");
+                ("IV parameter missing");
         }
 
         byte[] keyParam = null;
@@ -292,52 +341,209 @@ public class OpenSslAesCipherSpi
     @Override
     protected byte[] engineUpdate(byte[] input, int inputOffset, int inputLen)
     {
-        return engineDoFinal(input, inputOffset, inputLen);
+        int bufNeeded = getOutputSize(inputLen, false);
+        byte[] buf = new byte[bufNeeded];
+        try
+        {
+            int len = engineUpdate(input, inputOffset, inputLen, buf, 0);
+            assert(len == bufNeeded);
+        }
+        catch (ShortBufferException e)
+        {
+            /* Shouldn't happen, we allocated enough. */
+            throw new IllegalStateException(e);
+        }
+        return buf;
+    }
+
+    /**
+     * Call EVP_CipherUpdate, throwing on failure.
+     */
+    private void doCipherUpdate(byte[] input, int inputOffset, int inputLen,
+        byte[] output, int outputOffset)
+    {
+        if (!EVP_CipherUpdate(ctx, input, inputOffset, inputLen, output,
+            outputOffset))
+        {
+            throw new IllegalStateException("Failure in EVP_CipherUpdate");
+        }
+    }
+
+    private int doGcmDecryptUpdateWithBuffer(byte[] input,
+        int inputOffset, int inputLen,
+        byte[] output, int outputOffset)
+    {
+        /* For GCM decryption, we need to hold on to the bytes that might be
+         * the auth tag. */
+        if (buffer == null)
+        {
+            buffer = new byte[tagLen];
+        }
+        int len = buffered + inputLen - tagLen;
+        int outLen = 0;
+        if (len > 0)
+        {
+            if (len <= buffered)
+            {
+                doCipherUpdate(buffer, 0, len, output, outputOffset);
+                buffered -= len;
+                inputOffset += len;
+                inputLen -= len;
+                if (buffered > 0)
+                {
+                    System.arraycopy(buffer, len, buffer, 0, buffered);
+                }
+                outLen += len;
+            }
+            else
+            {
+                if (buffered > 0)
+                {
+                    doCipherUpdate(buffer, 0, buffered, output,
+                        outputOffset);
+                    outputOffset += buffered;
+                    len -= buffered;
+                    buffered = 0;
+                    outLen += buffered;
+                }
+                if (len > 0)
+                {
+                    doCipherUpdate(input, inputLen, len, output,
+                        outputOffset);
+                    inputOffset += len;
+                    inputLen -= len;
+                    outLen += len;
+                }
+            }
+        }
+        assert(buffered + inputLen <= tagLen);
+        if (inputLen > 0)
+        {
+            System.arraycopy(input, inputOffset, buffer, buffered, inputLen);
+            buffered += inputLen;
+        }
+
+        return outLen;
     }
 
     @Override
     protected int engineUpdate(byte[] input, int inputOffset, int inputLen,
         byte[] output, int outputOffset) throws ShortBufferException
     {
-        return engineDoFinal(input, inputOffset, inputLen, output,
-            outputOffset);
+        int needed = getOutputSize(inputLen, false);
+        if (output.length - outputOffset < needed)
+        {
+            throw new ShortBufferException("Output buffer needs at least " +
+                needed + "bytes");
+        }
+        if (cipherMode != GCM_MODE || opmode == Cipher.ENCRYPT_MODE)
+        {
+            doCipherUpdate(input, inputOffset, inputLen, output, outputOffset);
+            return inputLen;
+        }
+        else
+        {
+            return doGcmDecryptUpdateWithBuffer(input, inputOffset, inputLen,
+                output, outputOffset);
+        }
     }
 
     @Override
     protected void engineUpdateAAD(byte[] input, int inputOffset, int inputLen)
     {
-        if (!EVP_CipherUpdate(ctx, input, inputOffset, inputLen, null, 0))
-        {
-            throw new IllegalStateException("EVP_CipherUpdate");
-        }
+        doCipherUpdate(input, inputOffset, inputLen, null, 0);
     }
 
     @Override
     protected byte[] engineDoFinal(byte[] input, int inputOffset, int inputLen)
+        throws AEADBadTagException
     {
-        byte[] out = new byte[inputLen];
+        int bufNeeded = getOutputSize(inputLen, true);
+        byte[] buf = new byte[bufNeeded];
         try
         {
-            engineDoFinal(input, inputOffset, inputLen, out, 0);
+            int len = engineDoFinal(input, inputOffset, inputLen, buf, 0);
+            assert(len == bufNeeded);
         }
         catch (ShortBufferException e)
         {
-            // nope, we allocated enough
+            /* Shouldn't happen, we allocated enough. */
+            throw new IllegalStateException(e);
         }
-        return out;
+        return buf;
     }
 
     @Override
     protected int engineDoFinal(byte[] input, int inputOffset, int inputLen,
         byte[] output, int outputOffset) throws
-        ShortBufferException
+        ShortBufferException, AEADBadTagException
     {
-        if (!EVP_CipherUpdate(ctx, input, inputOffset, inputLen, output, outputOffset))
+        int needed = getOutputSize(inputLen, false);
+        if (output.length - outputOffset < needed)
         {
-            throw new ShortBufferException("EVP_CipherUpdate");
+            throw new ShortBufferException("Output buffer needs at least " +
+                needed + "bytes");
+        }
+        int outLen;
+        if (cipherMode != GCM_MODE || opmode == Cipher.ENCRYPT_MODE)
+        {
+            doCipherUpdate(input, inputOffset, inputLen, output, outputOffset);
+            outLen = inputLen;
+        }
+        else
+        {
+            byte[] tagBuf;
+            int tagOffset;
+            if (buffered == 0 && inputLen >= tagLen)
+            {
+                doCipherUpdate(input, inputOffset, inputLen - tagLen, output, outputOffset);
+                outLen = inputLen - tagLen;
+                tagBuf = input;
+                tagOffset = inputOffset + outLen;
+            }
+            else {
+                outLen = doGcmDecryptUpdateWithBuffer(input, inputOffset, inputLen, output, outputOffset);
+                if (buffered != tagLen)
+                {
+                    /* Not enough bytes sent to decryption operation */
+                    throw new AEADBadTagException("Input too short - need tag");
+                }
+                tagBuf = buffer;
+                tagOffset = 0;
+            }
+            if (!EVP_CipherSetTag(ctx, tagBuf, tagOffset, tagLen))
+            {
+                throw new IllegalStateException("Failure in EVP_CipherSetTag");
+            }
         }
 
-        return inputLen;
+        if (cipherMode != GCM_MODE)
+        {
+            return outLen;
+        }
+
+        if (!EVP_CipherFinal(ctx, output, outputOffset + outLen))
+        {
+            if (opmode == Cipher.DECRYPT_MODE)
+            {
+                throw new AEADBadTagException("Bad AEAD tag");
+            }
+            else
+            {
+                throw new IllegalStateException("Failure in EVP_CipherFinal");
+            }
+        }
+
+        if (opmode == Cipher.ENCRYPT_MODE)
+        {
+            if (!EVP_CipherGetTag(ctx, output, outputOffset + outLen, tagLen))
+            {
+                throw new IllegalStateException("Failure in EVP_CipherGetTag");
+            }
+            outLen += tagLen;
+        }
+
+        return outLen;
     }
 
     /**
