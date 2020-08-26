@@ -269,7 +269,7 @@ JNIEXPORT jboolean JNICALL Java_org_jitsi_srtp_crypto_OpenSslAesCipherSpi_EVP_1C
 
     ok = EVP_CIPHER_CTX_ctrl(
                 (EVP_CIPHER_CTX *) (intptr_t) ctx,
-                EVP_CTRL_AEAD_SET_TAG,
+                EVP_CTRL_GCM_SET_TAG,
                 taglen,
                 (unsigned char *) (tag_ + offset));
 
@@ -296,7 +296,7 @@ JNIEXPORT jboolean JNICALL Java_org_jitsi_srtp_crypto_OpenSslAesCipherSpi_EVP_1C
 
     ok = EVP_CIPHER_CTX_ctrl(
                 (EVP_CIPHER_CTX *) (intptr_t) ctx,
-                EVP_CTRL_AEAD_GET_TAG,
+                EVP_CTRL_GCM_GET_TAG,
                 taglen,
                 (unsigned char *) (tag_ + offset));
 
