@@ -505,6 +505,14 @@ public class SrtpCryptoContext
         long guessedIndex = guessIndex(seqNo);
         SrtpErrorStatus ret, err;
 
+        if (policy.getEncType() == SrtpPolicy.AESGCM_ENCRYPTION) {
+            /* We can't skip decryption for GCM, because it's also the authentication. */
+            /*  (Note: in theory it'd be possible to run a GCM auth without the decryption
+             *   part, but I don't know of any GCM cipher APIs which support this.)
+             */
+            skipDecryption = false;
+        }
+
         // Replay control
         if (policy.isReceiveReplayDisabled() || ((err = checkReplay(seqNo, guessedIndex)) == SrtpErrorStatus.OK))
         {
