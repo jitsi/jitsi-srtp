@@ -95,20 +95,26 @@ public class SrtpCipherGcmTest
         assertEquals(-16, lenDelta);
     }
 
-    private void testGcmCipherKey(SrtpCipherGcm cipher, final byte[] key, final byte[] expectedCiphertext)
+    private void testEncryptGcmCipherKey(SrtpCipherGcm cipher, final byte[] expectedCiphertext)
         throws Exception
     {
         byte[] data = Arrays.copyOf(TV_Packet, expectedCiphertext.length);
 
-        cipher.init(key, null);
         encryptBuffer(cipher, data);
 
         assertArrayEquals(expectedCiphertext, data);
+    }
 
-        byte[] data2 = Arrays.copyOf(expectedCiphertext, expectedCiphertext.length);
-        decryptBuffer(cipher, data2);
+    private void testDecryptGcmCipherKey(SrtpCipherGcm cipher, final byte[] expectedCiphertext, boolean authOnly)
+        throws Exception
+    {
+        byte[] data = Arrays.copyOf(expectedCiphertext, expectedCiphertext.length);
+        decryptBuffer(cipher, data);
 
-        assertArrayEquals(TV_Packet, Arrays.copyOf(data2, TV_Packet.length));
+        if (!authOnly)
+        {
+            assertArrayEquals(TV_Packet, Arrays.copyOf(data, TV_Packet.length));
+        }
 
         for (int i = 0; i < TV_Packet.length; i++) {
             for (int j = 0; j < 8; j++) {
@@ -118,6 +124,14 @@ public class SrtpCipherGcmTest
                 assertThrows(AEADBadTagException.class, () -> decryptBuffer(cipher, mungedData));
             }
         }
+    }
+
+    private void testGcmCipherKey(SrtpCipherGcm cipher, final byte[] key, final byte[] expectedCiphertext)
+        throws Exception
+    {
+        cipher.init(key, null);
+        testEncryptGcmCipherKey(cipher, expectedCiphertext);
+        testDecryptGcmCipherKey(cipher, expectedCiphertext, false);
     }
 
     private void testGcmCipher(SrtpCipherGcm cipher)
@@ -164,6 +178,31 @@ public class SrtpCipherGcmTest
         SrtpCipherGcm cipher = new SrtpCipherGcm(new Aes.OpenSSLCipherFactory().createCipher("AES/GCM/NoPadding"));
 
         testGcmCipher(cipher);
+    }
+
+    @Test
+    public void testSrtpCipherOpenSslAuthOnly()
+        throws Exception
+    {
+        boolean haveOpenSsl = JitsiOpenSslProvider.isLoaded();
+
+        if (System.getProperty("os.name").toLowerCase().contains("linux"))
+        {
+            assertTrue(haveOpenSsl, "should always have OpenSSL on Linux");
+        }
+
+        if (!haveOpenSsl)
+        {
+            return;
+        }
+
+        SrtpCipherGcm cipher = new SrtpCipherGcm(new Aes.OpenSSLCipherFactory().createCipher("AES/GCM-AuthOnly/NoPadding"));
+
+        cipher.init(TV_Key_128, null);
+        testDecryptGcmCipherKey(cipher, TV_Cipher_AES_GCM_128, true);
+
+        cipher.init(TV_Key_256, null);
+        testDecryptGcmCipherKey(cipher, TV_Cipher_AES_GCM_256, true);
     }
 
     /* TODO add tests for other implementations as they're written */

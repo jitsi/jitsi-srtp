@@ -66,14 +66,37 @@ public class SrtpPerfTest {
         packet.grow(payloadSize);
     }
 
+    private byte[] encryptedPacket = null;
+
+    private void setupEncryptedPacket(int payloadSize, SrtpPolicy policy)
+        throws GeneralSecurityException
+    {
+        setupPacket(payloadSize, policy);
+        resetPacket(payloadSize);
+        createContext(policy, true);
+        doEncrypt(1, payloadSize);
+        encryptedPacket = packet.getBuffer().clone();
+    }
+
+    private void resetEncryptedPacket()
+    {
+        if (packet == null || packet.getBuffer().length < encryptedPacket.length)
+        {
+            packet = new ByteArrayBufferImpl(encryptedPacket.length);
+        }
+
+        System.arraycopy(encryptedPacket, 0, packet.getBuffer(), 0, encryptedPacket.length);
+        packet.setLength(encryptedPacket.length);
+    }
+
     private SrtpContextFactory factory;
     private SrtpCryptoContext context;
 
-    private void createContext(SrtpPolicy policy)
+    private void createContext(SrtpPolicy policy, boolean sender)
         throws GeneralSecurityException
     {
         Logger logger = new LoggerImpl(getClass().getName());
-        factory = new SrtpContextFactory(true,
+        factory = new SrtpContextFactory(sender,
             Arrays.copyOf(test_key, policy.getEncKeyLength()),
             Arrays.copyOf(test_key_salt, policy.getSaltKeyLength()),
             policy, policy, logger);
@@ -90,11 +113,21 @@ public class SrtpPerfTest {
         }
     }
 
-    public void doPerfTest(SrtpPolicy policy, String desc, int num, int payloadSize, int numWarmups)
+    public void doDecrypt(int num, int payloadSize, boolean skipDecryption)
         throws GeneralSecurityException
     {
-        createContext(policy);
+        for (int i = 0; i < num; i++)
+        {
+            resetEncryptedPacket();
+            context.reverseTransformPacket(packet, skipDecryption);
+        }
+    }
+
+    public void doEncPerfTest(SrtpPolicy policy, String desc, int num, int payloadSize, int numWarmups)
+        throws GeneralSecurityException
+    {
         setupPacket(payloadSize, policy);
+        createContext(policy, true);
 
         /* Warm up JVM */
         doEncrypt(numWarmups, payloadSize);
@@ -108,8 +141,41 @@ public class SrtpPerfTest {
         long elapsed = endTime - startTime;
         long average = elapsed / num;
 
-        System.out.printf("Executed %d SRTP %s (%d byte payload) in %s: %.3f µs/pkt\n",
+        System.out.printf("Executed %d SRTP %s encrypt (%d byte payload) in %s: %.3f µs/pkt\n",
                 num, desc, payloadSize, Duration.ofNanos(elapsed).toString(), average / 1000.0);
+    }
+
+    public void doDecPerfTest(SrtpPolicy policy, String desc, int num, int payloadSize, int numWarmups,
+        boolean skipDecryption)
+        throws GeneralSecurityException
+    {
+        setupEncryptedPacket(payloadSize, policy);
+        policy.setReceiveReplayEnabled(false);
+        createContext(policy, false);
+
+        /* Warm up JVM */
+        doDecrypt(numWarmups, payloadSize, skipDecryption);
+
+        long startTime = System.nanoTime();
+
+        doDecrypt(num, payloadSize, skipDecryption);
+
+        long endTime = System.nanoTime();
+
+        long elapsed = endTime - startTime;
+        long average = elapsed / num;
+
+        System.out.printf("Executed %d SRTP %s decrypt%s (%d byte payload) in %s: %.3f µs/pkt\n",
+            num, desc, skipDecryption ?" auth only" : "", payloadSize,
+            Duration.ofNanos(elapsed).toString(), average / 1000.0);
+    }
+
+    public void doPerfTest(SrtpPolicy policy, String desc, int num, int payloadSize, int numWarmups)
+        throws GeneralSecurityException
+    {
+        doEncPerfTest(policy, desc, num, payloadSize, numWarmups);
+        doDecPerfTest(policy, desc, num, payloadSize, numWarmups, false);
+        doDecPerfTest(policy, desc, num, payloadSize, numWarmups, true);
     }
 
     public void doCtrPerfTest(int num, int payloadSize, int numWarmups)
