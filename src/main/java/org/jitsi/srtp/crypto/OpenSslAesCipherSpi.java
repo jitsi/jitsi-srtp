@@ -54,6 +54,8 @@ public class OpenSslAesCipherSpi
     private static native boolean EVP_CipherFinal(long ctx,
         byte[] out, int offset);
 
+    private static native boolean EVP_CipherSetIVLen(long ctx, int ivlen);
+
     private static native boolean EVP_CipherSetTag(long ctx,
         byte[] tag, int offset, int taglen);
 
@@ -235,6 +237,8 @@ public class OpenSslAesCipherSpi
         }
         this.opmode = opmode;
 
+        int ivLen = 0;
+
         if (params != null)
         {
             if (cipherMode == GCM_MODE)
@@ -248,7 +252,14 @@ public class OpenSslAesCipherSpi
                             ("Unsupported GCM tag length: must be 128");
                     }
                     tagLen = ((GCMParameterSpec)params).getTLen() / 8;
-                    iv = ((GCMParameterSpec) params).getIV();
+                    byte[] newIv = ((GCMParameterSpec) params).getIV();
+                    /* Default IV length is 12. */
+                    if ((iv == null && newIv.length != 12) ||
+                        (iv != null && iv.length != newIv.length))
+                    {
+                        ivLen = newIv.length;
+                    }
+                    iv = newIv;
                 }
                 else
                 {
@@ -303,6 +314,15 @@ public class OpenSslAesCipherSpi
             this.key = key;
             keyParam = key.getEncoded();
             cipherType = getCipher(key);
+        }
+
+        if (ivLen != 0)
+        {
+            if (!EVP_CipherSetIVLen(ctx, ivLen))
+            {
+                throw new InvalidAlgorithmParameterException
+                    ("Unsupported IV length " + ivLen);
+            }
         }
 
         if (!EVP_CipherInit(ctx, cipherType, keyParam, this.iv, enc))

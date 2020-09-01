@@ -255,6 +255,25 @@ exit:
 
 /*
  * Class:     org_jitsi_srtp_crypto_OpenSslAesCipherSpi
+ * Method:    EVP_CipherSetIVLen
+ * Signature: (JI)Z
+ */
+JNIEXPORT jboolean JNICALL Java_org_jitsi_srtp_crypto_OpenSslAesCipherSpi_EVP_1CipherSetIVLen
+  (JNIEnv *env, jclass clazz, jlong ctx, jint ivLen)
+{
+    int ok = 0;
+
+    ok = EVP_CIPHER_CTX_ctrl(
+                (EVP_CIPHER_CTX *) (intptr_t) ctx,
+                EVP_CTRL_GCM_SET_IVLEN,
+                ivLen,
+                NULL);
+
+    return ok;
+}
+
+/*
+ * Class:     org_jitsi_srtp_crypto_OpenSslAesCipherSpi
  * Method:    EVP_CipherSetTag
  * Signature: (J[BII)Z
  */
