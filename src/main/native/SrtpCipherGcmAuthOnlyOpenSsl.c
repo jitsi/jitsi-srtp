@@ -160,11 +160,14 @@ JNIEXPORT jboolean JNICALL Java_org_jitsi_srtp_crypto_OpenSslAesGcmAuthOnlyCiphe
   (JNIEnv *env, jclass clazz, jlong ctx, jbyteArray iv, jint len)
 {
     jboolean ok = JNI_FALSE;
+    AES_GCM_CONTEXT* ctx_ = (AES_GCM_CONTEXT*)ctx;
+    if (ctx_->gcm == NULL)
+        return JNI_FALSE; /* Not initialized */
     unsigned char *iv_ = (unsigned char*)(*env)->GetPrimitiveArrayCritical(env, iv, NULL);
     if (iv_ == NULL)
         goto exit;
 
-    CRYPTO_gcm128_setiv(((AES_GCM_CONTEXT*)ctx)->gcm, iv_, len);
+    CRYPTO_gcm128_setiv(ctx_->gcm, iv_, len);
     ok = JNI_TRUE;
 
 exit:
@@ -182,11 +185,14 @@ JNIEXPORT jboolean JNICALL Java_org_jitsi_srtp_crypto_OpenSslAesGcmAuthOnlyCiphe
   (JNIEnv *env, jclass clazz, jlong ctx, jbyteArray in, jint inOffset, jint len)
 {
     jboolean ok = 0;
+    AES_GCM_CONTEXT* ctx_ = (AES_GCM_CONTEXT*)ctx;
+    if (ctx_->gcm == NULL)
+        return JNI_FALSE; /* Not initialized */
     unsigned char *in_ = (unsigned char*)(*env)->GetPrimitiveArrayCritical(env, in, NULL);
     if (in_ == NULL)
         goto exit;
 
-    ok = (CRYPTO_gcm128_aad(((AES_GCM_CONTEXT*)ctx)->gcm, in_ + inOffset, len) == 0);
+    ok = (CRYPTO_gcm128_aad(ctx_->gcm, in_ + inOffset, len) == 0);
 
 exit:
     if (in_ != NULL)
@@ -215,6 +221,9 @@ JNIEXPORT jboolean JNICALL Java_org_jitsi_srtp_crypto_OpenSslAesGcmAuthOnlyCiphe
   (JNIEnv *env, jclass clazz, jlong ctx, jbyteArray in, jint inOffset, jint len)
 {
     jboolean ok = 0;
+    AES_GCM_CONTEXT* ctx_ = (AES_GCM_CONTEXT*)ctx;
+    if (ctx_->gcm == NULL)
+        return JNI_FALSE; /* Not initialized */
     unsigned char *in_ = (unsigned char*)(*env)->GetPrimitiveArrayCritical(env, in, NULL);
     if (in_ == NULL)
         goto exit;
@@ -222,7 +231,7 @@ JNIEXPORT jboolean JNICALL Java_org_jitsi_srtp_crypto_OpenSslAesGcmAuthOnlyCiphe
     /* In order to do auth-without-decrypt with an OpenSSL GCM_CONTEXT, we call
      * int CRYPTO_gcm128_decrypt_ctr32 with a no-op stream cipher. */
 
-    ok = (CRYPTO_gcm128_decrypt_ctr32(((AES_GCM_CONTEXT*)ctx)->gcm, in_ + inOffset,
+    ok = (CRYPTO_gcm128_decrypt_ctr32(ctx_->gcm, in_ + inOffset,
         in_ + inOffset, len, null_cipher) == 0);
 
 exit:
@@ -241,12 +250,15 @@ JNIEXPORT jboolean JNICALL Java_org_jitsi_srtp_crypto_OpenSslAesGcmAuthOnlyCiphe
   (JNIEnv * env, jclass clazz, jlong ctx, jbyteArray tag, jint tagOffset, jint tagLen)
 {
     int ok = 0;
+    AES_GCM_CONTEXT* ctx_ = (AES_GCM_CONTEXT*)ctx;
+    if (ctx_->gcm == NULL)
+        return JNI_FALSE; /* Not initialized */
 
     unsigned char *tag_ = (unsigned char*)(*env)->GetPrimitiveArrayCritical(env, tag, NULL);
     if (!tag_)
         goto exit;
 
-    ok = (CRYPTO_gcm128_finish(((AES_GCM_CONTEXT*)ctx)->gcm, tag_ + tagOffset, tagLen) == 0);
+    ok = (CRYPTO_gcm128_finish(ctx_->gcm, tag_ + tagOffset, tagLen) == 0);
 
 exit:
     if (tag_ != NULL)

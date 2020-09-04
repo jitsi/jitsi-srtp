@@ -311,12 +311,22 @@ public class OpenSslAesGcmAuthOnlyCipherSpi
     protected int engineUpdate(byte[] input, int inputOffset, int inputLen,
         byte[] output, int outputOffset)
     {
+        if (inputOffset + inputLen > input.length)
+        {
+            throw new IllegalArgumentException("Input buffer length " + input.length +
+                " is too short for offset " + inputOffset + " plus length " + inputLen);
+        }
         return doGcmDecryptUpdateWithBuffer(input, inputOffset, inputLen);
     }
 
     @Override
     protected void engineUpdateAAD(byte[] input, int inputOffset, int inputLen)
     {
+        if (inputOffset + inputLen > input.length)
+        {
+            throw new IllegalArgumentException("Input buffer length " + input.length +
+                " is too short for offset " + inputOffset + " plus length " + inputLen);
+        }
         if (!CRYPTO_gcm128_aad(ctx, input, inputOffset, inputLen))
         {
             throw new IllegalStateException("Failure in CRYPTO_gcm128_aad");
@@ -336,6 +346,11 @@ public class OpenSslAesGcmAuthOnlyCipherSpi
         byte[] output, int outputOffset) throws
         AEADBadTagException
     {
+        if (inputOffset + inputLen > input.length)
+        {
+            throw new IllegalArgumentException("Input buffer length " + input.length +
+                " is too short for offset " + inputOffset + " plus length " + inputLen);
+        }
         byte[] tagBuf;
         int tagOffset;
         int outLen;
