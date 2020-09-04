@@ -157,10 +157,10 @@
                                 <source>
                                     <directory>src/main/native</directory>
                                     <fileNames>
-                                        <fileName>Hmac.c</fileName>
+                                        <fileName>JitsiHmacOpenSsl.c</fileName>
                                         <fileName>JitsiOpenSslProvider.c
                                         </fileName>
-                                        <fileName>SrtpCipherCtrOpenSsl.c
+                                        <fileName>JitsiCipherOpenSsl.c
                                         </fileName>
                                     </fileNames>
                                 </source>
