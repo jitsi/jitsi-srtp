@@ -436,6 +436,11 @@ public class OpenSslAesCipherSpi
             throw new ShortBufferException("Output buffer needs at least " +
                 needed + "bytes");
         }
+        if (inputOffset + inputLen > input.length)
+        {
+            throw new IllegalArgumentException("Input buffer length " + input.length +
+                " is too short for offset " + inputOffset + " plus length " + inputLen);
+        }
         if (cipherMode != GCM_MODE || opmode == Cipher.ENCRYPT_MODE)
         {
             doCipherUpdate(input, inputOffset, inputLen, output, outputOffset);
@@ -451,6 +456,11 @@ public class OpenSslAesCipherSpi
     @Override
     protected void engineUpdateAAD(byte[] input, int inputOffset, int inputLen)
     {
+        if (inputOffset + inputLen > input.length)
+        {
+            throw new IllegalArgumentException("Input buffer length " + input.length +
+                " is too short for offset " + inputOffset + " plus length " + inputLen);
+        }
         doCipherUpdate(input, inputOffset, inputLen, null, 0);
     }
 
@@ -483,6 +493,11 @@ public class OpenSslAesCipherSpi
         {
             throw new ShortBufferException("Output buffer needs at least " +
                 needed + "bytes");
+        }
+        if (inputOffset + inputLen > input.length)
+        {
+            throw new IllegalArgumentException("Input buffer length " + input.length +
+                " is too short for offset " + inputOffset + " plus length " + inputLen);
         }
         int outLen;
         if (cipherMode != GCM_MODE || opmode == Cipher.ENCRYPT_MODE)
