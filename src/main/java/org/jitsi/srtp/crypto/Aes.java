@@ -61,7 +61,7 @@ public class Aes
 
     /**
      * The {@link CipherFactory} implementations known to the {@link Aes}
-     * class among which the fastest is to be elected as {@link #factory}
+     * class among which the fastest is to be elected as {@link #fastestFactories}
      * for each transformation.
      */
     private static CipherFactory[] factories;
@@ -70,7 +70,7 @@ public class Aes
      * The {@link CipherFactory} implementation which is (to be) used by
      * the class {@link Aes} to initialize {@link Cipher}s.
      */
-    private static final Map<String, CipherFactory> factory = new HashMap<>();
+    private static final Map<String, CipherFactory> fastestFactories = new HashMap<>();
 
     /**
      * The name of the class to instantiate as a {@link CipherFactory}
@@ -93,7 +93,7 @@ public class Aes
 
     /**
      * The number of nanoseconds after which the benchmark which elected
-     * {@link #factory} is to be considered expired.
+     * {@link #fastestFactories} is to be considered expired.
      */
     public static final long FACTORY_TIMEOUT = TimeUnit.SECONDS.toNanos(60);
 
@@ -107,7 +107,7 @@ public class Aes
 
     /**
      * The time in nanoseconds at which {@link #factories} were benchmarked and
-     * {@link #factory} was elected for a given transformation.
+     * {@link #fastestFactories} was elected for a given transformation.
      */
     private static final Map<String, Long> factoryTimestamps = new HashMap<>();
 
@@ -372,7 +372,7 @@ public class Aes
         {
             long now = System.nanoTime();
 
-            factory = Aes.factory.getOrDefault(transformation, null);
+            factory = Aes.fastestFactories.getOrDefault(transformation, null);
             long factoryTimestamp = Aes.factoryTimestamps.getOrDefault(transformation, Long.MIN_VALUE);
             boolean warmup = true;
             if ((factory != null) && (now > factoryTimestamp + FACTORY_TIMEOUT))
@@ -408,13 +408,15 @@ public class Aes
                 {
                     if (factory == null)
                     {
-                        factory = Aes.factory.getOrDefault(transformation, null);
+                        factory = Aes.fastestFactories
+                            .getOrDefault(transformation, null);
                         if (factory == null)
                             factory = DEFAULT_FACTORY;
                     }
 
                     Aes.factoryTimestamps.put(transformation, now);
-                    CipherFactory oldFactory = Aes.factory.put(transformation, factory);
+                    CipherFactory oldFactory = Aes.fastestFactories
+                        .put(transformation, factory);
                     if (oldFactory != factory)
                     {
                         // Simplify the name of the CipherFactory class to

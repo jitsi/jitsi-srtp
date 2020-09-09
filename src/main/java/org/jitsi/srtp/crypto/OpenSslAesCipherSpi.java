@@ -64,11 +64,12 @@ public class OpenSslAesCipherSpi
 
     private Key key;
 
-    private static final int CTR_MODE = 1;
-    private static final int GCM_MODE = 2;
-    private static final int ECB_MODE = 3;
+    private enum CipherMode
+    {
+        Unspecified, CTR, GCM, ECB
+    }
 
-    private int cipherMode = 0;
+    private CipherMode cipherMode = CipherMode.Unspecified;
 
     /**
      * the OpenSSL AES_CTR context
@@ -116,15 +117,15 @@ public class OpenSslAesCipherSpi
     {
         if ("ctr".equalsIgnoreCase(mode))
         {
-            cipherMode = CTR_MODE;
+            cipherMode = CipherMode.CTR;
         }
         else if ("gcm".equalsIgnoreCase(mode))
         {
-            cipherMode = GCM_MODE;
+            cipherMode = CipherMode.GCM;
         }
         else if ("ecb".equalsIgnoreCase(mode))
         {
-            cipherMode = ECB_MODE;
+            cipherMode = CipherMode.ECB;
         }
         else
         {
@@ -150,11 +151,12 @@ public class OpenSslAesCipherSpi
 
     private int getOutputSize(int inputLen, boolean forFinal)
     {
-        if (cipherMode != GCM_MODE)
+        if (cipherMode != CipherMode.GCM)
         {
             return inputLen;
         }
-        if (opmode == Cipher.ENCRYPT_MODE) {
+        if (opmode == Cipher.ENCRYPT_MODE)
+        {
             if (forFinal)
             {
                 return inputLen + tagLen;
@@ -164,7 +166,8 @@ public class OpenSslAesCipherSpi
                 return inputLen;
             }
         }
-        else {
+        else
+        {
             int len = buffered + inputLen - tagLen;
             if (len < 0)
             {
@@ -212,6 +215,11 @@ public class OpenSslAesCipherSpi
         AlgorithmParameterSpec params, SecureRandom random)
         throws InvalidKeyException, InvalidAlgorithmParameterException
     {
+        if (cipherMode == CipherMode.Unspecified)
+        {
+            throw new IllegalStateException("Cipher mode has not been initialized");
+        }
+
         if (!key.getAlgorithm().equalsIgnoreCase("AES")
             || !key.getFormat().equalsIgnoreCase("RAW")
             || (key.getEncoded().length != 16
@@ -223,14 +231,14 @@ public class OpenSslAesCipherSpi
                     + " " + key.getAlgorithm() + "/" + key.getFormat());
         }
 
-        int enc;
+        int openSslEncryptMode;
         switch (opmode)
         {
         case Cipher.ENCRYPT_MODE:
-            enc = 1;
+            openSslEncryptMode = 1;
             break;
         case Cipher.DECRYPT_MODE:
-            enc = 0;
+            openSslEncryptMode = 0;
             break;
         default:
             throw new InvalidAlgorithmParameterException("Unsupported opmode " + opmode);
@@ -241,7 +249,7 @@ public class OpenSslAesCipherSpi
 
         if (params != null)
         {
-            if (cipherMode == GCM_MODE)
+            if (cipherMode == CipherMode.GCM)
             {
                 if (params instanceof GCMParameterSpec)
                 {
@@ -290,7 +298,7 @@ public class OpenSslAesCipherSpi
             iv = null;
         }
 
-        if (cipherMode == ECB_MODE)
+        if (cipherMode == CipherMode.ECB)
         {
             if (iv != null)
             {
@@ -325,7 +333,7 @@ public class OpenSslAesCipherSpi
             }
         }
 
-        if (!EVP_CipherInit(ctx, cipherType, keyParam, this.iv, enc))
+        if (!EVP_CipherInit(ctx, cipherType, keyParam, this.iv, openSslEncryptMode))
         {
             throw new InvalidKeyException("AES_CTR_CTX_init");
         }
@@ -341,7 +349,7 @@ public class OpenSslAesCipherSpi
         {
             try
             {
-                if (cipherMode == GCM_MODE)
+                if (cipherMode == CipherMode.GCM)
                 {
                     spec = params.getParameterSpec(GCMParameterSpec.class);
                 }
@@ -461,7 +469,7 @@ public class OpenSslAesCipherSpi
             throw new IllegalArgumentException("Input buffer length " + input.length +
                 " is too short for offset " + inputOffset + " plus length " + inputLen);
         }
-        if (cipherMode != GCM_MODE || opmode == Cipher.ENCRYPT_MODE)
+        if (cipherMode != CipherMode.GCM || opmode == Cipher.ENCRYPT_MODE)
         {
             doCipherUpdate(input, inputOffset, inputLen, output, outputOffset);
             return inputLen;
@@ -520,7 +528,7 @@ public class OpenSslAesCipherSpi
                 " is too short for offset " + inputOffset + " plus length " + inputLen);
         }
         int outLen;
-        if (cipherMode != GCM_MODE || opmode == Cipher.ENCRYPT_MODE)
+        if (cipherMode != CipherMode.GCM || opmode == Cipher.ENCRYPT_MODE)
         {
             doCipherUpdate(input, inputOffset, inputLen, output, outputOffset);
             outLen = inputLen;
@@ -552,7 +560,7 @@ public class OpenSslAesCipherSpi
             }
         }
 
-        if (cipherMode != GCM_MODE)
+        if (cipherMode != CipherMode.GCM)
         {
             return outLen;
         }
@@ -609,11 +617,11 @@ public class OpenSslAesCipherSpi
     {
         switch (cipherMode)
         {
-        case CTR_MODE:
+        case CTR:
             return getCTRCipher(key);
-        case GCM_MODE:
+        case GCM:
             return getGCMCipher(key);
-        case ECB_MODE:
+        case ECB:
             return getECBCipher(key);
         default:
             throw new IllegalStateException("Bad cipherMode " + cipherMode);
