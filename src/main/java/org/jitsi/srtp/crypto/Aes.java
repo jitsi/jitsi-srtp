@@ -659,7 +659,11 @@ public class Aes
     private static CipherFactory getCipherFactory(String transformation, boolean warmup)
     {
         CipherFactory[] factories = Aes.factories;
-        /* TODO: figure out keysize for transformation? */
+        /* Note: we use 128-bit keys to measure the performance -- we can't know
+         * the actual key length that will be used until init() is called.
+         * Presume for now that all implementations' performance is roughly proportional
+         * between key lengths.
+         */
         final int keySize = 16;
 
         if (factories == null)
