@@ -245,7 +245,7 @@ public class OpenSslAesCipherSpi
         }
         this.opmode = opmode;
 
-        int ivLen = 0;
+        int newIvLen = 0;
 
         if (params != null)
         {
@@ -261,11 +261,12 @@ public class OpenSslAesCipherSpi
                     }
                     tagLen = ((GCMParameterSpec)params).getTLen() / 8;
                     byte[] newIv = ((GCMParameterSpec) params).getIV();
-                    /* Default IV length is 12. */
+                    /* We only want to call EVP_CipherSetIVLen if the iv length
+                     * has changed.  The default IV length is 12. */
                     if ((iv == null && newIv.length != 12) ||
                         (iv != null && iv.length != newIv.length))
                     {
-                        ivLen = newIv.length;
+                        newIvLen = newIv.length;
                     }
                     iv = newIv;
                 }
@@ -324,12 +325,12 @@ public class OpenSslAesCipherSpi
             cipherType = getCipher(key);
         }
 
-        if (ivLen != 0)
+        if (newIvLen != 0)
         {
-            if (!EVP_CipherSetIVLen(ctx, ivLen))
+            if (!EVP_CipherSetIVLen(ctx, newIvLen))
             {
                 throw new InvalidAlgorithmParameterException
-                    ("Unsupported IV length " + ivLen);
+                    ("Unsupported IV length " + newIvLen);
             }
         }
 
