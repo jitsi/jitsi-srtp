@@ -57,16 +57,6 @@ public class OpenSslAesGcmAuthOnlyCipherSpi
     private byte[] iv;
 
     /**
-     * Buffer of bytes that might include the GCM tag when decrypting.
-     */
-    private byte[] buffer;
-
-    /**
-     * The number of bytes buffered.
-     */
-    private int buffered = 0;
-
-    /**
      * For GCM, the size of the authentication tag, in bytes.
      */
     private int tagLen;
@@ -253,70 +243,16 @@ public class OpenSslAesGcmAuthOnlyCipherSpi
         }
     }
 
-    private int doGcmDecryptUpdateWithBuffer(byte[] input,
-        int inputOffset, int inputLen)
-    {
-        /* For GCM decryption, we need to hold on to the bytes that might be
-         * the auth tag. */
-        if (buffer == null)
-        {
-            buffer = new byte[tagLen];
-        }
-        int len = buffered + inputLen - tagLen;
-        int outLen = 0;
-        if (len > 0)
-        {
-            if (len <= buffered)
-            {
-                doDecrypt(buffer, 0, len);
-                buffered -= len;
-                inputOffset += len;
-                inputLen -= len;
-                if (buffered > 0)
-                {
-                    System.arraycopy(buffer, len, buffer, 0, buffered);
-                }
-                outLen += len;
-            }
-            else
-            {
-                if (buffered > 0)
-                {
-                    doDecrypt(buffer, 0, buffered);
-                    len -= buffered;
-                    buffered = 0;
-                    outLen += buffered;
-                }
-                if (len > 0)
-                {
-                    doDecrypt(input, inputLen, len
-                    );
-                    inputOffset += len;
-                    inputLen -= len;
-                    outLen += len;
-                }
-            }
-        }
-        assert(buffered + inputLen <= tagLen);
-        if (inputLen > 0)
-        {
-            System.arraycopy(input, inputOffset, buffer, buffered, inputLen);
-            buffered += inputLen;
-        }
-
-        return outLen;
-    }
-
     @Override
     protected int engineUpdate(byte[] input, int inputOffset, int inputLen,
         byte[] output, int outputOffset)
     {
-        if (inputOffset + inputLen > input.length)
-        {
-            throw new IllegalArgumentException("Input buffer length " + input.length +
-                " is too short for offset " + inputOffset + " plus length " + inputLen);
-        }
-        return doGcmDecryptUpdateWithBuffer(input, inputOffset, inputLen);
+        /* Update for decryption is complicated for GCM, as bytes that might
+         * be the tag rather than encrypted data need to be buffered.
+         * jitsi-srtp never uses this operation (it always directly calls doFinal),
+         * so this SPI doesn't support it.
+         */
+        throw new UnsupportedOperationException("Update not supported for GCM Decryption");
     }
 
     @Override
@@ -351,27 +287,17 @@ public class OpenSslAesGcmAuthOnlyCipherSpi
             throw new IllegalArgumentException("Input buffer length " + input.length +
                 " is too short for offset " + inputOffset + " plus length " + inputLen);
         }
-        byte[] tagBuf;
-        int tagOffset;
-        int outLen;
-        if (buffered == 0 && inputLen >= tagLen)
+        if (inputLen < tagLen)
         {
-            doDecrypt(input, inputOffset, inputLen - tagLen);
-            outLen = inputLen - tagLen;
-            tagBuf = input;
-            tagOffset = inputOffset + inputLen - tagLen;
+            /* Not enough bytes sent to decryption operation */
+            throw new AEADBadTagException("Input too short - need tag");
         }
-        else {
-            outLen = doGcmDecryptUpdateWithBuffer(input, inputOffset, inputLen);
-            if (buffered != tagLen)
-            {
-                /* Not enough bytes sent to decryption operation */
-                throw new AEADBadTagException("Input too short - need tag");
-            }
-            tagBuf = buffer;
-            tagOffset = 0;
-        }
-        if (!CRYPTO_gcm128_finish(ctx, tagBuf, tagOffset, tagLen))
+
+        doDecrypt(input, inputOffset, inputLen - tagLen);
+        int outLen = inputLen - tagLen;
+        int tagOffset = inputOffset + inputLen - tagLen;
+
+        if (!CRYPTO_gcm128_finish(ctx, input, tagOffset, tagLen))
         {
             throw new AEADBadTagException("Bad AEAD tag");
         }
