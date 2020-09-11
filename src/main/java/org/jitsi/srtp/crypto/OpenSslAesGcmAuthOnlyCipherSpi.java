@@ -47,13 +47,19 @@ public class OpenSslAesGcmAuthOnlyCipherSpi
     private static native boolean CRYPTO_gcm128_finish(long ctx,
         byte[] tag, int offset, int taglen);
 
+    /**
+     * The current key used for this cipher.
+     */
     private Key key;
 
     /**
-     * the OpenSSL AES_CTR context
+     * the OpenSSL CRYPTO_gcm128 context and EVP cipher.
      */
     private long ctx;
 
+    /**
+     * The most recent initialization vector set.
+     */
     private byte[] iv;
 
     /**
