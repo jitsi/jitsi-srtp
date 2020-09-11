@@ -62,20 +62,32 @@ public class OpenSslAesCipherSpi
     private static native boolean EVP_CipherGetTag(long ctx,
         byte[] tag, int offset, int taglen);
 
+    /**
+     * The current key used for this cipher.
+     */
     private Key key;
 
+    /**
+     * Valid modes supported by this cipher.
+     */
     private enum CipherMode
     {
         Unspecified, CTR, GCM, ECB
     }
 
+    /**
+     * The current mode of this cipher.
+     */
     private CipherMode cipherMode = CipherMode.Unspecified;
 
     /**
-     * the OpenSSL AES_CTR context
+     * the OpenSSL EVP_CIPHER_CTX context
      */
     private long ctx;
 
+    /**
+     * The most recent initialization vector set
+     */
     private byte[] iv;
 
     /**
