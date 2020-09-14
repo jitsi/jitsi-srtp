@@ -189,8 +189,8 @@ public class OpenSslAesCipherSpi
     @Override
     protected AlgorithmParameters engineGetParameters()
     {
-        /* TODO: do we need this? */
-        return null;
+        /* Not used by jitsi-srtp. */
+        throw new UnsupportedOperationException("Not implemented");
     }
 
     @Override
@@ -252,7 +252,7 @@ public class OpenSslAesCipherSpi
                 {
                     if (((GCMParameterSpec)params).getTLen() != 128)
                     {
-                        /* ?? Do we need to enforce this? */
+                        /* The only length used by srtp transforms. */
                         throw new InvalidAlgorithmParameterException
                             ("Unsupported GCM tag length: must be 128");
                     }
@@ -333,7 +333,7 @@ public class OpenSslAesCipherSpi
 
         if (!EVP_CipherInit(ctx, cipherType, keyParam, this.iv, openSslEncryptMode))
         {
-            throw new InvalidKeyException("AES_CTR_CTX_init");
+            throw new InvalidKeyException("EVP_CipherInit");
         }
     }
 
