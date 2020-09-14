@@ -49,15 +49,14 @@ public class SrtpCipherCtr
     }
 
     @Override
-    public void setIV(byte[] iv, boolean enc) throws GeneralSecurityException
+    public void setIV(byte[] iv, int opmode) throws GeneralSecurityException
     {
         if (iv.length != cipher.getBlockSize())
         {
             throw new IllegalArgumentException("iv.length != BLKLEN");
         }
 
-        int mode = enc ? Cipher.ENCRYPT_MODE : Cipher.DECRYPT_MODE;
-        cipher.init(mode, key, new IvParameterSpec(iv));
+        cipher.init(opmode, key, new IvParameterSpec(iv));
     }
 
     @Override

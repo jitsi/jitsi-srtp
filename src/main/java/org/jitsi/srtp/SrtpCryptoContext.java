@@ -37,7 +37,10 @@ package org.jitsi.srtp;
 import java.security.*;
 import java.util.*;
 
+import javax.crypto.*;
 import javax.crypto.spec.*;
+
+import org.jitsi.srtp.crypto.*;
 import org.jitsi.srtp.utils.*;
 import org.jitsi.utils.*;
 import org.jitsi.utils.logging2.*;
@@ -343,7 +346,7 @@ public class SrtpCryptoContext
 
         int rtpHeaderLength = SrtpPacketUtils.getTotalHeaderLength(pkt);
 
-        cipher.setIV(ivStore, true);
+        cipher.setIV(ivStore, Cipher.ENCRYPT_MODE);
 
         cipher.process(
                 pkt.getBuffer(),
@@ -403,7 +406,8 @@ public class SrtpCryptoContext
 
         try
         {
-            cipher.setIV(ivStore, forEncryption);
+            cipher.setIV(ivStore, forEncryption ? Cipher.ENCRYPT_MODE :
+                Cipher.DECRYPT_MODE);
 
             cipher.processAAD(pkt.getBuffer(), pkt.getOffset(), rtpHeaderLength);
 
@@ -443,7 +447,7 @@ public class SrtpCryptoContext
 
         int rtpHeaderLength = SrtpPacketUtils.getTotalHeaderLength(pkt);
 
-        cipher.setIV(ivStore, true);
+        cipher.setIV(ivStore, Cipher.ENCRYPT_MODE);
 
         cipher.process(
                 pkt.getBuffer(),

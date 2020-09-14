@@ -70,9 +70,9 @@ public class SrtpCipherGcmTest
     {
         /* Hack to allow us to re-use the same IV for the same cipher. */
         /* Never do this for real data */
-        cipher.setIV(fake_IV, true);
+        cipher.setIV(fake_IV, Cipher.ENCRYPT_MODE);
 
-        cipher.setIV(TV_IV, true);
+        cipher.setIV(TV_IV, Cipher.ENCRYPT_MODE);
         cipher.processAAD(data, 0, TV_AEAD_length);
         int inLen = TV_Packet.length - TV_AEAD_length;
         int outLen = cipher.process(data, TV_AEAD_length, inLen);
@@ -85,9 +85,9 @@ public class SrtpCipherGcmTest
     {
         /* Hack to allow us to re-use the same IV for the same cipher. */
         /* Never do this for real data */
-        cipher.setIV(fake_IV, false);
+        cipher.setIV(fake_IV, Cipher.DECRYPT_MODE);
 
-        cipher.setIV(TV_IV, false);
+        cipher.setIV(TV_IV, Cipher.DECRYPT_MODE);
         cipher.processAAD(data, 0, TV_AEAD_length);
         int inLen = TV_Cipher_AES_GCM_128.length - TV_AEAD_length;
         int outLen = cipher.process(data, TV_AEAD_length, TV_Cipher_AES_GCM_128.length - TV_AEAD_length);

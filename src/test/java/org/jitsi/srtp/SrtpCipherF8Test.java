@@ -61,7 +61,7 @@ public class SrtpCipherF8Test
         cipher.init(TV_Key, TV_Salt);
         byte[] data = Arrays.copyOf(TV_Plain, TV_Plain.length);
         byte[] iv = Arrays.copyOf(TV_IV, TV_IV.length);
-        cipher.setIV(iv, true);
+        cipher.setIV(iv, Cipher.ENCRYPT_MODE);
         cipher.process(data, 0, data.length);
 
         assertArrayEquals(TV_Cipher_AES, data);
@@ -78,7 +78,7 @@ public class SrtpCipherF8Test
         cipher.init(TV_Key, TV_Salt);
         byte[] data = Arrays.copyOf(TV_Plain, TV_Plain.length);
         byte[] iv = Arrays.copyOf(TV_IV, TV_IV.length);
-        cipher.setIV(iv, true);
+        cipher.setIV(iv, Cipher.ENCRYPT_MODE);
         cipher.process(data, 0, data.length);
 
         assertArrayEquals(TV_Cipher_TwoFish, data);

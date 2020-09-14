@@ -17,6 +17,7 @@ package org.jitsi.srtp;
 
 import java.security.*;
 import java.security.spec.*;
+import javax.crypto.*;
 import javax.crypto.spec.*;
 import org.jitsi.srtp.utils.*;
 import org.jitsi.utils.*;
@@ -186,7 +187,7 @@ public class SrtcpCryptoContext
         int payloadOffset = 8;
         int payloadLength = pkt.getLength() - payloadOffset;
 
-        cipher.setIV(ivStore, true);
+        cipher.setIV(ivStore, Cipher.ENCRYPT_MODE);
         cipher.process(
                 pkt.getBuffer(), pkt.getOffset() + payloadOffset, payloadLength);
     }
@@ -231,7 +232,7 @@ public class SrtcpCryptoContext
 
         try
         {
-            cipher.setIV(ivStore, forEncryption);
+            cipher.setIV(ivStore, forEncryption ? Cipher.ENCRYPT_MODE : Cipher.DECRYPT_MODE);
 
             if (encrypt)
             {
@@ -310,7 +311,7 @@ public class SrtcpCryptoContext
         int payloadOffset = 8;
         int payloadLength = pkt.getLength() - (4 + policy.getAuthTagLength());
 
-        cipher.setIV(ivStore, true);
+        cipher.setIV(ivStore, Cipher.ENCRYPT_MODE);
         cipher.process(
                 pkt.getBuffer(), pkt.getOffset() + payloadOffset, payloadLength);
     }

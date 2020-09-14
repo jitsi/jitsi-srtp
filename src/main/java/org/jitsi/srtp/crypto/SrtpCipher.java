@@ -42,7 +42,7 @@ public abstract class SrtpCipher
     public abstract void init(byte[] k_e, byte[] k_s)
         throws GeneralSecurityException;
 
-    public abstract void setIV(byte[] iv, boolean enc)
+    public abstract void setIV(byte[] iv, int opmode)
         throws GeneralSecurityException;
 
     public abstract void processAAD(byte[] data, int off, int len)

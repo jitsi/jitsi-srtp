@@ -104,7 +104,7 @@ public class SrtpCipherF8 extends SrtpCipher
     }
 
     @Override
-    public void setIV(byte[] iv, boolean enc) throws GeneralSecurityException
+    public void setIV(byte[] iv, int opmode) throws GeneralSecurityException
     {
         if (iv.length != cipher.getBlockSize())
         {

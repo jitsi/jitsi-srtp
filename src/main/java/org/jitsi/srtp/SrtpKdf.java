@@ -135,7 +135,7 @@ class SrtpKdf
         }
 
         Arrays.fill(sessKey, (byte)0);
-        cipherCtr.setIV(ivStore, true);
+        cipherCtr.setIV(ivStore, Cipher.ENCRYPT_MODE);
         cipherCtr.process(sessKey, 0, sessKey.length);
     }
 }

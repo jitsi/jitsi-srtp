@@ -50,10 +50,9 @@ public class SrtpCipherGcm
     }
 
     @Override
-    public void setIV(byte[] iv, boolean enc) throws GeneralSecurityException
+    public void setIV(byte[] iv, int opmode) throws GeneralSecurityException
     {
-        int mode = enc ? Cipher.ENCRYPT_MODE : Cipher.DECRYPT_MODE;
-        cipher.init(mode, key, new GCMParameterSpec(param.getTLen(), iv));
+        cipher.init(opmode, key, new GCMParameterSpec(param.getTLen(), iv));
     }
 
     @Override
