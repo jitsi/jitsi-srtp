@@ -354,7 +354,7 @@ public class SrtpCryptoContext
                 pkt.getLength() - rtpHeaderLength);
     }
 
-    private SrtpErrorStatus processPacketAesGcm(ByteArrayBuffer pkt, boolean forEncryption)
+    private SrtpErrorStatus processPacketAesGcm(ByteArrayBuffer pkt, boolean encrypting)
     {
         int ssrc = SrtpPacketUtils.getSsrc(pkt);
         int seqNo = SrtpPacketUtils.getSequenceNumber(pkt);
@@ -406,7 +406,7 @@ public class SrtpCryptoContext
 
         try
         {
-            cipher.setIV(ivStore, forEncryption ? Cipher.ENCRYPT_MODE :
+            cipher.setIV(ivStore, encrypting ? Cipher.ENCRYPT_MODE :
                 Cipher.DECRYPT_MODE);
 
             cipher.processAAD(pkt.getBuffer(), pkt.getOffset(), rtpHeaderLength);
@@ -419,7 +419,15 @@ public class SrtpCryptoContext
             pkt.setLength(processLen + rtpHeaderLength);
         }
         catch (GeneralSecurityException e) {
-            return SrtpErrorStatus.AUTH_FAIL;
+            if (encrypting)
+            {
+                logger.debug(() -> "Error encrypting SRTP packet: " + e.getMessage());
+                return SrtpErrorStatus.FAIL;
+            }
+            else
+            {
+                return SrtpErrorStatus.AUTH_FAIL;
+            }
         }
         return SrtpErrorStatus.OK;
     }
