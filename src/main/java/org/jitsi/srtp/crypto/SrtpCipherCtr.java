@@ -25,9 +25,6 @@ import javax.crypto.spec.*;
 public class SrtpCipherCtr
     extends SrtpCipher
 {
-    private static final IvParameterSpec zeroIV =
-        new IvParameterSpec(new byte[16]);
-
     private SecretKeySpec key = null;
 
     public SrtpCipherCtr(Cipher cipher)
