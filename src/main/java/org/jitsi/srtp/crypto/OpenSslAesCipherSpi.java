@@ -22,7 +22,7 @@ import javax.crypto.*;
 import javax.crypto.spec.*;
 
 /**
- * AES-CTR, AES-GCM, and AES-ECB implementation using OpenSSL via JNI.
+ * AES Cipher implementations using OpenSSL via JNI.
  */
 public abstract class OpenSslAesCipherSpi
     extends CipherSpi

@@ -19,6 +19,9 @@ import javax.crypto.spec.*;
 import java.security.*;
 import java.security.spec.*;
 
+/**
+ * AES-CTR Cipher implementation using OpenSSL via JNI.
+ */
 public final class OpenSslAesCtrCipherSpi
     extends OpenSslAesCipherSpi
 {

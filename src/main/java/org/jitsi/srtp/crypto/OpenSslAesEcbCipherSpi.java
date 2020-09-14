@@ -18,6 +18,9 @@ package org.jitsi.srtp.crypto;
 import java.security.*;
 import java.security.spec.*;
 
+/**
+ * AES-ECB Cipher implementation using OpenSSL via JNI.
+ */
 public final class OpenSslAesEcbCipherSpi
     extends OpenSslAesCipherSpi
 {
@@ -30,6 +33,7 @@ public final class OpenSslAesEcbCipherSpi
         super("ECB");
     }
 
+    @Override
     protected void engineInit(int opmode, Key key,
         AlgorithmParameterSpec params, SecureRandom random)
         throws InvalidKeyException, InvalidAlgorithmParameterException

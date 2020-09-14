@@ -20,6 +20,9 @@ import javax.crypto.spec.*;
 import java.security.*;
 import java.security.spec.*;
 
+/**
+ * AES-GCM Cipher implementation using OpenSSL via JNI.
+ */
 public final class OpenSslAesGcmCipherSpi
     extends OpenSslAesCipherSpi
 {
@@ -42,7 +45,7 @@ public final class OpenSslAesGcmCipherSpi
     }
 
     /**
-     * For GCM, the size of the authentication tag, in bytes.
+     * The size of the authentication tag, in bytes.
      */
     private int tagLen;
 
