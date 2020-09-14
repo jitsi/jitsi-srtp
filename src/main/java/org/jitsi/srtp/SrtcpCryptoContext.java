@@ -193,7 +193,7 @@ public class SrtcpCryptoContext
     }
 
     private SrtpErrorStatus processPacketAesGcm(ByteArrayBuffer pkt, int index,
-        boolean encrypt, boolean forEncryption)
+        boolean authenticationOnly, boolean encrypting)
     {
         int ssrc = SrtcpPacketUtils.getSenderSsrc(pkt);
 
@@ -232,11 +232,11 @@ public class SrtcpCryptoContext
 
         try
         {
-            cipher.setIV(ivStore, forEncryption ? Cipher.ENCRYPT_MODE : Cipher.DECRYPT_MODE);
+            cipher.setIV(ivStore, encrypting ? Cipher.ENCRYPT_MODE : Cipher.DECRYPT_MODE);
 
-            if (encrypt)
+            if (!authenticationOnly)
             {
-                // Need the encryption flag
+                // Mark the SRTCP packet as encrypted
                 index = index | 0x80000000;
 
                 // Encrypted part excludes fixed header (8 bytes)
@@ -256,7 +256,7 @@ public class SrtcpCryptoContext
             }
             else
             {
-                int bufferedTagLen = forEncryption ? 0 : policy.getAuthTagLength();
+                int bufferedTagLen = encrypting ? 0 : policy.getAuthTagLength();
                 int aadLen = pkt.getLength() - bufferedTagLen;
                 if (aadLen < 0)
                 {
@@ -274,7 +274,15 @@ public class SrtcpCryptoContext
         }
         catch (GeneralSecurityException e)
         {
-            return SrtpErrorStatus.AUTH_FAIL;
+            if (encrypting)
+            {
+                logger.debug(() -> "Error encrypting SRTCP packet: " + e.getMessage());
+                return SrtpErrorStatus.FAIL;
+            }
+            else
+            {
+                return SrtpErrorStatus.AUTH_FAIL;
+            }
         }
         return SrtpErrorStatus.OK;
     }
@@ -294,7 +302,7 @@ public class SrtcpCryptoContext
         ivStore[2] = 0;
         ivStore[3] = 0;
 
-        // Need the encryption flag
+        // Mark the SRTCP packet as encrypted
         index = index | 0x80000000;
 
         // set the index and the encrypt flag in network order into IV
@@ -400,7 +408,7 @@ public class SrtcpCryptoContext
             }
             else if (policy.getEncType() == SrtpPolicy.AESGCM_ENCRYPTION) {
                 pkt.shrink(4); /* Index is processed separately as part of AAD. */
-                err = processPacketAesGcm(pkt, index, true, false);
+                err = processPacketAesGcm(pkt, index, false, false);
                 if (err != SrtpErrorStatus.OK)
                 {
                     return err;
@@ -414,7 +422,7 @@ public class SrtcpCryptoContext
             }
         }
         else if (policy.getEncType() == SrtpPolicy.AESGCM_ENCRYPTION) {
-            err = processPacketAesGcm(pkt, index, false, false);
+            err = processPacketAesGcm(pkt, index, true, false);
             if (err != SrtpErrorStatus.OK)
             {
                 return err;
@@ -462,7 +470,7 @@ public class SrtcpCryptoContext
              * non-encrypted RTCP authenticated with GCM, but that's not generally
              * a thing one wants to do anyway.
              */
-            processPacketAesGcm(pkt, sentIndex, true, true);
+            processPacketAesGcm(pkt, sentIndex, false, true);
             pkt.append(rbStore, 4);
         }
 
