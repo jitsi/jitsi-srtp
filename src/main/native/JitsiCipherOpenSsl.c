@@ -15,39 +15,43 @@
  */
 
 #include "org_jitsi_srtp_crypto_OpenSslAesCipherSpi.h"
+#include "org_jitsi_srtp_crypto_OpenSslAesCtrCipherSpi.h"
+#include "org_jitsi_srtp_crypto_OpenSslAesGcmCipherSpi.h"
+#include "org_jitsi_srtp_crypto_OpenSslAesEcbCipherSpi.h"
+
 
 #include <openssl/evp.h>
 #include <stdint.h>
 #include <stdlib.h>
 
 /*
- * Class:     org_jitsi_srtp_crypto_OpenSslAesCipherSpi
+ * Class:     org_jitsi_srtp_crypto_OpenSslAesCtrCipherSpi
  * Method:    EVP_aes_128_ctr
  * Signature: ()J
  */
-JNIEXPORT jlong JNICALL Java_org_jitsi_srtp_crypto_OpenSslAesCipherSpi_EVP_1aes_1128_1ctr
+JNIEXPORT jlong JNICALL Java_org_jitsi_srtp_crypto_OpenSslAesCtrCipherSpi_EVP_1aes_1128_1ctr
   (JNIEnv *env, jclass clazz)
 {
     return (jlong) (intptr_t) EVP_aes_128_ctr();
 }
 
 /*
- * Class:     org_jitsi_srtp_crypto_OpenSslAesCipherSpi
+ * Class:     org_jitsi_srtp_crypto_OpenSslAesCtrCipherSpi
  * Method:    EVP_aes_192_ctr
  * Signature: ()J
  */
-JNIEXPORT jlong JNICALL Java_org_jitsi_srtp_crypto_OpenSslAesCipherSpi_EVP_1aes_1192_1ctr
+JNIEXPORT jlong JNICALL Java_org_jitsi_srtp_crypto_OpenSslAesCtrCipherSpi_EVP_1aes_1192_1ctr
   (JNIEnv *env, jclass clazz)
 {
     return (jlong) (intptr_t) EVP_aes_192_ctr();
 }
 
 /*
- * Class:     org_jitsi_srtp_crypto_OpenSslAesCipherSpi
+ * Class:     org_jitsi_srtp_crypto_OpenSslAesCtrCipherSpi
  * Method:    EVP_aes_256_ctr
  * Signature: ()J
  */
-JNIEXPORT jlong JNICALL Java_org_jitsi_srtp_crypto_OpenSslAesCipherSpi_EVP_1aes_1256_1ctr
+JNIEXPORT jlong JNICALL Java_org_jitsi_srtp_crypto_OpenSslAesCtrCipherSpi_EVP_1aes_1256_1ctr
   (JNIEnv *env, jclass clazz)
 {
     return (jlong) (intptr_t) EVP_aes_256_ctr();
@@ -55,66 +59,67 @@ JNIEXPORT jlong JNICALL Java_org_jitsi_srtp_crypto_OpenSslAesCipherSpi_EVP_1aes_
 
 
 /*
- * Class:     org_jitsi_srtp_crypto_OpenSslAesCipherSpi
+ * Class:     org_jitsi_srtp_crypto_OpenSslAesGcmCipherSpi
  * Method:    EVP_aes_128_gcm
  * Signature: ()J
  */
-JNIEXPORT jlong JNICALL Java_org_jitsi_srtp_crypto_OpenSslAesCipherSpi_EVP_1aes_1128_1gcm
+JNIEXPORT jlong JNICALL Java_org_jitsi_srtp_crypto_OpenSslAesGcmCipherSpi_EVP_1aes_1128_1gcm
   (JNIEnv *env, jclass clazz)
 {
     return (jlong) (intptr_t) EVP_aes_128_gcm();
 }
 
 /*
- * Class:     org_jitsi_srtp_crypto_OpenSslAesCipherSpi
+ * Class:     org_jitsi_srtp_crypto_OpenSslAesGcmCipherSpi
  * Method:    EVP_aes_192_gcm
  * Signature: ()J
  */
-JNIEXPORT jlong JNICALL Java_org_jitsi_srtp_crypto_OpenSslAesCipherSpi_EVP_1aes_1192_1gcm
+JNIEXPORT jlong JNICALL Java_org_jitsi_srtp_crypto_OpenSslAesGcmCipherSpi_EVP_1aes_1192_1gcm
   (JNIEnv *env, jclass clazz)
 {
     return (jlong) (intptr_t) EVP_aes_192_gcm();
 }
 
 /*
- * Class:     org_jitsi_srtp_crypto_OpenSslAesCipherSpi
+ * Class:     org_jitsi_srtp_crypto_OpenSslAesGcmCipherSpi
  * Method:    EVP_aes_256_gcm
  * Signature: ()J
  */
-JNIEXPORT jlong JNICALL Java_org_jitsi_srtp_crypto_OpenSslAesCipherSpi_EVP_1aes_1256_1gcm
+JNIEXPORT jlong JNICALL Java_org_jitsi_srtp_crypto_OpenSslAesGcmCipherSpi_EVP_1aes_1256_1gcm
   (JNIEnv *env, jclass clazz)
 {
     return (jlong) (intptr_t) EVP_aes_256_gcm();
 }
 
+
 /*
- * Class:     org_jitsi_srtp_crypto_OpenSslAesCipherSpi
+ * Class:     org_jitsi_srtp_crypto_OpenSslAesEcbCipherSpi
  * Method:    EVP_aes_128_ecb
  * Signature: ()J
  */
-JNIEXPORT jlong JNICALL Java_org_jitsi_srtp_crypto_OpenSslAesCipherSpi_EVP_1aes_1128_1ecb
+JNIEXPORT jlong JNICALL Java_org_jitsi_srtp_crypto_OpenSslAesEcbCipherSpi_EVP_1aes_1128_1ecb
   (JNIEnv *env, jclass clazz)
 {
     return (jlong) (intptr_t) EVP_aes_128_ecb();
 }
 
 /*
- * Class:     org_jitsi_srtp_crypto_OpenSslAesCipherSpi
+ * Class:     org_jitsi_srtp_crypto_OpenSslAesEcbCipherSpi
  * Method:    EVP_aes_192_ecb
  * Signature: ()J
  */
-JNIEXPORT jlong JNICALL Java_org_jitsi_srtp_crypto_OpenSslAesCipherSpi_EVP_1aes_1192_1ecb
+JNIEXPORT jlong JNICALL Java_org_jitsi_srtp_crypto_OpenSslAesEcbCipherSpi_EVP_1aes_1192_1ecb
   (JNIEnv *env, jclass clazz)
 {
     return (jlong) (intptr_t) EVP_aes_192_ecb();
 }
 
 /*
- * Class:     org_jitsi_srtp_crypto_OpenSslAesCipherSpi
+ * Class:     org_jitsi_srtp_crypto_OpenSslAesEcbCipherSpi
  * Method:    EVP_aes_256_ecb
  * Signature: ()J
  */
-JNIEXPORT jlong JNICALL Java_org_jitsi_srtp_crypto_OpenSslAesCipherSpi_EVP_1aes_1256_1ecb
+JNIEXPORT jlong JNICALL Java_org_jitsi_srtp_crypto_OpenSslAesEcbCipherSpi_EVP_1aes_1256_1ecb
   (JNIEnv *env, jclass clazz)
 {
     return (jlong) (intptr_t) EVP_aes_256_ecb();
@@ -228,11 +233,11 @@ exit:
 }
 
 /*
- * Class:     org_jitsi_srtp_crypto_OpenSslAesCipherSpi
+ * Class:     org_jitsi_srtp_crypto_OpenSslAesGcmCipherSpi
  * Method:    EVP_CipherFinal
  * Signature: (J[BI)Z
  */
-JNIEXPORT jboolean JNICALL Java_org_jitsi_srtp_crypto_OpenSslAesCipherSpi_EVP_1CipherFinal
+JNIEXPORT jboolean JNICALL Java_org_jitsi_srtp_crypto_OpenSslAesGcmCipherSpi_EVP_1CipherFinal
   (JNIEnv * env, jclass clazz, jlong ctx, jbyteArray out, jint offset)
 {
     int ok = 0;
@@ -254,11 +259,11 @@ exit:
 }
 
 /*
- * Class:     org_jitsi_srtp_crypto_OpenSslAesCipherSpi
- * Method:    EVP_CipherSetIVLen
+ * Class:     org_jitsi_srtp_crypto_OpenSslAesGcmCipherSpi
+ * Method:    CipherSetIVLen
  * Signature: (JI)Z
  */
-JNIEXPORT jboolean JNICALL Java_org_jitsi_srtp_crypto_OpenSslAesCipherSpi_EVP_1CipherSetIVLen
+JNIEXPORT jboolean JNICALL Java_org_jitsi_srtp_crypto_OpenSslAesGcmCipherSpi_CipherSetIVLen
   (JNIEnv *env, jclass clazz, jlong ctx, jint ivLen)
 {
     int ok = 0;
@@ -273,11 +278,11 @@ JNIEXPORT jboolean JNICALL Java_org_jitsi_srtp_crypto_OpenSslAesCipherSpi_EVP_1C
 }
 
 /*
- * Class:     org_jitsi_srtp_crypto_OpenSslAesCipherSpi
- * Method:    EVP_CipherSetTag
+ * Class:     org_jitsi_srtp_crypto_OpenSslAesGcmCipherSpi
+ * Method:    CipherSetTag
  * Signature: (J[BII)Z
  */
-JNIEXPORT jboolean JNICALL Java_org_jitsi_srtp_crypto_OpenSslAesCipherSpi_EVP_1CipherSetTag
+JNIEXPORT jboolean JNICALL Java_org_jitsi_srtp_crypto_OpenSslAesGcmCipherSpi_CipherSetTag
   (JNIEnv *env, jclass clazz, jlong ctx, jbyteArray tag, jint offset, jint taglen)
 {
     int ok = 0;
@@ -300,11 +305,11 @@ exit:
 }
 
 /*
- * Class:     org_jitsi_srtp_crypto_OpenSslAesCipherSpi
- * Method:    EVP_CipherGetTag
+ * Class:     org_jitsi_srtp_crypto_OpenSslAesGcmCipherSpi
+ * Method:    CipherGetTag
  * Signature: (J[BII)Z
  */
-JNIEXPORT jboolean JNICALL Java_org_jitsi_srtp_crypto_OpenSslAesCipherSpi_EVP_1CipherGetTag
+JNIEXPORT jboolean JNICALL Java_org_jitsi_srtp_crypto_OpenSslAesGcmCipherSpi_CipherGetTag
   (JNIEnv *env, jclass clazz, jlong ctx, jbyteArray tag, jint offset, jint taglen)
 {
     int ok = 0;

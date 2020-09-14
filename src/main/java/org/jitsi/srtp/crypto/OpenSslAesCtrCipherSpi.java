@@ -22,6 +22,10 @@ import java.security.spec.*;
 public final class OpenSslAesCtrCipherSpi
     extends OpenSslAesCipherSpi
 {
+    private static native long EVP_aes_128_ctr();
+    private static native long EVP_aes_192_ctr();
+    private static native long EVP_aes_256_ctr();
+
     public OpenSslAesCtrCipherSpi()
     {
         super("CTR");

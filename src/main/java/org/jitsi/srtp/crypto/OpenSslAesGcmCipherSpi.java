@@ -23,6 +23,19 @@ import java.security.spec.*;
 public final class OpenSslAesGcmCipherSpi
     extends OpenSslAesCipherSpi
 {
+    private static native long EVP_aes_128_gcm();
+    private static native long EVP_aes_192_gcm();
+    private static native long EVP_aes_256_gcm();
+
+    private static native boolean EVP_CipherFinal(long ctx,
+        byte[] out, int offset);
+
+    private static native boolean CipherSetIVLen(long ctx, int ivlen);
+    private static native boolean CipherSetTag(long ctx,
+        byte[] tag, int offset, int taglen);
+    private static native boolean CipherGetTag(long ctx,
+        byte[] tag, int offset, int taglen);
+
     public OpenSslAesGcmCipherSpi()
     {
         super("GCM");
@@ -98,7 +111,7 @@ public final class OpenSslAesGcmCipherSpi
 
         if (newIvLen != 0)
         {
-            if (!EVP_CipherSetIVLen(ctx, newIvLen))
+            if (!CipherSetIVLen(ctx, newIvLen))
             {
                 throw new InvalidAlgorithmParameterException
                     ("Unsupported IV length " + newIvLen);
@@ -178,7 +191,7 @@ public final class OpenSslAesGcmCipherSpi
             outLen = inputLen - tagLen;
             int tagOffset = inputOffset + outLen;
 
-            if (!EVP_CipherSetTag(ctx, input, tagOffset, tagLen))
+            if (!CipherSetTag(ctx, input, tagOffset, tagLen))
             {
                 throw new IllegalStateException("Failure in EVP_CipherSetTag");
             }
@@ -198,7 +211,7 @@ public final class OpenSslAesGcmCipherSpi
 
         if (opmode == Cipher.ENCRYPT_MODE)
         {
-            if (!EVP_CipherGetTag(ctx, output, outputOffset + outLen, tagLen))
+            if (!CipherGetTag(ctx, output, outputOffset + outLen, tagLen))
             {
                 throw new IllegalStateException("Failure in EVP_CipherGetTag");
             }

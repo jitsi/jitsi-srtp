@@ -21,6 +21,10 @@ import java.security.spec.*;
 public final class OpenSslAesEcbCipherSpi
     extends OpenSslAesCipherSpi
 {
+    private static native long EVP_aes_128_ecb();
+    private static native long EVP_aes_192_ecb();
+    private static native long EVP_aes_256_ecb();
+
     public OpenSslAesEcbCipherSpi()
     {
         super("ECB");

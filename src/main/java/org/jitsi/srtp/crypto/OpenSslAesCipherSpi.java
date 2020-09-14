@@ -29,18 +29,6 @@ public abstract class OpenSslAesCipherSpi
 {
     protected static final int BLKLEN = 16;
 
-    static native long EVP_aes_128_ctr();
-    static native long EVP_aes_192_ctr();
-    static native long EVP_aes_256_ctr();
-
-    static native long EVP_aes_128_gcm();
-    static native long EVP_aes_192_gcm();
-    static native long EVP_aes_256_gcm();
-
-    static native long EVP_aes_128_ecb();
-    static native long EVP_aes_192_ecb();
-    static native long EVP_aes_256_ecb();
-
     private static native long EVP_CIPHER_CTX_new();
 
     private static native void EVP_CIPHER_CTX_free(long ctx);
@@ -50,17 +38,6 @@ public abstract class OpenSslAesCipherSpi
 
     private static native boolean EVP_CipherUpdate(long ctx,
         byte[] in, int inOffset, int len, byte[] out, int outOffset);
-
-    static native boolean EVP_CipherFinal(long ctx,
-        byte[] out, int offset);
-
-    static native boolean EVP_CipherSetIVLen(long ctx, int ivlen);
-
-    static native boolean EVP_CipherSetTag(long ctx,
-        byte[] tag, int offset, int taglen);
-
-    static native boolean EVP_CipherGetTag(long ctx,
-        byte[] tag, int offset, int taglen);
 
     /**
      * The current key used for this cipher.
