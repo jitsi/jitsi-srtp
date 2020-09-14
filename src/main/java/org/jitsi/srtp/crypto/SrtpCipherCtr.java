@@ -59,7 +59,6 @@ public class SrtpCipherCtr
 
     @Override
     public void processAAD(byte[] data, int off, int len)
-        throws GeneralSecurityException
     {
         throw new IllegalStateException("CTR mode does not accept AAD");
     }

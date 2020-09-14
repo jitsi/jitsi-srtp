@@ -38,7 +38,6 @@ public class SrtpCipherGcm
 
     @Override
     public void init(byte[] key, byte[] saltKey)
-        throws GeneralSecurityException
     {
         if (key.length != 16 && key.length != 24 && key.length != 32)
         {
@@ -56,7 +55,6 @@ public class SrtpCipherGcm
 
     @Override
     public void processAAD(byte[] data, int off, int len)
-        throws GeneralSecurityException
     {
         cipher.updateAAD(data, off, len);
     }

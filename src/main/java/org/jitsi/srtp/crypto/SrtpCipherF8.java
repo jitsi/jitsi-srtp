@@ -139,7 +139,6 @@ public class SrtpCipherF8 extends SrtpCipher
 
     @Override
     public void processAAD(byte[] data, int off, int len)
-        throws GeneralSecurityException
     {
         throw new IllegalStateException("F8 mode does not accept AAD");
     }
