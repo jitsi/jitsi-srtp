@@ -37,7 +37,6 @@ public class SrtpCipherCtr
 
     @Override
     public void init(byte[] key, byte[] saltKey)
-        throws GeneralSecurityException
     {
         if (key.length != 16 && key.length != 24 && key.length != 32)
         {
@@ -45,7 +44,6 @@ public class SrtpCipherCtr
         }
 
         this.key = getSecretKey(key);
-        cipher.init(Cipher.ENCRYPT_MODE, this.key, zeroIV);
     }
 
     @Override

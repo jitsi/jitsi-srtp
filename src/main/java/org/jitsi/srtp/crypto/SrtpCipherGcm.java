@@ -26,14 +26,14 @@ public class SrtpCipherGcm
     extends SrtpCipher
 {
     private static final byte[] zeroIv = new byte[12];
-    private final GCMParameterSpec param;
+    private final int authTagBits;
 
     private SecretKeySpec key = null;
 
     public SrtpCipherGcm(Cipher cipher, int authTagBits)
     {
         super(cipher);
-        param = new GCMParameterSpec(authTagBits, zeroIv);
+        this.authTagBits = authTagBits;
     }
 
     @Override
@@ -46,13 +46,12 @@ public class SrtpCipherGcm
         }
 
         this.key = getSecretKey(key);
-        cipher.init(Cipher.ENCRYPT_MODE, this.key, param);
     }
 
     @Override
     public void setIV(byte[] iv, int opmode) throws GeneralSecurityException
     {
-        cipher.init(opmode, key, new GCMParameterSpec(param.getTLen(), iv));
+        cipher.init(opmode, key, new GCMParameterSpec(authTagBits, iv));
     }
 
     @Override
