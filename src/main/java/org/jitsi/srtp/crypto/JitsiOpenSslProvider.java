@@ -64,9 +64,9 @@ public class JitsiOpenSslProvider
     {
         super("JitsiOpenSslProvider", 1,
             "Jitsi OpenSSL SRTP security provider");
-        put("Cipher.AES/CTR/NoPadding", OpenSslAesCipherSpi.CTR.class.getName());
-        put("Cipher.AES/GCM/NoPadding", OpenSslAesCipherSpi.GCM.class.getName());
-        put("Cipher.AES/ECB/NoPadding", OpenSslAesCipherSpi.ECB.class.getName());
+        put("Cipher.AES/CTR/NoPadding", OpenSslAesCtrCipherSpi.class.getName());
+        put("Cipher.AES/GCM/NoPadding", OpenSslAesGcmCipherSpi.class.getName());
+        put("Cipher.AES/ECB/NoPadding", OpenSslAesEcbCipherSpi.class.getName());
         put("MAC.HmacSHA1", OpenSslHmacSpi.class.getName());
     }
 }

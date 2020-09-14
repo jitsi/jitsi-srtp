@@ -24,22 +24,22 @@ import javax.crypto.spec.*;
 /**
  * AES-CTR, AES-GCM, and AES-ECB implementation using OpenSSL via JNI.
  */
-public class OpenSslAesCipherSpi
+public abstract class OpenSslAesCipherSpi
     extends CipherSpi
 {
-    private static final int BLKLEN = 16;
+    protected static final int BLKLEN = 16;
 
-    private static native long EVP_aes_128_ctr();
-    private static native long EVP_aes_192_ctr();
-    private static native long EVP_aes_256_ctr();
+    static native long EVP_aes_128_ctr();
+    static native long EVP_aes_192_ctr();
+    static native long EVP_aes_256_ctr();
 
-    private static native long EVP_aes_128_gcm();
-    private static native long EVP_aes_192_gcm();
-    private static native long EVP_aes_256_gcm();
+    static native long EVP_aes_128_gcm();
+    static native long EVP_aes_192_gcm();
+    static native long EVP_aes_256_gcm();
 
-    private static native long EVP_aes_128_ecb();
-    private static native long EVP_aes_192_ecb();
-    private static native long EVP_aes_256_ecb();
+    static native long EVP_aes_128_ecb();
+    static native long EVP_aes_192_ecb();
+    static native long EVP_aes_256_ecb();
 
     private static native long EVP_CIPHER_CTX_new();
 
@@ -51,15 +51,15 @@ public class OpenSslAesCipherSpi
     private static native boolean EVP_CipherUpdate(long ctx,
         byte[] in, int inOffset, int len, byte[] out, int outOffset);
 
-    private static native boolean EVP_CipherFinal(long ctx,
+    static native boolean EVP_CipherFinal(long ctx,
         byte[] out, int offset);
 
-    private static native boolean EVP_CipherSetIVLen(long ctx, int ivlen);
+    static native boolean EVP_CipherSetIVLen(long ctx, int ivlen);
 
-    private static native boolean EVP_CipherSetTag(long ctx,
+    static native boolean EVP_CipherSetTag(long ctx,
         byte[] tag, int offset, int taglen);
 
-    private static native boolean EVP_CipherGetTag(long ctx,
+    static native boolean EVP_CipherGetTag(long ctx,
         byte[] tag, int offset, int taglen);
 
     /**
@@ -68,39 +68,26 @@ public class OpenSslAesCipherSpi
     private Key key;
 
     /**
-     * Valid modes supported by this cipher.
-     */
-    private enum CipherMode
-    {
-        Unspecified, CTR, GCM, ECB
-    }
-
-    /**
      * The current mode of this cipher.
      */
-    private CipherMode cipherMode = CipherMode.Unspecified;
+    private final String cipherMode;
 
     /**
      * the OpenSSL EVP_CIPHER_CTX context
      */
-    private long ctx;
+    protected long ctx;
 
     /**
      * The most recent initialization vector set
      */
-    private byte[] iv;
+    protected byte[] iv;
 
     /**
      * The Cipher operation mode with which the cipher was initialized.
      */
-    private int opmode = 0;
+    protected int opmode = 0;
 
-    /**
-     * For GCM, the size of the authentication tag, in bytes.
-     */
-    private int tagLen;
-
-    public OpenSslAesCipherSpi()
+    protected OpenSslAesCipherSpi(String cipherMode)
     {
         if (!JitsiOpenSslProvider.isLoaded())
         {
@@ -112,28 +99,24 @@ public class OpenSslAesCipherSpi
         {
             throw new RuntimeException("EVP_CIPHER_CTX_create");
         }
+
+        this.cipherMode = cipherMode;
     }
 
     @Override
     public void engineSetMode(String mode) throws NoSuchAlgorithmException
     {
-        if ("ctr".equalsIgnoreCase(mode))
-        {
-            cipherMode = CipherMode.CTR;
-        }
-        else if ("gcm".equalsIgnoreCase(mode))
-        {
-            cipherMode = CipherMode.GCM;
-        }
-        else if ("ecb".equalsIgnoreCase(mode))
-        {
-            cipherMode = CipherMode.ECB;
-        }
-        else
+        if (!cipherMode.equalsIgnoreCase(mode))
         {
             throw new NoSuchAlgorithmException("Unsupported mode " + mode);
         }
     }
+
+    /**
+     * Get the appropriate OpenSSL cipher object for the given key length.
+     */
+    protected abstract long getOpenSSLCipher(Key key)
+        throws InvalidKeyException;
 
     @Override
     public void engineSetPadding(String padding)
@@ -151,27 +134,9 @@ public class OpenSslAesCipherSpi
         return BLKLEN;
     }
 
-    private int getOutputSize(int inputLen, boolean forFinal)
+    protected int getOutputSize(int inputLen, boolean forFinal)
     {
-        if (cipherMode != CipherMode.GCM)
-        {
-            return inputLen;
-        }
-        if (opmode == Cipher.ENCRYPT_MODE)
-        {
-            if (forFinal)
-            {
-                return inputLen + tagLen;
-            }
-            else
-            {
-                return inputLen;
-            }
-        }
-        else
-        {
-            return Math.max(inputLen - tagLen, 0);
-        }
+        return inputLen;
     }
 
     @Override
@@ -207,16 +172,9 @@ public class OpenSslAesCipherSpi
         }
     }
 
-    @Override
-    protected void engineInit(int opmode, Key key,
-        AlgorithmParameterSpec params, SecureRandom random)
+    protected void doEngineInit(int opmode, Key key)
         throws InvalidKeyException, InvalidAlgorithmParameterException
     {
-        if (cipherMode == CipherMode.Unspecified)
-        {
-            throw new IllegalStateException("Cipher mode has not been initialized");
-        }
-
         if (!key.getAlgorithm().equalsIgnoreCase("AES")
             || !key.getFormat().equalsIgnoreCase("RAW")
             || (key.getEncoded().length != 16
@@ -242,93 +200,13 @@ public class OpenSslAesCipherSpi
         }
         this.opmode = opmode;
 
-        int newIvLen = 0;
-
-        if (params != null)
-        {
-            if (cipherMode == CipherMode.GCM)
-            {
-                if (params instanceof GCMParameterSpec)
-                {
-                    if (((GCMParameterSpec)params).getTLen() != 128)
-                    {
-                        /* The only length used by srtp transforms. */
-                        throw new InvalidAlgorithmParameterException
-                            ("Unsupported GCM tag length: must be 128");
-                    }
-                    tagLen = ((GCMParameterSpec)params).getTLen() / 8;
-                    byte[] newIv = ((GCMParameterSpec) params).getIV();
-                    /* We only want to call EVP_CipherSetIVLen if the iv length
-                     * has changed.  The default IV length is 12. */
-                    if ((iv == null && newIv.length != 12) ||
-                        (iv != null && iv.length != newIv.length))
-                    {
-                        newIvLen = newIv.length;
-                    }
-                    iv = newIv;
-                }
-                else
-                {
-                    throw new InvalidAlgorithmParameterException
-                        ("Unsupported parameter: " + params);
-                }
-            }
-            else
-            {
-                if (params instanceof IvParameterSpec)
-                {
-                    iv = ((IvParameterSpec) params).getIV();
-                    if (iv.length != BLKLEN)
-                    {
-                        throw new InvalidAlgorithmParameterException
-                            ("Unsupported IV length: must be " + BLKLEN + " bytes");
-                    }
-                }
-                else
-                {
-                    throw new InvalidAlgorithmParameterException
-                        ("Unsupported parameter: " + params);
-                }
-            }
-        }
-        else
-        {
-            iv = null;
-        }
-
-        if (cipherMode == CipherMode.ECB)
-        {
-            if (iv != null)
-            {
-                throw new InvalidAlgorithmParameterException
-                    ("ECB mode cannot use IV");
-            }
-        }
-        else if (iv == null)
-        {
-            /* According to the SPI spec we should use random to generate the
-             * IV in this case if we're encrypting, but we never want to do this for SRTP.
-             */
-            throw new InvalidAlgorithmParameterException
-                ("IV parameter missing");
-        }
-
         byte[] keyParam = null;
         long cipherType = 0;
         if (key != this.key)
         {
             this.key = key;
             keyParam = key.getEncoded();
-            cipherType = getCipher(key);
-        }
-
-        if (newIvLen != 0)
-        {
-            if (!EVP_CipherSetIVLen(ctx, newIvLen))
-            {
-                throw new InvalidAlgorithmParameterException
-                    ("Unsupported IV length " + newIvLen);
-            }
+            cipherType = getOpenSSLCipher(key);
         }
 
         if (!EVP_CipherInit(ctx, cipherType, keyParam, this.iv, openSslEncryptMode))
@@ -340,28 +218,9 @@ public class OpenSslAesCipherSpi
     @Override
     protected void engineInit(int opmode, Key key, AlgorithmParameters params,
         SecureRandom random)
-        throws InvalidKeyException, InvalidAlgorithmParameterException
     {
-        AlgorithmParameterSpec spec = null;
-        if (params != null)
-        {
-            try
-            {
-                if (cipherMode == CipherMode.GCM)
-                {
-                    spec = params.getParameterSpec(GCMParameterSpec.class);
-                }
-                else
-                {
-                    spec = params.getParameterSpec(IvParameterSpec.class);
-                }
-            }
-            catch (InvalidParameterSpecException e)
-            {
-                throw new InvalidAlgorithmParameterException(e);
-            }
-        }
-        engineInit(opmode, key, spec, random);
+        /* Not used by jitsi-srtp - parameters are always set externally. */
+        throw new UnsupportedOperationException("Not implemented");
     }
 
     @Override
@@ -385,7 +244,7 @@ public class OpenSslAesCipherSpi
     /**
      * Call EVP_CipherUpdate, throwing on failure.
      */
-    private void doCipherUpdate(byte[] input, int inputOffset, int inputLen,
+    protected void doCipherUpdate(byte[] input, int inputOffset, int inputLen,
         byte[] output, int outputOffset)
     {
         if (!EVP_CipherUpdate(ctx, input, inputOffset, inputLen, output,
@@ -410,31 +269,9 @@ public class OpenSslAesCipherSpi
             throw new IllegalArgumentException("Input buffer length " + input.length +
                 " is too short for offset " + inputOffset + " plus length " + inputLen);
         }
-        if (cipherMode != CipherMode.GCM || opmode == Cipher.ENCRYPT_MODE)
-        {
-            doCipherUpdate(input, inputOffset, inputLen, output, outputOffset);
-            return inputLen;
-        }
-        else
-        {
-            /* Update for decryption is complicated for GCM, as bytes that might
-             * be the tag rather than encrypted data need to be buffered.
-             * jitsi-srtp never uses this operation (it always directly calls doFinal),
-             * so this SPI doesn't support it.
-             */
-            throw new UnsupportedOperationException("Update not supported for GCM Decryption");
-        }
-    }
 
-    @Override
-    protected void engineUpdateAAD(byte[] input, int inputOffset, int inputLen)
-    {
-        if (inputOffset + inputLen > input.length)
-        {
-            throw new IllegalArgumentException("Input buffer length " + input.length +
-                " is too short for offset " + inputOffset + " plus length " + inputLen);
-        }
-        doCipherUpdate(input, inputOffset, inputLen, null, 0);
+        doCipherUpdate(input, inputOffset, inputLen, output, outputOffset);
+        return inputLen;
     }
 
     @Override
@@ -472,57 +309,9 @@ public class OpenSslAesCipherSpi
             throw new IllegalArgumentException("Input buffer length " + input.length +
                 " is too short for offset " + inputOffset + " plus length " + inputLen);
         }
-        int outLen;
-        if (cipherMode != CipherMode.GCM || opmode == Cipher.ENCRYPT_MODE)
-        {
-            doCipherUpdate(input, inputOffset, inputLen, output, outputOffset);
-            outLen = inputLen;
-        }
-        else
-        {
-            if (inputLen < tagLen)
-            {
-                /* Not enough bytes sent to decryption operation */
-                throw new AEADBadTagException("Input too short - need tag");
-            }
 
-            doCipherUpdate(input, inputOffset, inputLen - tagLen, output, outputOffset);
-            outLen = inputLen - tagLen;
-            int tagOffset = inputOffset + outLen;
-
-            if (!EVP_CipherSetTag(ctx, input, tagOffset, tagLen))
-            {
-                throw new IllegalStateException("Failure in EVP_CipherSetTag");
-            }
-        }
-
-        if (cipherMode != CipherMode.GCM)
-        {
-            return outLen;
-        }
-
-        if (!EVP_CipherFinal(ctx, output, outputOffset + outLen))
-        {
-            if (opmode == Cipher.DECRYPT_MODE)
-            {
-                throw new AEADBadTagException("Bad AEAD tag");
-            }
-            else
-            {
-                throw new IllegalStateException("Failure in EVP_CipherFinal");
-            }
-        }
-
-        if (opmode == Cipher.ENCRYPT_MODE)
-        {
-            if (!EVP_CipherGetTag(ctx, output, outputOffset + outLen, tagLen))
-            {
-                throw new IllegalStateException("Failure in EVP_CipherGetTag");
-            }
-            outLen += tagLen;
-        }
-
-        return outLen;
+        doCipherUpdate(input, inputOffset, inputLen, output, outputOffset);
+        return inputLen;
     }
 
     /**
@@ -545,116 +334,6 @@ public class OpenSslAesCipherSpi
         finally
         {
             super.finalize();
-        }
-    }
-
-    private long getCipher(Key key)
-        throws InvalidKeyException
-    {
-        switch (cipherMode)
-        {
-        case CTR:
-            return getCTRCipher(key);
-        case GCM:
-            return getGCMCipher(key);
-        case ECB:
-            return getECBCipher(key);
-        default:
-            throw new IllegalStateException("Bad cipherMode " + cipherMode);
-        }
-    }
-
-    /** Get the appropriate OpenSSL cipher for CTR mode. */
-    private static long getCTRCipher(Key key)
-        throws InvalidKeyException
-    {
-        switch (key.getEncoded().length)
-        {
-        case 16:
-            return EVP_aes_128_ctr();
-        case 24:
-            return EVP_aes_192_ctr();
-        case 32:
-            return EVP_aes_256_ctr();
-        default:
-            throw new InvalidKeyException("Invalid AES key length: "
-                + key.getEncoded().length + " bytes");
-        }
-    }
-
-    /** Get the appropriate OpenSSL cipher for GCM mode. */
-    private static long getGCMCipher(Key key)
-        throws InvalidKeyException
-    {
-        switch (key.getEncoded().length)
-        {
-        case 16:
-            return EVP_aes_128_gcm();
-        case 24:
-            return EVP_aes_192_gcm();
-        case 32:
-            return EVP_aes_256_gcm();
-        default:
-            throw new InvalidKeyException("Invalid AES key length: "
-                + key.getEncoded().length + " bytes");
-        }
-    }
-
-    /** Get the appropriate OpenSSL cipher for ECB mode. */
-    private static long getECBCipher(Key key)
-        throws InvalidKeyException
-    {
-        switch (key.getEncoded().length)
-        {
-        case 16:
-            return EVP_aes_128_ecb();
-        case 24:
-            return EVP_aes_192_ecb();
-        case 32:
-            return EVP_aes_256_ecb();
-        default:
-            throw new InvalidKeyException("Invalid AES key length: "
-                + key.getEncoded().length + " bytes");
-        }
-    }
-
-    abstract static class Impl extends OpenSslAesCipherSpi
-    {
-        public Impl(String mode)
-        {
-            super();
-            try
-            {
-                engineSetMode(mode);
-            }
-            catch (GeneralSecurityException e)
-            {
-                throw new ProviderException("Internal Error", e);
-            }
-        }
-    }
-
-    public static final class CTR extends Impl
-    {
-        public CTR()
-        {
-            super("CTR");
-        }
-    }
-
-    public static final class GCM extends Impl
-    {
-        public GCM()
-        {
-            super("GCM");
-        }
-    }
-
-    public static final class ECB extends Impl
-    {
-        public ECB()
-        {
-            super("ECB");
         }
     }
 
