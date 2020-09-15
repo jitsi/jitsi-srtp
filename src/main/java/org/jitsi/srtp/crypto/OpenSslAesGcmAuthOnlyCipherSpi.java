@@ -67,6 +67,11 @@ public class OpenSslAesGcmAuthOnlyCipherSpi
      */
     private int tagLen;
 
+    /**
+     * Empty byte array returned by update and final flavors returning arrays.
+     */
+    private static final byte[] EMPTY_BYTE_ARRAY = { };
+
     public OpenSslAesGcmAuthOnlyCipherSpi()
     {
         if (!JitsiOpenSslProvider.isLoaded())
@@ -234,7 +239,7 @@ public class OpenSslAesGcmAuthOnlyCipherSpi
     protected byte[] engineUpdate(byte[] input, int inputOffset, int inputLen)
     {
         engineUpdate(input, inputOffset, inputLen, null, 0);
-        return new byte[0];
+        return EMPTY_BYTE_ARRAY;
     }
 
     /**
@@ -279,7 +284,7 @@ public class OpenSslAesGcmAuthOnlyCipherSpi
         throws AEADBadTagException
     {
         engineDoFinal(input, inputOffset, inputLen, null, 0);
-        return new byte[0];
+        return EMPTY_BYTE_ARRAY;
     }
 
     @Override
