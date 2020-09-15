@@ -123,7 +123,7 @@ public class Aes
      * The size of the data to be used for AES cipher benchmarks.
      * This is chosen to be comparable in size to an SRTP packet.
      */
-    private static final int BENCHMARK_SIZE = 1500;
+    private static final int BENCHMARK_SIZE = 1250;
 
     /**
      * The number of times to pre-execute the benchmark before executing it for real,
@@ -132,6 +132,11 @@ public class Aes
      * 10000 is the threshold to trigger "C2" compilation in the OpenJDK JVM.
      */
     private static final int NUM_WARMUPS = 11000;
+
+    /**
+     * The number of times to run each benchmark, for averaging.
+     */
+    private static final int NUM_BENCHMARKS = 10;
 
     /**
      * The input buffer to be used for the benchmarking of {@link #factories}.
@@ -322,10 +327,13 @@ public class Aes
                     }
 
                     long startTime = System.nanoTime();
-                    benchmark.run(cipher);
+                    for (int i = 0; i < NUM_BENCHMARKS; i++)
+                    {
+                        benchmark.run(cipher);
+                    }
 
                     long endTime = System.nanoTime();
-                    long time = endTime - startTime;
+                    long time = (endTime - startTime) / NUM_BENCHMARKS;
 
                     if (time < minTime)
                     {
