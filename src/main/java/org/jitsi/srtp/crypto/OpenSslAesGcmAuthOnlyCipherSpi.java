@@ -63,7 +63,7 @@ public class OpenSslAesGcmAuthOnlyCipherSpi
     private byte[] iv;
 
     /**
-     * For GCM, the size of the authentication tag, in bytes.
+     * The size of the authentication tag, in bytes.
      */
     private int tagLen;
 
@@ -84,8 +84,7 @@ public class OpenSslAesGcmAuthOnlyCipherSpi
     @Override
     public void engineSetMode(String mode) throws NoSuchAlgorithmException
     {
-        if (!"gcm".equalsIgnoreCase(mode) &&
-            !"gcm-authonly".equalsIgnoreCase(mode))
+        if (!"gcm-authonly".equalsIgnoreCase(mode))
         {
             throw new NoSuchAlgorithmException("Unsupported mode " + mode);
         }
@@ -122,8 +121,8 @@ public class OpenSslAesGcmAuthOnlyCipherSpi
     @Override
     protected AlgorithmParameters engineGetParameters()
     {
-        /* TODO: do we need this? */
-        return null;
+        /* Not used by jitsi-srtp. */
+        throw new UnsupportedOperationException("Not implemented");
     }
 
     @Override
@@ -168,7 +167,7 @@ public class OpenSslAesGcmAuthOnlyCipherSpi
             {
                 if (((GCMParameterSpec)params).getTLen() != 128)
                 {
-                    /* ?? Do we need to enforce this? */
+                    /* The only length used by srtp transforms. */
                     throw new InvalidAlgorithmParameterException
                         ("Unsupported GCM tag length: must be 128");
                 }
