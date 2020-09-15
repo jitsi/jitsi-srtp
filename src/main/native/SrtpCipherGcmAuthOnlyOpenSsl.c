@@ -201,9 +201,6 @@ static void null_cipher(const unsigned char *in, unsigned char *out,
                           size_t blocks, const void *key,
                           const unsigned char ivec[16])
 {
-    if (in != out)
-        memcpy(out, in, blocks * 16);
-
     return;
 }
 
