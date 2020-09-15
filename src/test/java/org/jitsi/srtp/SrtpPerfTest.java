@@ -99,18 +99,17 @@ public class SrtpPerfTest {
         /* Warm up JVM */
         doEncrypt(numWarmups, payloadSize);
 
-        Clock clock = Clock.systemUTC();
-        Instant startTime = clock.instant();
+        long startTime = System.nanoTime();
 
         doEncrypt(num, payloadSize);
 
-        Instant endTime = clock.instant();
+        long endTime = System.nanoTime();
 
-        Duration elapsed = Duration.between(startTime, endTime);
-        Duration average = elapsed.dividedBy(num);
+        long elapsed = endTime - startTime;
+        long average = elapsed / num;
 
         System.out.printf("Executed %d SRTP %s (%d byte payload) in %s: %.3f µs/pkt\n",
-                num, desc, payloadSize, elapsed.toString(), average.toNanos() / 1000.0);
+                num, desc, payloadSize, Duration.ofNanos(elapsed).toString(), average / 1000.0);
     }
 
     public void doCtrPerfTest(int num, int payloadSize, int numWarmups)
