@@ -189,10 +189,11 @@ public final class OpenSslAesGcmCipherSpi
                 throw new AEADBadTagException("Input too short - need tag");
             }
 
-            doCipherUpdate(input, inputOffset, inputLen - tagLen, output,
+            int ciphertextLen = inputLen - tagLen;
+            doCipherUpdate(input, inputOffset, ciphertextLen, output,
                 outputOffset);
-            outLen = inputLen - tagLen;
-            int tagOffset = inputOffset + outLen;
+            outLen = ciphertextLen;
+            int tagOffset = inputOffset + ciphertextLen;
 
             if (!CipherSetTag(ctx, input, tagOffset, tagLen))
             {
