@@ -303,16 +303,16 @@ public class OpenSslAesGcmAuthOnlyCipherSpi
             throw new AEADBadTagException("Input too short - need tag");
         }
 
-        doDecrypt(input, inputOffset, inputLen - tagLen);
-        int outLen = inputLen - tagLen;
-        int tagOffset = inputOffset + inputLen - tagLen;
+        int ciphertextLen = inputLen - tagLen;
+        doDecrypt(input, inputOffset, ciphertextLen);
+        int tagOffset = inputOffset + ciphertextLen;
 
         if (!CRYPTO_gcm128_finish(ctx, input, tagOffset, tagLen))
         {
             throw new AEADBadTagException("Bad AEAD tag");
         }
 
-        return outLen;
+        return ciphertextLen;
     }
 
     /**
