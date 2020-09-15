@@ -131,7 +131,7 @@ public class SrtpCipherGcmTest
     public void testSrtpCipherJava()
         throws Exception
     {
-        SrtpCipherGcm cipher = new SrtpCipherGcm(Cipher.getInstance("AES/GCM/NoPadding"), 128);
+        SrtpCipherGcm cipher = new SrtpCipherGcm(Cipher.getInstance("AES/GCM/NoPadding"));
 
         testGcmCipher(cipher);
     }
@@ -140,7 +140,7 @@ public class SrtpCipherGcmTest
     public void testSrtpCipherAes()
         throws Exception
     {
-        SrtpCipherGcm cipher = new SrtpCipherGcm(Aes.createCipher("AES/GCM/NoPadding"), 128);
+        SrtpCipherGcm cipher = new SrtpCipherGcm(Aes.createCipher("AES/GCM/NoPadding"));
 
         testGcmCipher(cipher);
     }
@@ -161,7 +161,7 @@ public class SrtpCipherGcmTest
             return;
         }
 
-        SrtpCipherGcm cipher = new SrtpCipherGcm(new Aes.OpenSSLCipherFactory().createCipher("AES/GCM/NoPadding"), 128);
+        SrtpCipherGcm cipher = new SrtpCipherGcm(new Aes.OpenSSLCipherFactory().createCipher("AES/GCM/NoPadding"));
 
         testGcmCipher(cipher);
     }

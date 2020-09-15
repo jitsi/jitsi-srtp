@@ -25,14 +25,13 @@ import java.security.*;
 public class SrtpCipherGcm
     extends SrtpCipher
 {
-    private final int authTagBits;
+    private final static int AUTH_TAG_BITS = 128;
 
     private SecretKeySpec key = null;
 
-    public SrtpCipherGcm(Cipher cipher, int authTagBits)
+    public SrtpCipherGcm(Cipher cipher)
     {
         super(cipher);
-        this.authTagBits = authTagBits;
     }
 
     @Override
@@ -49,7 +48,7 @@ public class SrtpCipherGcm
     @Override
     public void setIV(byte[] iv, int opmode) throws GeneralSecurityException
     {
-        cipher.init(opmode, key, new GCMParameterSpec(authTagBits, iv));
+        cipher.init(opmode, key, new GCMParameterSpec(AUTH_TAG_BITS, iv));
     }
 
     @Override
