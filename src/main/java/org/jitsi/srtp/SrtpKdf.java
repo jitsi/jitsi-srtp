@@ -124,7 +124,8 @@ class SrtpKdf
      */
     void deriveSessionKey(byte[] sessKey, byte label)
     {
-        if (sessKey == null || sessKey.length == 0) {
+        if (sessKey == null || sessKey.length == 0)
+        {
             return;
         }
 

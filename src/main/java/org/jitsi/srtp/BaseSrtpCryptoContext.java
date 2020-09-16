@@ -183,7 +183,8 @@ public class BaseSrtpCryptoContext
                 throw new IllegalArgumentException("masterS.length != saltKeyLength");
             }
         }
-        else {
+        else
+        {
             if (saltKeyLength != 0)
             {
                 throw new IllegalArgumentException("null masterS but saltKeyLength != 0");

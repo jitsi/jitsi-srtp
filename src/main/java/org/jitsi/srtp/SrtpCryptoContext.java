@@ -485,7 +485,8 @@ public class SrtpCryptoContext
                 ret = err;
             }
         }
-        else {
+        else
+        {
             ret = err;
         }
 
