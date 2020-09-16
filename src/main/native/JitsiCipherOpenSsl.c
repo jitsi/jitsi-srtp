@@ -117,10 +117,10 @@ JNIEXPORT jboolean JNICALL Java_org_jitsi_srtp_crypto_OpenSslAesCipherSpi_EVP_1C
             goto exit;
     }
 
-    int len_ = len;
+    int outLen;
     ok = EVP_CipherUpdate(
                 (EVP_CIPHER_CTX *) (intptr_t) ctx,
-                (unsigned char *) (out_ + outOffset), &len_,
+                (unsigned char *) (out_ + outOffset), &outLen,
                 (unsigned char *) (in_ + inOffset), len);
 
 exit:
@@ -217,10 +217,10 @@ JNIEXPORT jboolean JNICALL Java_org_jitsi_srtp_crypto_OpenSslAesGcmCipherSpi_EVP
     if (!out_)
         goto exit;
 
-    int len_ = 0;
+    int outLen;
     ok = EVP_CipherFinal(
                 (EVP_CIPHER_CTX *) (intptr_t) ctx,
-                (unsigned char *) (out_ + offset), &len_);
+                (unsigned char *) (out_ + offset), &outLen);
 
 exit:
     if (out_ != NULL)
