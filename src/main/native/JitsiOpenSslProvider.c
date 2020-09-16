@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "org_jitsi_srtp_crypto_OpenSslWrapperLoader.h"
+#include "org_jitsi_srtp_crypto_JitsiOpenSslProvider.h"
 #include <openssl/evp.h>
 #include <openssl/err.h>
 
@@ -24,11 +24,14 @@
  * Signature: ()Z
  */
 JNIEXPORT jboolean JNICALL
-Java_org_jitsi_srtp_crypto_OpenSslWrapperLoader_OpenSSL_1Init
+Java_org_jitsi_srtp_crypto_JitsiOpenSslProvider_OpenSSL_1Init
   (JNIEnv *env, jclass clazz)
 {
+#if OPENSSL_VERSION_NUMBER < 0x10100000L || (LIBRESSL_VERSION_NUMBER && LIBRESSL_VERSION_NUMBER < 0x20700000L)
+    /* these init calls are deprecated in OpenSSL 1.1 */
     OpenSSL_add_all_algorithms();
     ERR_load_crypto_strings();
+#endif
 
     return JNI_TRUE;
 }

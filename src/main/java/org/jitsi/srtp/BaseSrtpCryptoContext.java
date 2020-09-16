@@ -34,9 +34,8 @@
 */
 package org.jitsi.srtp;
 
-import org.bouncycastle.crypto.*;
-import org.bouncycastle.crypto.engines.*;
-import org.bouncycastle.crypto.macs.*;
+import java.security.*;
+import javax.crypto.*;
 import org.jitsi.srtp.crypto.*;
 import org.jitsi.utils.*;
 import org.jitsi.utils.logging2.*;
@@ -73,19 +72,14 @@ public class BaseSrtpCryptoContext
     protected static final long REPLAY_WINDOW_SIZE = 64;
 
     /**
-     * implements the counter cipher mode for RTP according to RFC 3711
+     * Cipher to encrypt packets.
      */
-    protected final SrtpCipherCtr cipherCtr;
-
-    /**
-     * F8 mode cipher
-     */
-    protected final SrtpCipherF8 cipherF8;
+    protected final SrtpCipher cipher;
 
     /**
      * Temp store.
      */
-    protected final byte[] ivStore = new byte[16];
+    protected final byte[] ivStore;
 
     /**
      * The HMAC object we used to do packet authentication
@@ -118,11 +112,6 @@ public class BaseSrtpCryptoContext
     protected final int ssrc;
 
     /**
-     * Temp store.
-     */
-    protected final byte[] tagStore;
-
-    /**
      * this is a working store, used by some methods to avoid new operations
      * the methods must use this only to store results for immediate processing
      */
@@ -133,26 +122,13 @@ public class BaseSrtpCryptoContext
      */
     protected final Logger logger;
 
-    protected BaseSrtpCryptoContext(int ssrc, Logger parentLogger)
-    {
-        logger = parentLogger.createChildLogger(this.getClass().getName());
-        this.ssrc = ssrc;
-
-        cipherCtr = null;
-        cipherF8 = null;
-        mac = null;
-        policy = null;
-        saltKey = null;
-        tagStore = null;
-    }
-
-    @SuppressWarnings("fallthrough")
     protected BaseSrtpCryptoContext(
             int ssrc,
             byte[] masterK,
             byte[] masterS,
             SrtpPolicy policy,
             Logger parentLogger)
+        throws GeneralSecurityException
     {
         logger = parentLogger.createChildLogger(this.getClass().getName());
         this.ssrc = ssrc;
@@ -191,97 +167,82 @@ public class BaseSrtpCryptoContext
             }
         }
 
-        SrtpCipherCtr cipherCtr = null;
-        SrtpCipherF8 cipherF8 = null;
-        byte[] saltKey = null;
-
+        saltKey = new byte[saltKeyLength];
+        int ivSize = 16;
         switch (policy.getEncType())
         {
-        case SrtpPolicy.NULL_ENCRYPTION:
-            break;
-
-        case SrtpPolicy.AESF8_ENCRYPTION:
-            cipherF8 = new SrtpCipherF8(Aes.createBlockCipher(encKeyLength));
-            //$FALL-THROUGH$
-
         case SrtpPolicy.AESCM_ENCRYPTION:
-            // use OpenSSL if available and AES128 is in use
-            if (OpenSslWrapperLoader.isLoaded() && encKeyLength == 16)
-            {
-                cipherCtr = new SrtpCipherCtrOpenSsl();
-            }
-            else
-            {
-                cipherCtr
-                    = new SrtpCipherCtrJava(
-                            Aes.createBlockCipher(encKeyLength));
-            }
-            saltKey = new byte[saltKeyLength];
+            cipher = new SrtpCipherCtr(Aes.createCipher("AES/CTR/NoPadding"));
             break;
-
+        case SrtpPolicy.AESGCM_ENCRYPTION:
+            if (policy.getAuthTagLength() != 16)
+            {
+                throw new IllegalArgumentException("SRTP only supports 16-octet GCM auth tags");
+            }
+            cipher = new SrtpCipherGcm(Aes.createCipher("AES/GCM/NoPadding"));
+            ivSize = 12;
+            break;
+        case SrtpPolicy.AESF8_ENCRYPTION:
+            cipher = new SrtpCipherF8(Aes.createCipher("AES/ECB/NoPadding"));
+            break;
         case SrtpPolicy.TWOFISHF8_ENCRYPTION:
-            cipherF8 = new SrtpCipherF8(new TwofishEngine());
-            //$FALL-THROUGH$
-
+            cipher = new SrtpCipherF8(Cipher.getInstance("Twofish/ECB/NoPadding"));
+            break;
         case SrtpPolicy.TWOFISH_ENCRYPTION:
-            cipherCtr = new SrtpCipherCtrJava(new TwofishEngine());
-            saltKey = new byte[saltKeyLength];
+            cipher = new SrtpCipherCtr(Cipher.getInstance("Twofish/CTR/NoPadding"));
+            break;
+        case SrtpPolicy.NULL_ENCRYPTION:
+        default:
+            cipher = null;
+            ivSize = 0;
             break;
         }
-        this.cipherCtr = cipherCtr;
-        this.cipherF8 = cipherF8;
-        this.saltKey = saltKey;
+
+        ivStore = new byte[ivSize];
 
         Mac mac;
-        byte[] tagStore;
-
         switch (policy.getAuthType())
         {
         case SrtpPolicy.HMACSHA1_AUTHENTICATION:
-            mac = HmacSha1.createMac();
-            tagStore = new byte[mac.getMacSize()];
+            mac = HmacSha1.createMac(parentLogger);
             break;
 
         case SrtpPolicy.SKEIN_AUTHENTICATION:
-            tagStore = new byte[policy.getAuthTagLength()];
-            mac = new SkeinMac(SkeinMac.SKEIN_512, tagStore.length * 8);
+            mac = Mac.getInstance("SkeinMac_512_" + (policy.getAuthTagLength() * 8));
             break;
 
         case SrtpPolicy.NULL_AUTHENTICATION:
         default:
             mac = null;
-            tagStore = null;
             break;
         }
         this.mac = mac;
-        this.tagStore = tagStore;
     }
 
+
     /**
-     * Authenticates a packet. Calculated authentication tag is returned/stored
-     * in {@link #tagStore}.
-     *
-     * @param pkt the RTP packet to be authenticated
-     * @param rocIn Roll-Over-Counter
+     * Writes roc / index to the rbStore buffer.
      */
-    synchronized protected void authenticatePacketHmac(ByteArrayBuffer pkt, int rocIn)
+    protected void writeRoc(int rocIn)
     {
-        mac.update(pkt.getBuffer(), pkt.getOffset(), pkt.getLength());
         rbStore[0] = (byte) (rocIn >> 24);
         rbStore[1] = (byte) (rocIn >> 16);
         rbStore[2] = (byte) (rocIn >> 8);
         rbStore[3] = (byte) rocIn;
-        mac.update(rbStore, 0, rbStore.length);
-        mac.doFinal(tagStore, 0);
     }
 
     /**
-     * Closes this crypto context. The close functions deletes key data and
-     * performs a cleanup of this crypto context.
+     * Authenticates a packet.
+     *
+     * @param pkt the RTP packet to be authenticated
+     * @param rocIn Roll-Over-Counter
      */
-    synchronized public void close()
+    synchronized protected byte[] authenticatePacketHmac(ByteArrayBuffer pkt, int rocIn)
     {
-        /* TODO, clean up ciphers and mac. */
+        mac.update(pkt.getBuffer(), pkt.getOffset(), pkt.getLength());
+        writeRoc(rocIn);
+        mac.update(rbStore, 0, rbStore.length);
+        return mac.doFinal();
     }
 
     /**

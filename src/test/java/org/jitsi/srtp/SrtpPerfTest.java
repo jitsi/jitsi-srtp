@@ -16,6 +16,7 @@
 package org.jitsi.srtp;
 
 import gnu.getopt.*;
+import java.security.*;
 import org.jitsi.srtp.crypto.*;
 import org.jitsi.utils.*;
 import org.jitsi.utils.logging2.*;
@@ -69,13 +70,18 @@ public class SrtpPerfTest {
     private SrtpCryptoContext context;
 
     private void createContext(SrtpPolicy policy)
+        throws GeneralSecurityException
     {
         Logger logger = new LoggerImpl(getClass().getName());
-        factory = new SrtpContextFactory(true, test_key, test_key_salt, policy, policy, logger);
+        factory = new SrtpContextFactory(true,
+            Arrays.copyOf(test_key, policy.getEncKeyLength()),
+            Arrays.copyOf(test_key_salt, policy.getSaltKeyLength()),
+            policy, policy, logger);
         context = factory.deriveContext(0xcafebabe, 0);
     }
 
     public void doEncrypt(int num, int payloadSize)
+        throws GeneralSecurityException
     {
         for (int i = 0; i < num; i++)
         {
@@ -84,40 +90,67 @@ public class SrtpPerfTest {
         }
     }
 
-    public void doPerfTest(int num, int payloadSize)
+    public void doPerfTest(SrtpPolicy policy, String desc, int num, int payloadSize, int numWarmups)
+        throws GeneralSecurityException
     {
-        SrtpPolicy policy =
-                new SrtpPolicy(SrtpPolicy.AESCM_ENCRYPTION, 128/8,
-                        SrtpPolicy.HMACSHA1_AUTHENTICATION, 160/8,
-                        80/8, 112/8 );
-
         createContext(policy);
         setupPacket(payloadSize, policy);
 
         /* Warm up JVM */
-        doEncrypt(10, payloadSize);
+        doEncrypt(numWarmups, payloadSize);
 
-        Clock clock = Clock.systemUTC();
-        Instant startTime = clock.instant();
+        long startTime = System.nanoTime();
 
         doEncrypt(num, payloadSize);
 
-        Instant endTime = clock.instant();
+        long endTime = System.nanoTime();
 
-        Duration elapsed = Duration.between(startTime, endTime);
-        Duration average = elapsed.dividedBy(num);
+        long elapsed = endTime - startTime;
+        long average = elapsed / num;
 
-        System.out.printf("Executed %d SRTP enc/auth (%d byte payload) in %s: %.3f µs/pkt\n",
-                num, payloadSize, elapsed.toString(), average.toNanos() / 1000.0);
+        System.out.printf("Executed %d SRTP %s (%d byte payload) in %s: %.3f µs/pkt\n",
+                num, desc, payloadSize, Duration.ofNanos(elapsed).toString(), average / 1000.0);
+    }
+
+    public void doCtrPerfTest(int num, int payloadSize, int numWarmups)
+        throws GeneralSecurityException
+    {
+        SrtpPolicy policy =
+            new SrtpPolicy(SrtpPolicy.AESCM_ENCRYPTION, 128/8,
+                SrtpPolicy.HMACSHA1_AUTHENTICATION, 160/8,
+                80/8, 112/8 );
+
+        doPerfTest(policy, "CTR/HMAC", num, payloadSize, numWarmups);
+    }
+
+    public void doGcmPerfTest(int num, int payloadSize, int numWarmups)
+        throws GeneralSecurityException
+    {
+        SrtpPolicy policy =
+            new SrtpPolicy(SrtpPolicy.AESGCM_ENCRYPTION, 128/8,
+                SrtpPolicy.NULL_AUTHENTICATION, 0,
+                128/8, 96/8 );
+
+        doPerfTest(policy, "GCM", num, payloadSize, numWarmups);
     }
 
     private static final int DEFAULT_NUM_TESTS = 100000;
     private static final int DEFAULT_PAYLOAD_SIZE = 1250;
+    /* 10000 is is the threshold for full (C2) JIT optimization. */
+    private static final int DEFAULT_NUM_WARMUPS = 20000;
 
     @Test
     public void srtpPerf()
+        throws GeneralSecurityException
     {
-        doPerfTest(DEFAULT_NUM_TESTS, DEFAULT_PAYLOAD_SIZE);
+        doCtrPerfTest(DEFAULT_NUM_TESTS, DEFAULT_PAYLOAD_SIZE, DEFAULT_NUM_WARMUPS);
+    }
+
+    @Test
+    public void srtpPerfGcm()
+        throws GeneralSecurityException
+    {
+        doGcmPerfTest(DEFAULT_NUM_TESTS, DEFAULT_PAYLOAD_SIZE, DEFAULT_NUM_WARMUPS);
     }
 
     private static final String progName = "SrtpPerfTest";
@@ -129,12 +162,14 @@ public class SrtpPerfTest {
     }
 
     public static void main(String[] args)
+        throws GeneralSecurityException
     {
         int numTests = DEFAULT_NUM_TESTS;
         int payloadSize = DEFAULT_PAYLOAD_SIZE;
+        int numWarmups = DEFAULT_NUM_WARMUPS;
         String factoryClassName = null;
 
-        Getopt g = new Getopt(progName, args, "f:p:");
+        Getopt g = new Getopt(progName, args, "f:p:w:");
 
         int c;
         String arg;
@@ -152,11 +187,25 @@ public class SrtpPerfTest {
                         payloadSize = Integer.parseInt(arg);
                     }
                     catch (NumberFormatException e) {
-                        System.err.println("Invalid payload size " + arg);
+                        System.err.println("Invalid payload size " + arg + ": " + e.getMessage());
                         usage();
                     }
                     if (payloadSize < 0) {
                         System.err.println("Invalid payload size " + arg);
+                        usage();
+                    }
+                    break;
+                case 'w':
+                    arg = g.getOptarg();
+                    try {
+                        numTests = Integer.parseInt(arg);
+                    }
+                    catch (NumberFormatException e) {
+                        System.err.println("Invalid number of warmups " + arg + ": " + e.getMessage());
+                        usage();
+                    }
+                    if (payloadSize < 0) {
+                        System.err.println("Invalid number of warmups " + arg);
                         usage();
                     }
                     break;
@@ -182,7 +231,7 @@ public class SrtpPerfTest {
             }
             catch (NumberFormatException e)
             {
-                System.err.println("Invalid number of tests " + args[optind]);
+                System.err.println("Invalid number of tests " + args[optind]+ ": " + e.getMessage());
                 usage();
             }
             if (numTests < 0)
@@ -193,6 +242,7 @@ public class SrtpPerfTest {
         }
 
         SrtpPerfTest test = new SrtpPerfTest();
-        test.doPerfTest(numTests, payloadSize);
+        test.doCtrPerfTest(numTests, payloadSize, numWarmups);
+        test.doGcmPerfTest(numTests, payloadSize, numWarmups);
     }
 }

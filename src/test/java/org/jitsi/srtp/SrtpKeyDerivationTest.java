@@ -17,6 +17,8 @@ package org.jitsi.srtp;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import java.security.*;
+import javax.crypto.*;
 import org.junit.jupiter.api.*;
 
 import javax.xml.bind.*;
@@ -37,7 +39,7 @@ public class SrtpKeyDerivationTest {
             DatatypeConverter.parseHexBinary("CEBE321F6FF7716B6FD4AB49AF256A156D38BAA4");
 
     @Test
-    public void srtpKdf128Test()
+    public void srtpKdf128Test() throws Exception
     {
         SrtpPolicy policy =
                 new SrtpPolicy(SrtpPolicy.AESCM_ENCRYPTION, 128/8,
@@ -47,17 +49,15 @@ public class SrtpKeyDerivationTest {
 
         byte[] encKey = new byte[policy.getEncKeyLength()];
         kdf.deriveSessionKey(encKey, SrtpKdf.LABEL_RTP_ENCRYPTION);
-        assertArrayEquals(encKey, cipherKey128);
+        assertArrayEquals(cipherKey128, encKey);
 
         byte[] authKey = new byte[policy.getAuthKeyLength()];
         kdf.deriveSessionKey(authKey, SrtpKdf.LABEL_RTP_MSG_AUTH);
-        assertArrayEquals(authKey, authKey128);
+        assertArrayEquals(authKey128, authKey);
 
         byte[] saltKey = new byte[policy.getSaltKeyLength()];
         kdf.deriveSessionKey(saltKey, SrtpKdf.LABEL_RTP_SALT);
-        assertArrayEquals(saltKey, cipherSalt128);
-
-        kdf.close();
+        assertArrayEquals(cipherSalt128, saltKey);
     }
 
     /* Key derivation test vectors from RFC 6188. */
@@ -76,7 +76,7 @@ public class SrtpKeyDerivationTest {
             DatatypeConverter.parseHexBinary("fd9c32d39ed5fbb5a9dc96b30818454d1313dc05");
 
     @Test
-    public void srtpKdf256Test()
+    public void srtpKdf256Test() throws Exception
     {
         SrtpPolicy policy =
                 new SrtpPolicy(SrtpPolicy.AESCM_ENCRYPTION, 256/8,
@@ -86,16 +86,14 @@ public class SrtpKeyDerivationTest {
 
         byte[] encKey = new byte[policy.getEncKeyLength()];
         kdf.deriveSessionKey(encKey, SrtpKdf.LABEL_RTP_ENCRYPTION);
-        assertArrayEquals(encKey, cipherKey256);
+        assertArrayEquals(cipherKey256, encKey);
 
         byte[] authKey = new byte[policy.getAuthKeyLength()];
         kdf.deriveSessionKey(authKey, SrtpKdf.LABEL_RTP_MSG_AUTH);
-        assertArrayEquals(authKey, authKey256);
+        assertArrayEquals(authKey256, authKey);
 
         byte[] saltKey = new byte[policy.getSaltKeyLength()];
         kdf.deriveSessionKey(saltKey, SrtpKdf.LABEL_RTP_SALT);
-        assertArrayEquals(saltKey, cipherSalt256);
-
-        kdf.close();
+        assertArrayEquals(cipherSalt256, saltKey);
     }
 }

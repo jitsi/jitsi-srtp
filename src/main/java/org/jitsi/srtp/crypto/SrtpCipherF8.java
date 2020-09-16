@@ -15,10 +15,10 @@
  */
 package org.jitsi.srtp.crypto;
 
-import java.util.*;
+import java.security.*;
 
-import org.bouncycastle.crypto.*;
-import org.bouncycastle.crypto.params.*;
+import javax.crypto.*;
+import javax.crypto.spec.*;
 
 /**
  * SrtpCipherF8 implements Srtp F8 Mode Encryption for 128 bits block cipher.
@@ -46,13 +46,8 @@ import org.bouncycastle.crypto.params.*;
  * @author Bing SU (nova.su@gmail.com)
  * @author Werner Dittmann <werner.dittmann@t-online.de>
  */
-public class SrtpCipherF8
+public class SrtpCipherF8 extends SrtpCipher
 {
-    /**
-     * block size, just a short name.
-     */
-    private final static int BLKLEN = 16;
-
     /**
      * F8 mode encryption context, see RFC3711 section 4.1.2 for detailed
      * description.
@@ -68,28 +63,26 @@ public class SrtpCipherF8
      * Encryption key
      * (k_e)
      */
-    private byte[] encKey;
+    private SecretKeySpec encKey;
 
     /**
      * Masked Encryption key (F8 mode specific)
      * (k_e XOR (k_s || 0x555..5))
      */
-    private byte[] maskedKey;
+    private SecretKeySpec maskedKey;
 
-    /**
-     * A 128 bits block cipher (AES or TwoFish)
-     */
-    private BlockCipher cipher;
+    private F8Context f8ctx;
 
-    public SrtpCipherF8(BlockCipher cipher)
+    public SrtpCipherF8(Cipher cipher)
     {
-        this.cipher = cipher;
+        super(cipher);
     }
 
     /**
      * @param k_e encryption key
      * @param k_s salt key
      */
+    @Override
     public void init(byte[] k_e, byte[] k_s)
     {
         if (k_e.length != BLKLEN)
@@ -97,36 +90,32 @@ public class SrtpCipherF8
         if (k_s.length > k_e.length)
             throw new IllegalArgumentException("k_s.length > k_e.length");
 
-        encKey = Arrays.copyOf(k_e, k_e.length);
+        encKey = getSecretKey(k_e);
 
-        /*
-         * XOR the original key with the salt||0x55 to get
-         * the special key maskedKey.
-         */
-        maskedKey = Arrays.copyOf(k_e, k_e.length);
+        // XOR the original key with the salt||0x55 to get
+        // the special key maskedKey.
+        byte[] k_m = new byte[k_e.length];
         int i = 0;
         for (; i < k_s.length; ++i)
-            maskedKey[i] ^= k_s[i];
-        for (; i < maskedKey.length; ++i)
-            maskedKey[i] ^= 0x55;
+            k_m[i] = (byte) (k_e[i] ^ k_s[i]);
+        for (; i < k_m.length; ++i)
+            k_m[i] = (byte) (k_e[i] ^  0x55);
+        maskedKey = getSecretKey(k_m);
     }
 
-    public void process(byte[] data, int off, int len, byte[] iv)
+    @Override
+    public void setIV(byte[] iv, int opmode) throws GeneralSecurityException
     {
-        if (iv.length != BLKLEN)
+        if (iv.length != cipher.getBlockSize())
+        {
             throw new IllegalArgumentException("iv.length != BLKLEN");
-        if (off < 0)
-            throw new IllegalArgumentException("off < 0");
-        if (len < 0)
-            throw new IllegalArgumentException("len < 0");
-        if (off + len > data.length)
-            throw new IllegalArgumentException("off + len > data.length");
+        }
+
         /*
          * RFC 3711 says we should not encrypt more than 2^32 blocks which is
          * way more than java array max size, so no checks needed here
          */
-
-        F8Context f8ctx = new F8Context();
+        f8ctx = new F8Context();
 
         /*
          * Get memory for the derived IV (IV')
@@ -136,18 +125,28 @@ public class SrtpCipherF8
         /*
          * Encrypt the original IV to produce IV'.
          */
-        cipher.init(true, new KeyParameter(maskedKey));
-        cipher.processBlock(iv, 0, f8ctx.ivAccent, 0);
+        cipher.init(Cipher.ENCRYPT_MODE, maskedKey);
+        cipher.update(iv, 0, iv.length, f8ctx.ivAccent, 0);
 
         /*
          * re-init cipher with the "normal" key
          */
-        cipher.init(true, new KeyParameter(encKey));
+        cipher.init(Cipher.ENCRYPT_MODE, encKey);
 
         f8ctx.J = 0; // initialize the counter
         f8ctx.S = new byte[BLKLEN]; // get the key stream buffer
-        Arrays.fill(f8ctx.S, (byte) 0);
+    }
 
+    @Override
+    public void processAAD(byte[] data, int off, int len)
+    {
+        throw new IllegalStateException("F8 mode does not accept AAD");
+    }
+
+    @Override
+    public int process(byte[] data, int off, int len)
+        throws GeneralSecurityException
+    {
         int inLen = len;
 
         while (inLen >= BLKLEN)
@@ -161,6 +160,8 @@ public class SrtpCipherF8
         {
             processBlock(f8ctx, data, off, inLen);
         }
+
+        return len;
     }
 
     /**
@@ -177,6 +178,7 @@ public class SrtpCipherF8
      *            length of the data to be processed inside inOut array from off
      */
     private void processBlock(F8Context f8ctx, byte[] inOut, int off, int len)
+        throws ShortBufferException
     {
         /*
          * XOR the previous key stream with IV'
@@ -198,7 +200,7 @@ public class SrtpCipherF8
         /*
          * Now compute the new key stream using AES encrypt
          */
-        cipher.processBlock(f8ctx.S, 0, f8ctx.S, 0);
+        cipher.update(f8ctx.S, 0, f8ctx.S.length, f8ctx.S, 0);
 
         /*
          * As the last step XOR the plain text with the key stream to produce

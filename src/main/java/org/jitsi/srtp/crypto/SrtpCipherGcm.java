@@ -15,19 +15,21 @@
  */
 package org.jitsi.srtp.crypto;
 
-import java.security.*;
 import javax.crypto.*;
 import javax.crypto.spec.*;
+import java.security.*;
 
 /**
- * SRTP encryption in CTR mode.
+ * SRTP encryption in GCM mode.
  */
-public class SrtpCipherCtr
+public class SrtpCipherGcm
     extends SrtpCipher
 {
+    private final static int AUTH_TAG_BITS = 128;
+
     private SecretKeySpec key = null;
 
-    public SrtpCipherCtr(Cipher cipher)
+    public SrtpCipherGcm(Cipher cipher)
     {
         super(cipher);
     }
@@ -46,18 +48,13 @@ public class SrtpCipherCtr
     @Override
     public void setIV(byte[] iv, int opmode) throws GeneralSecurityException
     {
-        if (iv.length != cipher.getBlockSize())
-        {
-            throw new IllegalArgumentException("iv.length != BLKLEN");
-        }
-
-        cipher.init(opmode, key, new IvParameterSpec(iv));
+        cipher.init(opmode, key, new GCMParameterSpec(AUTH_TAG_BITS, iv));
     }
 
     @Override
     public void processAAD(byte[] data, int off, int len)
     {
-        throw new IllegalStateException("CTR mode does not accept AAD");
+        cipher.updateAAD(data, off, len);
     }
 
     @Override
