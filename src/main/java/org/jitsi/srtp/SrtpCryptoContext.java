@@ -154,7 +154,8 @@ public class SrtpCryptoContext
         this.roc = roc;
 
         if (!sender && policy.getEncType() == SrtpPolicy.AESGCM_ENCRYPTION &&
-            JitsiOpenSslProvider.isLoaded()) {
+            JitsiOpenSslProvider.isLoaded())
+        {
             try
             {
                 cipherAuthOnly = new SrtpCipherGcm(
@@ -285,7 +286,8 @@ public class SrtpCryptoContext
             byte[] encKey = new byte[policy.getEncKeyLength()];
             kdf.deriveSessionKey(encKey, SrtpKdf.LABEL_RTP_ENCRYPTION);
             cipher.init(encKey, saltKey);
-            if (cipherAuthOnly != cipher) {
+            if (cipherAuthOnly != cipher)
+            {
                 cipherAuthOnly.init(encKey, saltKey);
             }
         }
