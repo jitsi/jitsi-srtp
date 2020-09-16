@@ -176,7 +176,7 @@ public class Aes
             {
                 return new CtrBenchmark(keySize);
             }
-            if (transformation.contains("/GCM/"))
+            if (transformation.contains("/GCM"))
             {
                 return new GcmBenchmark(keySize);
             }

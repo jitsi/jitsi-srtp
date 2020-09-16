@@ -162,6 +162,8 @@
                                         </fileName>
                                         <fileName>JitsiCipherOpenSsl.c
                                         </fileName>
+                                        <fileName>SrtpCipherGcmAuthOnlyOpenSsl.c
+                                        </fileName>
                                     </fileNames>
                                 </source>
                             </sources>
