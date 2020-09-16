@@ -19,6 +19,8 @@ import java.security.*;
 import org.jitsi.utils.*;
 import org.jitsi.utils.logging2.*;
 
+import javax.crypto.*;
+
 public class JitsiOpenSslProvider
     extends Provider
 {
@@ -67,6 +69,7 @@ public class JitsiOpenSslProvider
         put("Cipher.AES/CTR/NoPadding", OpenSslAesCtrCipherSpi.class.getName());
         put("Cipher.AES/GCM/NoPadding", OpenSslAesGcmCipherSpi.class.getName());
         put("Cipher.AES/ECB/NoPadding", OpenSslAesEcbCipherSpi.class.getName());
+        put("Cipher.AES/GCM-AuthOnly/NoPadding", OpenSslAesGcmAuthOnlyCipherSpi.class.getName());
         put("MAC.HmacSHA1", OpenSslHmacSpi.class.getName());
     }
 }

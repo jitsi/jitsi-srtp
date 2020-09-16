@@ -73,6 +73,11 @@ public class SrtpCryptoContext
     extends BaseSrtpCryptoContext
 {
     /**
+     * Secondary cipher for decrypting packets in auth-only mode.
+     */
+    protected SrtpCipher cipherAuthOnly;
+
+    /**
      * For the receiver only, the rollover counter guessed from the sequence
      * number of the received packet that is currently being processed (i.e. the
      * value is valid during the execution of
@@ -147,6 +152,25 @@ public class SrtpCryptoContext
 
         this.sender = sender;
         this.roc = roc;
+
+        if (!sender && policy.getEncType() == SrtpPolicy.AESGCM_ENCRYPTION &&
+            JitsiOpenSslProvider.isLoaded())
+        {
+            try
+            {
+                cipherAuthOnly = new SrtpCipherGcm(
+                    new Aes.OpenSSLCipherFactory()
+                        .createCipher("AES/GCM-AuthOnly/NoPadding"));
+            }
+            catch (Exception e)
+            {
+                cipherAuthOnly = cipher;
+            }
+        }
+        else
+        {
+            cipherAuthOnly = cipher;
+        }
 
         deriveSrtpKeys(masterK, masterS);
     }
@@ -262,6 +286,10 @@ public class SrtpCryptoContext
             byte[] encKey = new byte[policy.getEncKeyLength()];
             kdf.deriveSessionKey(encKey, SrtpKdf.LABEL_RTP_ENCRYPTION);
             cipher.init(encKey, saltKey);
+            if (cipherAuthOnly != cipher)
+            {
+                cipherAuthOnly.init(encKey, saltKey);
+            }
         }
 
         // compute the session authentication key
@@ -354,7 +382,8 @@ public class SrtpCryptoContext
                 pkt.getLength() - rtpHeaderLength);
     }
 
-    private SrtpErrorStatus processPacketAesGcm(ByteArrayBuffer pkt, boolean encrypting)
+    private SrtpErrorStatus processPacketAesGcm(ByteArrayBuffer pkt, boolean encrypting,
+        boolean skipDecryption)
     {
         int ssrc = SrtpPacketUtils.getSsrc(pkt);
         int seqNo = SrtpPacketUtils.getSequenceNumber(pkt);
@@ -406,6 +435,8 @@ public class SrtpCryptoContext
 
         try
         {
+            SrtpCipher cipher = skipDecryption ? cipherAuthOnly : this.cipher;
+
             cipher.setIV(ivStore, encrypting ? Cipher.ENCRYPT_MODE :
                 Cipher.DECRYPT_MODE);
 
@@ -518,22 +549,13 @@ public class SrtpCryptoContext
         long guessedIndex = guessIndex(seqNo);
         SrtpErrorStatus ret, err;
 
-        if (policy.getEncType() == SrtpPolicy.AESGCM_ENCRYPTION)
-        {
-            /* We can't skip decryption for GCM, because it's also the authentication. */
-            /*  (Note: in theory it'd be possible to run a GCM auth without the decryption
-             *   part, but I don't know of any GCM cipher APIs which support this.)
-             */
-            skipDecryption = false;
-        }
-
         // Replay control
         if (policy.isReceiveReplayDisabled() || ((err = checkReplay(seqNo, guessedIndex)) == SrtpErrorStatus.OK))
         {
             // Authenticate the packet.
             if ((err = authenticatePacket(pkt)) == SrtpErrorStatus.OK)
             {
-                if (!skipDecryption)
+                if (!skipDecryption || policy.getEncType() == SrtpPolicy.AESGCM_ENCRYPTION)
                 {
                     switch (policy.getEncType())
                     {
@@ -544,7 +566,7 @@ public class SrtpCryptoContext
                         break;
 
                     case SrtpPolicy.AESGCM_ENCRYPTION:
-                        err = processPacketAesGcm(pkt, false);
+                        err = processPacketAesGcm(pkt, false, skipDecryption);
                         break;
 
                     // Decrypt the packet using F8 Mode encryption.
@@ -644,7 +666,7 @@ public class SrtpCryptoContext
             break;
 
         case SrtpPolicy.AESGCM_ENCRYPTION:
-            processPacketAesGcm(pkt, true);
+            processPacketAesGcm(pkt, true, false);
             break;
 
         // Encrypt the packet using F8 Mode encryption.
