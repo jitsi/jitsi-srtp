@@ -1,2 +1,2 @@
 # Jitsi SRTP
-Jitsi SRTP contains classes for encrypting and unencrypting SRTP and SRTCP packets.
+Jitsi SRTP contains classes for encrypting and decrypting SRTP and SRTCP packets.

@@ -34,6 +34,11 @@ public class SrtpPolicy
     public final static int AESCM_ENCRYPTION = 1;
 
     /**
+     * Galois/Counter Mode AES Cipher, defined in RFC 7714
+     */
+    public final static int AESGCM_ENCRYPTION = 5;
+
+    /**
      * Counter Mode TwoFish Cipher
      */
     public final static int TWOFISH_ENCRYPTION = 3;
@@ -47,13 +52,16 @@ public class SrtpPolicy
      * F8 Mode TwoFish Cipher
      */
     public final static int TWOFISHF8_ENCRYPTION = 4;
+
     /**
      * Null Authentication, no authentication
+     *
+     * This should be set if GCM or other AEAD encryption is used.
      */
     public final static int NULL_AUTHENTICATION = 0;
 
     /**
-     * HAMC SHA1 Authentication, defined in Section 4.2.1, RFC3711
+     * HMAC SHA1 Authentication, defined in Section 4.2.1, RFC3711
      */
     public final static int HMACSHA1_AUTHENTICATION = 1;
 
@@ -83,7 +91,7 @@ public class SrtpPolicy
     private int authKeyLength;
 
     /**
-     * SRTP authentication tag length
+     * SRTP authentication tag length.  Also used for GCM tag.
      */
     private int authTagLength;
 
@@ -251,52 +259,72 @@ public class SrtpPolicy
 
     /**
      * Set whether send-side RTP replay protection is to be enabled.
+     * <p>
+     * Turn this off if you need to send identical packets more than once (e.g.,
+     * retransmission to a peer that does not support the rtx payload.)
+     * <b>Note</b>: Never re-send a packet with a different payload!
      *
-     * Turn this off if you need to send identical packets more than once (e.g., retransmission to
-     * a peer that does not support the rtx payload.)  <b>Note</b>: Never re-send a packet with a different
-     * payload!
-     *
-     * @param enabled <tt>true</tt> if send-side replay protection is to be enabled; <tt>false</tt> if not.
+     * @param enabled {@code true} if send-side replay protection is to be
+     *                enabled; {@code false} if not.
      */
-    public void setSendReplayEnabled(boolean enabled) { sendReplayEnabled = enabled; }
+    public void setSendReplayEnabled(boolean enabled)
+    {
+        sendReplayEnabled = enabled;
+    }
 
     /**
      * Get whether send-side RTP replay protection is enabled.
      *
      * @see #isSendReplayDisabled
      */
-    public boolean isSendReplayEnabled() { return sendReplayEnabled; }
+    public boolean isSendReplayEnabled()
+    {
+        return sendReplayEnabled;
+    }
 
     /**
      * Get whether send-side RTP replay protection is disabled.
      *
      * @see #isSendReplayEnabled
      */
-    public boolean isSendReplayDisabled() { return !sendReplayEnabled; }
+    public boolean isSendReplayDisabled()
+    {
+        return !sendReplayEnabled;
+    }
 
     /**
      * Set whether receive-side RTP replay protection is to be enabled.
-     *
-     * Turn this off if you need to be able to receive identical packets more than once (e.g., if you are
-     * an RTP translator, with peers that are doing retransmission without using the rtx payload.)
+     * <p>
+     * Turn this off if you need to be able to receive identical packets more
+     * than once (e.g., if you are an RTP translator, with peers that are doing
+     * retransmission without using the rtx payload.)
      * <b>Note</b>: You must make sure your packet handling is idempotent!
      *
-     * @param enabled <tt>true</tt> if receive-side replay protection is to be enabled; <tt>false</tt> if not.
+     * @param enabled {@code true} if receive-side replay protection is to be
+     *                enabled; {@code false} if not.
      */
-    public void setReceiveReplayEnabled(boolean enabled) { receiveReplayEnabled = enabled; }
+    public void setReceiveReplayEnabled(boolean enabled)
+    {
+        receiveReplayEnabled = enabled;
+    }
 
     /**
      * Get whether receive-side RTP replay protection is enabled.
      *
      * @see #isReceiveReplayDisabled
      */
-    public boolean isReceiveReplayEnabled() { return receiveReplayEnabled; }
+    public boolean isReceiveReplayEnabled()
+    {
+        return receiveReplayEnabled;
+    }
 
     /**
      * Get whether receive-side RTP replay protection is enabled.
      *
      * @see #isReceiveReplayEnabled
      */
-    public boolean isReceiveReplayDisabled() { return !receiveReplayEnabled; }
-
+    public boolean isReceiveReplayDisabled()
+    {
+        return !receiveReplayEnabled;
+    }
 }

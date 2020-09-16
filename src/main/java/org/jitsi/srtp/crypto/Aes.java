@@ -19,110 +19,140 @@ import java.lang.reflect.*;
 import java.security.*;
 import java.util.*;
 
-import org.bouncycastle.crypto.*;
-import org.bouncycastle.crypto.engines.*;
-import org.bouncycastle.crypto.params.*;
+import java.util.concurrent.*;
+import javax.crypto.spec.*;
+import org.bouncycastle.jce.provider.*;
 import org.jitsi.utils.logging2.*;
 
+import javax.crypto.*;
+
 /**
- * Implements a factory for an AES <tt>BlockCipher</tt>.
+ * Implements a factory for an AES/CTR {@link Cipher}.
  *
  * @author Lyubomir Marinov
  */
 public class Aes
 {
     /**
+     * The {@link Logger} used by the {@link Aes} class to print out debug
+     * information.
+     */
+    private static final Logger logger = new LoggerImpl(Aes.class.getName());
+
+    /**
      * The block size in bytes of the AES algorithm (implemented by the
-     * <tt>BlockCipher</tt>s initialized by the <tt>Aes</tt> class).
+     * {@link Cipher}s initialized by the {@link Aes} class).
      */
     private static final int BLOCK_SIZE = 16;
 
     /**
-     * The simple name of the <tt>BlockCipherFactory</tt> class/interface which
+     * The simple name of the {@link CipherFactory} class/interface which
      * is used as a class name suffix by the well-known
-     * <tt>BlockCipherFactory</tt> implementations.
+     * {@link CipherFactory} implementations.
      */
-    private static final String BLOCK_CIPHER_FACTORY_SIMPLE_CLASS_NAME
-        = "BlockCipherFactory";
+    private static final String CIPHER_FACTORY_SIMPLE_CLASS_NAME
+        = CipherFactory.class.getSimpleName();
 
     /**
-     * The <tt>BlockCipherFactory</tt> implemented with BouncyCastle. It is the
-     * well-known fallback.
+     * The default {@link CipherFactory} which is used as fallback.
      */
-    private static final BlockCipherFactory BOUNCYCASTLE_FACTORY
-        = new BouncyCastleBlockCipherFactory();
+    private static final CipherFactory DEFAULT_FACTORY
+        = new SunJCECipherFactory();
 
     /**
-     * The <tt>BlockCipherFactory</tt> implementations known to the <tt>Aes</tt>
-     * class among which the fastest is to be elected as {@link #factory}.
+     * The {@link CipherFactory} implementations known to the {@link Aes}
+     * class among which the fastest is to be elected as {@link #fastestFactories}
+     * for each transformation.
      */
-    private static BlockCipherFactory[] factories;
+    private static CipherFactory[] factories;
+
+    private static class FactoryAndTimestamp
+    {
+        public CipherFactory factory;
+        public long timestamp;
+
+        public FactoryAndTimestamp (CipherFactory f, long t)
+        {
+            factory = f;
+            timestamp = t;
+        }
+    }
 
     /**
-     * The <tt>BlockCipherFactory</tt> implementation which is (to be) used by
-     * the class <tt>Aes</tt> to initialize <tt>BlockCipher</tt>s.
+     * The {@link CipherFactory} implementation which is (to be) used by
+     * the class {@link Aes} to initialize {@link Cipher}s, and
+     * The time in nanoseconds at which the factory was benchmarked and
+     * was elected for a given transformation.
      */
-    private static BlockCipherFactory factory;
+    private static final Map<String, FactoryAndTimestamp> fastestFactories = new HashMap<>();
 
     /**
-     * The name of the class to instantiate as a <tt>BlockCipherFactory</tt>
-     * implementation to be used by the class <tt>Aes</tt> to initialize
-     * <tt>BlockCipher</tt>s.
+     * The name of the class to instantiate as a {@link CipherFactory}
+     * implementation to be used by the class {@link Aes} to initialize
+     * {@link Cipher}s.
      */
     private static String FACTORY_CLASS_NAME = null;
 
     /**
-     * The <tt>Class</tt>es of the well-known <tt>BlockCipherFactory</tt>
+     * The {@link Class}es of the well-known {@link CipherFactory}
      * implementations.
      */
     private static final Class<?>[] FACTORY_CLASSES
         = {
-            BouncyCastleBlockCipherFactory.class,
-            SunJCEBlockCipherFactory.class,
-            SunPKCS11BlockCipherFactory.class,
+            OpenSSLCipherFactory.class,
+            SunJCECipherFactory.class,
+            BouncyCastleCipherFactory.class,
+            SunPKCS11CipherFactory.class,
         };
 
     /**
-     * The number of milliseconds after which the benchmark which elected
-     * {@link #factory} is to be considered expired.
+     * The number of nanoseconds after which the benchmark which elected
+     * {@link #fastestFactories} is to be considered expired.
      */
-    public static final long FACTORY_TIMEOUT = 60 * 1000;
+    public static final long FACTORY_TIMEOUT = TimeUnit.SECONDS.toNanos(60);
 
     /**
-     * The class to instantiate as a <tt>BlockCipherFactory</tt> implementation
-     * to be used to initialized <tt>BlockCipher</tt>s.
+     * The class to instantiate as a {@link CipherFactory} implementation
+     * to be used to initialized {@link Cipher}s.
      *
      * @see #FACTORY_CLASS_NAME
      */
-    private static Class<? extends BlockCipherFactory> factoryClass;
+    private static Class<? extends CipherFactory> factoryClass;
 
     /**
-     * The time in milliseconds at which {@link #factories} were benchmarked and
-     * {@link #factory} was elected.
+     * The size of the data to be used for AES cipher benchmarks.
+     * This is chosen to be comparable in size to an SRTP packet.
      */
-    private static long factoryTimestamp;
+    private static final int BENCHMARK_SIZE = 1250;
+
+    /**
+     * The number of times to pre-execute the benchmark before executing it for real,
+     * to give the JVM time to run JITs and the like.
+     *
+     * 10000 is the threshold to trigger "C2" compilation in the OpenJDK JVM.
+     */
+    private static final int NUM_WARMUPS = 11000;
+
+    /**
+     * The number of times to run each benchmark, for averaging.
+     */
+    private static final int NUM_BENCHMARKS = 10;
 
     /**
      * The input buffer to be used for the benchmarking of {@link #factories}.
      * It consists of blocks and its length specifies the number of blocks to
      * process for the purposes of the benchmark.
      */ 
-    private static final byte[] in = new byte[BLOCK_SIZE * 1024];
-
-    /**
-     * The <tt>Logger</tt> used by the <tt>Aes</tt> class to print out debug
-     * information.
-     */
-    private static final Logger logger = new LoggerImpl(Aes.class.getName());
+    private static final byte[] in = new byte[BENCHMARK_SIZE];
 
     /**
      * The output buffer to be used for the benchmarking of {@link #factories}.
      */
-    private static final byte[] out = new byte[BLOCK_SIZE];
+    private static final byte[] out = new byte[BENCHMARK_SIZE + BLOCK_SIZE];
 
     /**
      * The random number generator which generates keys and inputs for the
-     * benchmarking of the <tt>BlockCipherFactory</tt> implementations.
+     * benchmarking of the {@link CipherFactory} implementations.
      */
     private static final Random random = new Random();
 
@@ -135,70 +165,175 @@ public class Aes
         factoryClass = null;
     }
 
+    private static abstract class BenchmarkOperation
+    {
+        abstract void run(Cipher cipher) throws Exception;
+
+        static BenchmarkOperation getBenchmark(String transformation, int keySize)
+            throws Exception
+        {
+            if (transformation.contains("/CTR/"))
+            {
+                return new CtrBenchmark(keySize);
+            }
+            if (transformation.contains("/GCM/"))
+            {
+                return new GcmBenchmark(keySize);
+            }
+            else if (transformation.contains("/ECB/"))
+            {
+                return new EcbBenchmark(keySize);
+            }
+            else {
+                throw new NoSuchAlgorithmException("Unsupported transformation " + transformation + " for benchmark");
+            }
+        }
+    }
+
+    private static class CtrBenchmark extends BenchmarkOperation
+    {
+        private final Key keySpec;
+        private final IvParameterSpec ivSpec;
+
+        public CtrBenchmark(int keySize)
+        {
+            byte[] key = new byte[keySize];
+
+            byte[] iv = new byte[BLOCK_SIZE];
+            Random random = Aes.random;
+            random.nextBytes(key);
+            random.nextBytes(iv);
+            random.nextBytes(in);
+
+            keySpec = new SecretKeySpec(key, "AES");
+            ivSpec = new IvParameterSpec(iv);
+        }
+
+        public void run(Cipher cipher) throws Exception
+        {
+            cipher.init(Cipher.ENCRYPT_MODE, keySpec, ivSpec);
+            cipher.update(in, 0, in.length, out, 0);
+        }
+    }
+
+    private static class GcmBenchmark extends BenchmarkOperation
+    {
+        private static final int AAD_SIZE = 20; /* RTP header plus extensions */
+
+        private final Key keySpec;
+        private final byte[] aad = new byte[AAD_SIZE];
+        private final byte[] iv = new byte[12];
+
+        public GcmBenchmark(int keySize)
+        {
+            byte[] key = new byte[keySize];
+
+            Random random = Aes.random;
+            random.nextBytes(key);
+            random.nextBytes(iv);
+            random.nextBytes(aad);
+            random.nextBytes(in);
+
+            keySpec = new SecretKeySpec(key, "AES");
+        }
+
+        public void run(Cipher cipher) throws Exception
+        {
+            /* Many GCM providers don't let us use two identical IVs in a row
+               with the same key. */
+            iv[0] ^= 1;
+            GCMParameterSpec gcmSpec = new GCMParameterSpec(128, iv);
+            cipher.init(Cipher.ENCRYPT_MODE, keySpec, gcmSpec);
+            cipher.updateAAD(aad, 0, aad.length);
+            cipher.doFinal(in, 0, in.length, out, 0);
+        }
+    }
+
+
+    private static class EcbBenchmark extends BenchmarkOperation
+    {
+        private final Key keySpec;
+
+        public EcbBenchmark(int keySize)
+        {
+            byte[] key = new byte[keySize];
+
+            Random random = Aes.random;
+            random.nextBytes(key);
+            random.nextBytes(in);
+
+            keySpec = new SecretKeySpec(key, "AES");
+        }
+
+        public void run(Cipher cipher) throws Exception
+        {
+            cipher.init(Cipher.ENCRYPT_MODE, keySpec);
+            cipher.update(in, 0, in.length, out, 0);
+        }
+    }
+
+
     /**
-     * Benchmarks a specific array/list of <tt>BlockCipherFactory</tt> instances
+     * Benchmarks a specific array/list of {@link CipherFactory} instances
      * and returns the fastest-performing element.
      *
-     * @param factories the <tt>BlockCipherFactory</tt> instances to benchmark
+     * @param factories the {@link CipherFactory} instances to benchmark
      * @param keySize AES key size (16, 24, 32 bytes)
-     * @return the fastest-performing <tt>BlockCipherFactory</tt> among the
-     * specified <tt>factories</tt>
+     * @param transformation String describing transformation to be created.
+     * @return the fastest-performing {@link CipherFactory} among the
+     * specified {@code factories}
      */
-    private static BlockCipherFactory benchmark(
-            BlockCipherFactory[] factories,
-            int keySize)
+    private static CipherFactory benchmark(
+            CipherFactory[] factories,
+            int keySize,
+            String transformation,
+            boolean warmup
+        )
     {
-        Random random = Aes.random;
-        byte[] key = new byte[keySize];
-        byte[] in = Aes.in;
-
-        random.nextBytes(key);
-        random.nextBytes(in);
-
-        CipherParameters params = new KeyParameter(key);
-        int blockSize = BLOCK_SIZE;
-        int inEnd = in.length - blockSize + 1;
         byte[] out = Aes.out;
         long minTime = Long.MAX_VALUE;
-        BlockCipherFactory minFactory = null;
+        CipherFactory minFactory = null;
 
         StringBuilder log = new StringBuilder();
 
         for (int f = 0; f < factories.length; ++f)
         {
-            BlockCipherFactory factory = factories[f];
+            CipherFactory factory = factories[f];
 
             if (factory == null)
                 continue;
 
             try
             {
-                BlockCipher cipher = factory.createBlockCipher(keySize);
+                Cipher cipher = factory.createCipher(transformation);
 
                 if (cipher == null)
                 {
-                    // The BlockCipherFactory failed to initialize a new
-                    // BlockCipher instance. We will not use it again because
+                    // The CipherFactory failed to initialize a new
+                    // StreamCipher instance. We will not use it again because
                     // the failure may persist.
                     factories[f] = null;
                 }
                 else
                 {
-                    cipher.init(true, params);
+                    BenchmarkOperation benchmark = BenchmarkOperation.getBenchmark(transformation, keySize);
+                    if (warmup)
+                    {
+                        // Let the JVM "warm up" (do JIT compilation and the like)
+                        for (int i = 0; i < NUM_WARMUPS; i++)
+                        {
+                            benchmark.run(cipher);
+                        }
+                    }
 
                     long startTime = System.nanoTime();
-
-                    for (int inOff = 0;
-                            inOff < inEnd;
-                            inOff = inOff + blockSize)
+                    for (int i = 0; i < NUM_BENCHMARKS; i++)
                     {
-                        cipher.processBlock(in, inOff, out, 0);
+                        benchmark.run(cipher);
                     }
-                    // We do not invoke the method BlockCipher.reset() so we do
-                    // not need to take it into account in the benchmark.
 
                     long endTime = System.nanoTime();
-                    long time = endTime - startTime;
+                    long time = (endTime - startTime) / NUM_BENCHMARKS;
 
                     if (time < minTime)
                     {
@@ -228,36 +363,52 @@ public class Aes
             logger.info(() ->
                     "AES benchmark"
                         + " (of execution times expressed in nanoseconds): "
-                        + log);
+                        + log
+                        + " for " + transformation
+            );
         }
 
         return minFactory;
     }
 
     /**
-     * Initializes a new <tt>BlockCipher</tt> instance which implements Advanced
-     * Encryption Standard (AES).
-     * @param keySize length of the AES key (16, 24, 32 bytes)
+     * Initializes a new {@link Cipher} instance which implements Advanced
+     * Encryption Standard (AES) in some mode.
+     * @param transformation String describing transformation to be created. Must
+     *                       be an AES variant.
      *
-     * @return a new <tt>BlockCipher</tt> instance which implements Advanced
-     * Encryption Standard (AES)
+     * @return a new {@link Cipher} instance which implements Advanced
+     * Encryption Standard (AES) in CTR mode
      */
-    public static BlockCipher createBlockCipher(int keySize)
+    public static Cipher createCipher(String transformation)
     {
-        BlockCipherFactory factory;
+        FactoryAndTimestamp factoryAndTimestamp;
+        CipherFactory factory;
 
         synchronized (Aes.class)
         {
-            long now = System.currentTimeMillis();
+            long now = System.nanoTime();
 
-            factory = Aes.factory;
-            if ((factory != null) && (now > factoryTimestamp + FACTORY_TIMEOUT))
+            factoryAndTimestamp = Aes.fastestFactories.getOrDefault(transformation, null);
+            boolean warmup = true;
+            if (factoryAndTimestamp != null)
+            {
+                factory = factoryAndTimestamp.factory;
+            }
+            else
+            {
                 factory = null;
+            }
+            if ((factoryAndTimestamp != null) && (now > factoryAndTimestamp.timestamp + FACTORY_TIMEOUT))
+            {
+                factory = null;
+                warmup = false;
+            }
             if (factory == null)
             {
                 try
                 {
-                    factory = getBlockCipherFactory(keySize);
+                    factory = getCipherFactory(transformation, warmup);
                 }
                 catch (Throwable t)
                 {
@@ -281,20 +432,28 @@ public class Aes
                 {
                     if (factory == null)
                     {
-                        factory = Aes.factory;
-                        if (factory == null)
-                            factory = BOUNCYCASTLE_FACTORY;
+                        factoryAndTimestamp = Aes.fastestFactories
+                            .getOrDefault(transformation, null);
+                        if (factoryAndTimestamp != null)
+                        {
+                            factory = factoryAndTimestamp.factory;
+                        }
+                        else
+                        {
+                            factory = DEFAULT_FACTORY;
+                        }
                     }
 
-                    Aes.factoryTimestamp = now;
-                    if (Aes.factory != factory)
+                    FactoryAndTimestamp oldFactoryAndTimestamp = Aes.fastestFactories
+                        .put(transformation, new FactoryAndTimestamp(factory, now));
+                    if (oldFactoryAndTimestamp == null ||
+                        oldFactoryAndTimestamp.factory != factory)
                     {
-                        Aes.factory = factory;
-                        // Simplify the name of the BlockCipherFactory class to
+                        // Simplify the name of the CipherFactory class to
                         // be employed for the purposes of brevity and ease.
-                        logger.info(() ->
-                                "Will employ AES implemented by "
-                                    + getSimpleClassName(Aes.factory) + ".");
+                        logger.info("Will employ AES implemented by "
+                                    + getSimpleClassName(factory) +
+                                    " for " + transformation + ".");
                     }
                 }
             }
@@ -302,7 +461,7 @@ public class Aes
 
         try
         {
-            return factory.createBlockCipher(keySize);
+            return factory.createCipher(transformation);
         }
         catch (Exception ex)
         {
@@ -322,40 +481,40 @@ public class Aes
             return null;
         }
         // Support specifying FACTORY_CLASS_NAME without a package and
-        // without BlockCipherFactory at the end for the purposes of
+        // without CipherFactory at the end for the purposes of
         // brevity and ease.
         if (Character.isUpperCase(factoryClassName.charAt(0))
             && !factoryClassName.contains(".")
             && !factoryClassName.endsWith(
-            BLOCK_CIPHER_FACTORY_SIMPLE_CLASS_NAME))
+            CIPHER_FACTORY_SIMPLE_CLASS_NAME))
         {
             factoryClassName
                 = Aes.class.getName() + "$" + factoryClassName
-                + BLOCK_CIPHER_FACTORY_SIMPLE_CLASS_NAME;
+                + CIPHER_FACTORY_SIMPLE_CLASS_NAME;
         }
         return factoryClassName;
     }
 
     /**
-     * Initializes the <tt>BlockCipherFactory</tt> instances to be benchmarked
-     * by the class <tt>Aes</tt> and among which the fastest-performing one is
+     * Initializes the {@link CipherFactory} instances to be benchmarked
+     * by the class {@link Aes} and among which the fastest-performing one is
      * to be selected.
      * 
-     * @return the <tt>BlockCipherFactory</tt> instances to be benchmarked by
-     * the class <tt>Aes</tt> and among which the fastest-performing one is to
+     * @return the {@link CipherFactory} instances to be benchmarked by
+     * the class {@link Aes} and among which the fastest-performing one is to
      * be selected
      */
     @SuppressWarnings("unchecked")
-    private static BlockCipherFactory[] createBlockCipherFactories()
+    private static CipherFactory[] createCipherFactories()
     {
-        // The user may have specified a specific BlockCipherFactory class
+        // The user may have specified a specific CipherFactory class
         // (name) through setFactoryClassName(String). Practically, the specified FACTORY_CLASS_NAME
         // will override all other FACTORY_CLASSES and, consequently, it does
         // not seem necessary to try FACTORY_CLASSES at all. Technically though,
-        // the specified BlockCipherFactory may malfunction. That is why all
+        // the specified CipherFactory may malfunction. That is why all
         // FACTORY_CLASSES are tried as well and FACTORY_CLASS_NAME is selected
         // later on after it has proven itself functional.
-        Class<? extends BlockCipherFactory> factoryClass = Aes.factoryClass;
+        Class<? extends CipherFactory> factoryClass = Aes.factoryClass;
         Class<?>[] factoryClasses = FACTORY_CLASSES;
         boolean add = true;
 
@@ -373,11 +532,11 @@ public class Aes
                 {
                     if ((clazz != null)
                             && clazz.getName().equals(factoryClassName)
-                            && BlockCipherFactory.class.isAssignableFrom(clazz))
+                            && CipherFactory.class.isAssignableFrom(clazz))
                     {
                         Aes.factoryClass
                             = factoryClass
-                                = (Class<? extends BlockCipherFactory>)
+                                = (Class<? extends CipherFactory>)
                                     clazz;
                         add = false;
                         break;
@@ -392,11 +551,11 @@ public class Aes
                     {
                         Class<?> clazz = Class.forName(factoryClassName);
     
-                        if (BlockCipherFactory.class.isAssignableFrom(clazz))
+                        if (CipherFactory.class.isAssignableFrom(clazz))
                         {
                             Aes.factoryClass
                                 = factoryClass
-                                    = (Class<? extends BlockCipherFactory>)
+                                    = (Class<? extends CipherFactory>)
                                         clazz;
                         }
                     }
@@ -448,35 +607,35 @@ public class Aes
             }
         }
 
-        return createBlockCipherFactories(factoryClasses);
+        return createCipherFactories(factoryClasses);
     }
 
     /**
-     * Initializes <tt>BlockCipherFactory</tt> instances of specific
-     * <tt>Class</tt>es.
+     * Initializes {@link CipherFactory} instances of specific
+     * {@link Class}es.
      *
-     * @param classes the runtime <tt>Class</tt>es to instantiate
-     * @return the <tt>BlockCipherFactory</tt> instances initialized by the
-     * specified <tt>classes</tt>
+     * @param classes the runtime {@link Class}es to instantiate
+     * @return the {@link CipherFactory} instances initialized by the
+     * specified {@code classes}
      */
-    private static BlockCipherFactory[] createBlockCipherFactories(
+    private static CipherFactory[] createCipherFactories(
             Class<?>[] classes)
     {
-        BlockCipherFactory[] factories = new BlockCipherFactory[classes.length];
+        CipherFactory[] factories = new CipherFactory[classes.length];
         int i = 0;
 
         for (Class<?> clazz : classes)
         {
             try
             {
-                if (BlockCipherFactory.class.isAssignableFrom(clazz))
+                if (CipherFactory.class.isAssignableFrom(clazz))
                 {
-                    BlockCipherFactory factory;
+                    CipherFactory factory;
 
-                    if (BouncyCastleBlockCipherFactory.class.equals(clazz))
-                        factory = BOUNCYCASTLE_FACTORY;
+                    if (DEFAULT_FACTORY.getClass().equals(clazz))
+                        factory = DEFAULT_FACTORY;
                     else
-                        factory = (BlockCipherFactory) clazz.getConstructor().newInstance();
+                        factory = (CipherFactory) clazz.getConstructor().newInstance();
 
                     factories[i++] = factory;
                 }
@@ -493,47 +652,53 @@ public class Aes
     }
 
     /**
-     * Gets a <tt>BlockCipherFactory</tt> instance to be used by the
-     * <tt>Aes</tt> class to initialize <tt>BlockCipher</tt>s.
+     * Gets a {@link CipherFactory} instance to be used by the
+     * {@link Aes} class to initialize {@link Cipher}s.
      *
      * <p>
-     * Benchmarks the well-known <tt>BlockCipherFactory</tt> implementations and
+     * Benchmarks the well-known {@link CipherFactory} implementations and
      * returns the fastest one. 
      * </p>
-     * @param keySize AES key size (16, 24, 32 bytes)
+     * @param transformation The transformation for which to get a factory.
      *
-     * @return a <tt>BlockCipherFactory</tt> instance to be used by the
-     * <tt>Aes</tt> class to initialize <tt>BlockCipher</tt>s
+     * @return a {@link CipherFactory} instance to be used by the
+     * {@link Aes} class to initialize {@link Cipher}s
      */
-    private static BlockCipherFactory getBlockCipherFactory(int keySize)
+    private static CipherFactory getCipherFactory(String transformation, boolean warmup)
     {
-        BlockCipherFactory[] factories = Aes.factories;
+        CipherFactory[] factories = Aes.factories;
+        /* Note: we use 128-bit keys to measure the performance -- we can't know
+         * the actual key length that will be used until init() is called.
+         * Presume for now that all implementations' performance is roughly proportional
+         * between key lengths.
+         */
+        final int keySize = 16;
 
         if (factories == null)
         {
-            // A single instance of each well-known BlockCipherFactory
+            // A single instance of each well-known CipherFactory
             // implementation will be initialized i.e. the attempt to initialize
-            // BlockCipherFactory instances will be made once only.
-            Aes.factories = factories = createBlockCipherFactories();
+            // CipherFactory instances will be made once only.
+            Aes.factories = factories = createCipherFactories();
         }
 
-        // Benchmark the BlockCiphers provided by the available
-        // BlockCipherFactories in order to select the fastest-performing
-        // BlockCipherFactory.
-        BlockCipherFactory minFactory = benchmark(factories, keySize);
+        // Benchmark the StreamCiphers provided by the available
+        // StreamCipherFactories in order to select the fastest-performing
+        // CipherFactory.
+        CipherFactory minFactory = benchmark(factories, keySize, transformation, warmup);
 
-        // The user may have specified a specific BlockCipherFactory class
+        // The user may have specified a specific CipherFactory class
         // (name) through setFactoryClassName(String), Practically, FACTORY_CLASS_NAME may override
         // minFactory and, consequently, it may appear that the benchmark is
-        // unnecessary. Technically though, the specified BlockCipherFactory may
+        // unnecessary. Technically though, the specified CipherFactory may
         // malfunction. That is why FACTORY_CLASS_NAME is selected after it has
         // proven itself functional.
         {
-            Class<? extends BlockCipherFactory> factoryClass = Aes.factoryClass;
+            Class<? extends CipherFactory> factoryClass = Aes.factoryClass;
 
             if (factoryClass != null)
             {
-                for (BlockCipherFactory factory : factories)
+                for (CipherFactory factory : factories)
                 {
                     if ((factory != null)
                             && factory.getClass().equals(factoryClass))
@@ -549,17 +714,17 @@ public class Aes
     }
 
     /**
-     * Gets the simple name of the runtime <tt>Class</tt> of a specific
-     * <tt>BlockCipherFactory</tt> to be used for display purposes of brevity
+     * Gets the simple name of the runtime {@link Class} of a specific
+     * {@link CipherFactory} to be used for display purposes of brevity
      * and readability.
      *
-     * @param factory the <tt>BlockCipherFactory</tt> for which a simple class
+     * @param factory the {@link CipherFactory} for which a simple class
      * name is to be returned
-     * @return the simple name of the runtime <tt>Class</tt> of the specified
-     * <tt>factory</tt> to be used for display purposes of brevity and
+     * @return the simple name of the runtime {@link Class} of the specified
+     * {@code factory} to be used for display purposes of brevity and
      * readability
      */
-    private static String getSimpleClassName(BlockCipherFactory factory)
+    private static String getSimpleClassName(CipherFactory factory)
     {
         Class<?> clazz = factory.getClass();
         String className = clazz.getSimpleName();
@@ -567,7 +732,7 @@ public class Aes
         if (className == null || className.length() == 0)
             className = clazz.getName();
 
-        String suffix = BLOCK_CIPHER_FACTORY_SIMPLE_CLASS_NAME;
+        String suffix = CIPHER_FACTORY_SIMPLE_CLASS_NAME;
 
         if (className.endsWith(suffix))
         {
@@ -599,77 +764,137 @@ public class Aes
     }
 
     /**
-     * Implements <tt>BlockCipherFactory</tt> using BouncyCastle.
-     *
-     * @author Lyubomir Marinov
+     * Implements {@link CipherFactory} using Jitsi SRTP's OpenSSL.
      */
-    public static class BouncyCastleBlockCipherFactory
-        implements BlockCipherFactory
+    public static class OpenSSLCipherFactory
+        extends CipherFactory
     {
-        /**
-         * {@inheritDoc}
-         */
+        public OpenSSLCipherFactory()
+        {
+            super(new JitsiOpenSslProvider());
+        }
+
+        private boolean trySuperApi = true;
+        private Constructor<Cipher> cipherConstructor;
+        private Field cipherProviderField;
+
+        private synchronized void getMethods()
+            throws NoSuchAlgorithmException
+        {
+            if (cipherConstructor == null || cipherProviderField == null)
+            {
+                try
+                {
+                    cipherConstructor = Cipher.class
+                        .getDeclaredConstructor(CipherSpi.class, String.class);
+                    cipherConstructor.setAccessible(true);
+                    cipherProviderField =
+                        Cipher.class.getDeclaredField("provider");
+                    cipherProviderField.setAccessible(true);
+                }
+                catch (NoSuchMethodException | NoSuchFieldException e)
+                {
+                    cipherConstructor = null;
+                    cipherProviderField = null;
+                    throw new NoSuchAlgorithmException(
+                        "Cannot instantiate OpenSSL Cipher");
+                }
+            }
+        }
+
         @Override
-        public BlockCipher createBlockCipher(int keySize)
-            throws Exception
+        public Cipher createCipher(String transformation) throws Exception
         {
-            // The value of keySize can be ignored for BouncyCastle, it
-            // determines the AES algorithm to be used with the KeyParameter.
-            return new AESEngine();
+            if (trySuperApi)
+            {
+                try
+                {
+                    return super.createCipher(transformation);
+                }
+                catch (SecurityException e)
+                {
+                    trySuperApi = false;
+                }
+            }
+            /* Work around the fact that we can't install our own security
+             * providers on Oracle JVMs.
+             *
+             * Note this will trigger a illegal reflective access warning on JVM 11+.
+             */
+            getMethods();
+
+            Provider.Service s = provider.getService("Cipher", transformation);
+            CipherSpi spi = (CipherSpi)s.newInstance(null);
+
+            Cipher cipher = cipherConstructor.newInstance(spi, transformation);
+            cipherProviderField.set(cipher, provider);
+
+            return cipher;
         }
     }
 
     /**
-     * Implements <tt>BlockCipherFactory</tt> using Sun JCE.
+     * Implements {@link CipherFactory} using BouncyCastle.
      *
      * @author Lyubomir Marinov
      */
-    public static class SunJCEBlockCipherFactory
-        extends SecurityProviderBlockCipherFactory
+    public static class BouncyCastleCipherFactory
+        extends CipherFactory
     {
-        /**
-         * Initializes a new <tt>SunJCEBlockCipherFactory</tt> instance.
-         */
-        public SunJCEBlockCipherFactory()
+        public BouncyCastleCipherFactory()
         {
-            super("AES_<size>/ECB/NoPadding", "SunJCE", logger);
+            super(new BouncyCastleProvider());
         }
     }
 
     /**
-     * Implements <tt>BlockCipherFactory</tt> using Sun PKCS#11.
+     * Implements {@link CipherFactory} using Sun JCE.
      *
      * @author Lyubomir Marinov
      */
-    public static class SunPKCS11BlockCipherFactory
-        extends SecurityProviderBlockCipherFactory
+    public static class SunJCECipherFactory
+        extends CipherFactory
+    {
+        public SunJCECipherFactory()
+        {
+            super("SunJCE");
+        }
+    }
+
+    /**
+     * Implements {@link CipherFactory} using Sun PKCS#11.
+     *
+     * @author Lyubomir Marinov
+     */
+    public static class SunPKCS11CipherFactory
+        extends CipherFactory
     {
         /**
-         * The <tt>java.security.Provider</tt> instance (to be) employed for an
-         * (optimized) AES implementation.
+         * The {@link Provider} instance (to be) employed for an (optimized) AES
+         * implementation.
          */
         private static Provider provider;
 
         /**
          * The indicator which determines whether {@link #provider} is to be
-         * used. If <tt>true</tt>, an attempt will be made to initialize a
-         * <tt>java.security.Provider</tt> instance. If the attempt fails,
-         * <tt>false</tt> will be assigned in order to not repeatedly attempt
-         * the initialization which is known to have failed.
+         * used. If {@code true}, an attempt will be made to initialize a {@link
+         * Provider} instance. If the attempt fails, {@code false} will be
+         * assigned in order to not repeatedly attempt the initialization which
+         * is known to have failed.
          */
         private static boolean useProvider = true;
 
         /**
-         * Gets the <tt>java.security.Provider</tt> instance (to be) employed
+         * Gets the {@code java.security.Provider} instance (to be) employed
          * for an (optimized) AES implementation.
          *
-         * @return the <tt>java.security.Provider</tt> instance (to be) employed
+         * @return the {@code java.security.Provider} instance (to be) employed
          * for an (optimized) AES implementation
          */
-        private static synchronized Provider getProvider()
+        public static synchronized Provider getProvider()
             throws Exception
         {
-            Provider provider = SunPKCS11BlockCipherFactory.provider;
+            Provider provider = SunPKCS11CipherFactory.provider;
 
             if ((provider == null) && useProvider)
             {
@@ -706,22 +931,22 @@ public class Aes
                     if (provider == null)
                         useProvider = false;
                     else
-                        SunPKCS11BlockCipherFactory.provider = provider;
+                        SunPKCS11CipherFactory.provider = provider;
                 }
             }
             return provider;
         }
 
         /**
-         * Initializes a new <tt>SunPKCS11BlockCipherFactory</tt> instance.
+         * Initializes a new instance of this class.
          *
          * @throws Exception if anything goes wrong while initializing a new
-         * <tt>SunPKCS11BlockCipherFactory</tt> instance
+         *                   instance
          */
-        public SunPKCS11BlockCipherFactory()
+        public SunPKCS11CipherFactory()
             throws Exception
         {
-            super("AES_<size>/ECB/NoPadding", getProvider(), logger);
+            super(getProvider());
         }
     }
 }

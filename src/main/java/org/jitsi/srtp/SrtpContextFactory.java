@@ -15,12 +15,13 @@
  */
 package org.jitsi.srtp;
 
+import java.security.*;
 import org.jitsi.utils.logging2.*;
 
 import java.util.*;
 
 /**
- * The <tt>SrtpContextFactory</tt> creates the initial crypto contexts for RTP
+ * The {@link SrtpContextFactory} creates the initial crypto contexts for RTP
  * and RTCP encryption using the supplied key material.
  *
  * @author Bing SU (nova.su@gmail.com)
@@ -40,7 +41,7 @@ public class SrtpContextFactory
 
     /**
      * The indicator which determines whether this instance is used by SRTP
-     * senders (<tt>true</tt>) or receiver (<tt>false</tt>).
+     * senders ({@code true}) or receiver ({@code false}).
      */
     private final boolean sender;
 
@@ -63,8 +64,8 @@ public class SrtpContextFactory
      * Construct a SrtpTransformEngine based on given master encryption key,
      * master salt key and Srtp/Srtcp policy.
      *
-     * @param sender <tt>true</tt> if the new instance is to be used by an SRTP
-     * sender; <tt>false</tt> if the new instance is to be used by an SRTP
+     * @param sender {@code true} if the new instance is to be used by an SRTP
+     * sender; {@code false} if the new instance is to be used by an SRTP
      * receiver
      * @param masterKey the master encryption key
      * @param masterSalt the master salt key
@@ -157,6 +158,7 @@ public class SrtpContextFactory
      * @return a new SrtpCryptoContext with all relevant data set.
      */
     public SrtpCryptoContext deriveContext(int ssrc, int roc)
+        throws GeneralSecurityException
     {
         return
             new SrtpCryptoContext(
@@ -180,6 +182,7 @@ public class SrtpContextFactory
      * @return a new SrtcpCryptoContext with all relevant data set.
      */
     public SrtcpCryptoContext deriveControlContext(int ssrc)
+        throws GeneralSecurityException
     {
         return
             new SrtcpCryptoContext(

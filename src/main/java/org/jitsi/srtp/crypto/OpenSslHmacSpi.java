@@ -15,17 +15,17 @@
  */
 package org.jitsi.srtp.crypto;
 
-import org.bouncycastle.crypto.*;
-import org.bouncycastle.crypto.params.*;
+import java.security.*;
+import java.security.spec.*;
+import javax.crypto.*;
 
 /**
- * Implements the interface <tt>org.bouncycastle.crypto.Mac</tt> using the
- * OpenSSL Crypto library.
+ * Implements the interface {@link MacSpi} using the OpenSSL Crypto library.
  *
  * @author Lyubomir Marinov
  */
-public class OpenSslHmac
-    implements Mac
+public class OpenSslHmacSpi
+    extends MacSpi
 {
     private static native int EVP_MD_size(long md);
 
@@ -50,21 +50,15 @@ public class OpenSslHmac
             byte[] data, int off, int len);
 
     /**
-     * The name of the algorithm implemented by this instance.
-     */
-    private static final String algorithmName = "SHA-1/HMAC";
-
-    /**
      * The context of the OpenSSL (Crypto) library through which the actual
      * algorithm implementation is invoked by this instance.
      */
     private long ctx;
 
     /**
-     * The key provided in the form of a {@link KeyParameter} in the last
-     * invocation of {@link #init(CipherParameters)}.
+     * The key provided for the HMAC.
      */
-    private byte[] key;
+    private Key key;
 
     /**
      * The block size in bytes for this MAC.
@@ -78,26 +72,12 @@ public class OpenSslHmac
     private final long md;
 
     /**
-     * The algorithm of the SHA-1 cryptographic hash function/digest.
+     * Initializes a new of this class for {@code HMAC-SHA1}.
      */
-    public static final int SHA1 = 1;
-
-    /**
-     * Initializes a new <tt>OpenSslHmac</tt> instance with a specific digest
-     * algorithm.
-     *
-     * @param digestAlgorithm the algorithm of the digest to initialize the new
-     * instance with
-     * @see OpenSslHmac#SHA1
-     */
-    public OpenSslHmac(int digestAlgorithm)
+    public OpenSslHmacSpi()
     {
-        if (!OpenSslWrapperLoader.isLoaded())
+        if (!JitsiOpenSslProvider.isLoaded())
             throw new RuntimeException("OpenSSL wrapper not loaded");
-
-        if (digestAlgorithm != OpenSslHmac.SHA1)
-            throw new IllegalArgumentException(
-                    "digestAlgorithm " + digestAlgorithm);
 
         md = EVP_sha1();
         if (md == 0)
@@ -112,28 +92,15 @@ public class OpenSslHmac
             throw new RuntimeException("HMAC_CTX_create == 0");
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
-    public int doFinal(byte[] out, int outOff)
-        throws DataLengthException, IllegalStateException
+    protected int engineGetMacLength()
     {
-        if (out == null)
-            throw new NullPointerException("out");
-        if ((outOff < 0) || (out.length <= outOff))
-            throw new ArrayIndexOutOfBoundsException(outOff);
+        return macSize;
+    }
 
-        int outLen = out.length - outOff;
-        int macSize = getMacSize();
-
-        if (outLen < macSize)
-        {
-            throw new DataLengthException(
-                    "Space in out must be at least " + macSize + "bytes but is "
-                        + outLen + " bytes!");
-        }
-
+    @Override
+    protected byte[] engineDoFinal()
+    {
         long ctx = this.ctx;
 
         if (ctx == 0)
@@ -142,7 +109,8 @@ public class OpenSslHmac
         }
         else
         {
-            outLen = HMAC_Final(ctx, out, outOff, outLen);
+            byte[] out = new byte[macSize];
+            int outLen = HMAC_Final(ctx, out, 0, out.length);
             if (outLen < 0)
             {
                 throw new RuntimeException("HMAC_Final");
@@ -151,15 +119,12 @@ public class OpenSslHmac
             {
                 // As the javadoc on interface method specifies, the doFinal
                 // call leaves this Digest reset.
-                reset();
-                return outLen;
+                engineReset();
+                return out;
             }
         }
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     protected void finalize()
         throws Throwable
@@ -183,49 +148,24 @@ public class OpenSslHmac
         }
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
-    public String getAlgorithmName()
+    protected void engineInit(Key key, AlgorithmParameterSpec params)
+        throws InvalidKeyException
     {
-        return algorithmName;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public int getMacSize()
-    {
-        return macSize;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void init(CipherParameters params)
-        throws IllegalArgumentException
-    {
-        key = (params instanceof KeyParameter)
-                ? ((KeyParameter) params).getKey()
-                : null;
+        this.key = key;
 
         if (key == null)
-            throw new IllegalStateException("key == null");
+            throw new InvalidKeyException("key == null");
         if (ctx == 0)
             throw new IllegalStateException("ctx == 0");
 
-        if (!HMAC_Init_ex(ctx, key, key.length, md, 0))
+        byte[] k = key.getEncoded();
+        if (!HMAC_Init_ex(ctx, k, k.length, md, 0))
             throw new RuntimeException("HMAC_Init_ex() init failed");
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
-    public void reset()
+    protected void engineReset()
     {
         if (key == null)
             throw new IllegalStateException("key == null");
@@ -237,22 +177,19 @@ public class OpenSslHmac
             throw new RuntimeException("HMAC_Init_ex() reset failed");
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
-    public void update(byte in)
+    protected void engineUpdate(byte in)
         throws IllegalStateException
     {
-        // TODO Auto-generated method stub
+        long ctx = this.ctx;
+        if (ctx == 0)
+            throw new IllegalStateException("ctx");
+        else if (!HMAC_Update(ctx, new byte[]{in}, 0, 1))
+            throw new RuntimeException("HMAC_Update");
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
-    public void update(byte[] in, int off, int len)
-        throws DataLengthException, IllegalStateException
+    protected void engineUpdate(byte[] in, int off, int len)
     {
         if (len != 0)
         {
