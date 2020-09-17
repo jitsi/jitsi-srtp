@@ -122,7 +122,8 @@ public class SrtpContextFactory
             this.masterSalt = new byte[saltKeyLength];
             System.arraycopy(masterSalt, 0, this.masterSalt, 0, saltKeyLength);
         }
-        else {
+        else
+        {
             if (saltKeyLength != 0)
             {
                 throw new IllegalArgumentException("null masterS but saltKeyLength != 0");

@@ -449,7 +449,8 @@ public class SrtpCryptoContext
 
             pkt.setLength(processLen + rtpHeaderLength);
         }
-        catch (GeneralSecurityException e) {
+        catch (GeneralSecurityException e)
+        {
             if (encrypting)
             {
                 logger.debug(() -> "Error encrypting SRTP packet: " + e.getMessage());
@@ -595,7 +596,8 @@ public class SrtpCryptoContext
                 ret = err;
             }
         }
-        else {
+        else
+        {
             ret = err;
         }
 

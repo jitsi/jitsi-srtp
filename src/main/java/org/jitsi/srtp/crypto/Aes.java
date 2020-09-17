@@ -184,7 +184,8 @@ public class Aes
             {
                 return new EcbBenchmark(keySize);
             }
-            else {
+            else
+            {
                 throw new NoSuchAlgorithmException("Unsupported transformation " + transformation + " for benchmark");
             }
         }

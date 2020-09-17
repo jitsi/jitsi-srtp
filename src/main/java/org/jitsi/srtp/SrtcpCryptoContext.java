@@ -406,7 +406,8 @@ public class SrtcpCryptoContext
             {
                 processPacketAesCm(pkt, index);
             }
-            else if (policy.getEncType() == SrtpPolicy.AESGCM_ENCRYPTION) {
+            else if (policy.getEncType() == SrtpPolicy.AESGCM_ENCRYPTION)
+            {
                 pkt.shrink(4); /* Index is processed separately as part of AAD. */
                 err = processPacketAesGcm(pkt, index, false, false);
                 if (err != SrtpErrorStatus.OK)
@@ -421,7 +422,8 @@ public class SrtcpCryptoContext
                 processPacketAesF8(pkt, index);
             }
         }
-        else if (policy.getEncType() == SrtpPolicy.AESGCM_ENCRYPTION) {
+        else if (policy.getEncType() == SrtpPolicy.AESGCM_ENCRYPTION)
+        {
             err = processPacketAesGcm(pkt, index, true, false);
             if (err != SrtpErrorStatus.OK)
             {
@@ -465,7 +467,8 @@ public class SrtcpCryptoContext
         }
 
         /* Encrypt the packet using Galois/Counter Mode encryption */
-        else if (policy.getEncType() == SrtpPolicy.AESGCM_ENCRYPTION) {
+        else if (policy.getEncType() == SrtpPolicy.AESGCM_ENCRYPTION)
+        {
             /* N.B.: we have no way to indicate in policy that we want to send
              * non-encrypted RTCP authenticated with GCM, but that's not generally
              * a thing one wants to do anyway.
