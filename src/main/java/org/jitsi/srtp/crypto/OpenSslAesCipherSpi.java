@@ -152,17 +152,6 @@ public abstract class OpenSslAesCipherSpi
     protected void doEngineInit(int opmode, Key key)
         throws InvalidKeyException, InvalidAlgorithmParameterException
     {
-        if (!key.getAlgorithm().equalsIgnoreCase("AES")
-            || !key.getFormat().equalsIgnoreCase("RAW")
-            || (key.getEncoded().length != 16
-            && key.getEncoded().length != 24
-            && key.getEncoded().length != 32))
-        {
-            throw new InvalidKeyException(
-                "AES SecretKeySpec expected, got " + key.getEncoded().length
-                    + " " + key.getAlgorithm() + "/" + key.getFormat());
-        }
-
         int openSslEncryptMode;
         switch (opmode)
         {
@@ -181,6 +170,17 @@ public abstract class OpenSslAesCipherSpi
         long cipherType = 0;
         if (key != this.key)
         {
+            if (!key.getAlgorithm().equalsIgnoreCase("AES")
+                || !key.getFormat().equalsIgnoreCase("RAW")
+                || (key.getEncoded().length != 16
+                && key.getEncoded().length != 24
+                && key.getEncoded().length != 32))
+            {
+                throw new InvalidKeyException(
+                    "AES SecretKeySpec expected, got " + key.getEncoded().length
+                        + " " + key.getAlgorithm() + "/" + key.getFormat());
+            }
+
             this.key = key;
             keyParam = key.getEncoded();
             cipherType = getOpenSSLCipher(key);
