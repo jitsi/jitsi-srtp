@@ -193,7 +193,7 @@ public class Aes
         public void run(Cipher cipher) throws Exception
         {
             cipher.init(Cipher.ENCRYPT_MODE, keySpec, ivSpec);
-            cipher.update(in, 0, in.length, out, 0);
+            cipher.doFinal(in, 0, in.length, out, 0);
         }
     }
 
