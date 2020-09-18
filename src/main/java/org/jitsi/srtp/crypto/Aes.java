@@ -862,6 +862,26 @@ public class Aes
         private static boolean useProvider = true;
 
         /**
+         * Get the configuration string we want to use for SunPKCS11.
+         */
+        private static String getConfiguration()
+        {
+            // The SunPKCS11 Config name should be unique in order
+            // to avoid repeated initialization exceptions.
+            String name = null;
+            Package pkg = Aes.class.getPackage();
+
+            if (pkg != null)
+                name = pkg.getName();
+            if (name == null || name.length() == 0)
+                name = "org.jitsi.srtp";
+
+            return "--name=" + name + "\\n"
+                        + "nssDbMode=noDb\\n"
+                        + "attributes=compatibility";
+        }
+
+        /**
          * Gets the {@code java.security.Provider} instance (to be) employed
          * for an (optimized) AES implementation.
          *
@@ -882,26 +902,45 @@ public class Aes
 
                     if (Provider.class.isAssignableFrom(clazz))
                     {
-                        Constructor<?> contructor
-                            = clazz.getConstructor(String.class);
+                        try
+                        {
+                            /* Java 9+.  PKCS11 configuration is set using the
+                             * configure method.
+                             * Use reflection so we can build with JDK 8. */
+                            Method configureMethod =
+                                Provider.class.getMethod("configure", String.class);
 
-                        // The SunPKCS11 Config name should be unique in order
-                        // to avoid repeated initialization exceptions.
-                        String name = null;
-                        Package pkg = Aes.class.getPackage();
+                            Provider prototype =
+                                Security.getProvider("SunPKCS11");
+                            if (prototype != null)
+                            {
+                                provider
+                                    = (Provider)
+                                    configureMethod.invoke(prototype, getConfiguration());
+                            }
+                        }
+                        catch (Exception e)
+                        {
+                            logger.debug("Unable to construct PKCS11 provider: " + e.getMessage());
+                        }
+                        finally
+                        {
+                            /* Java 8. PKCS11 configuration is passed as a constructor parameter. */
+                            if (provider == null)
+                            {
+                                Constructor<?> contructor
+                                    = clazz.getConstructor(String.class);
 
-                        if (pkg != null)
-                            name = pkg.getName();
-                        if (name == null || name.length() == 0)
-                            name = "org.jitsi.srtp";
-
-                        provider
-                            = (Provider)
-                                contructor.newInstance(
-                                        "--name=" + name + "\\n"
-                                            + "nssDbMode=noDb\\n"
-                                            + "attributes=compatibility");
+                                provider
+                                    = (Provider)
+                                    contructor.newInstance(getConfiguration());
+                            }
+                        }
                     }
+                }
+                catch (Exception e)
+                {
+                    logger.debug("Unable to construct PKCS11 provider: " + e.getMessage());
                 }
                 finally
                 {
