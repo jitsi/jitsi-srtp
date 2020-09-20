@@ -19,7 +19,6 @@ import java.lang.reflect.*;
 import java.security.*;
 import java.util.*;
 
-import java.util.concurrent.*;
 import javax.crypto.spec.*;
 import org.bouncycastle.jce.provider.*;
 import org.jitsi.utils.logging2.*;
@@ -90,12 +89,6 @@ public class Aes
             BouncyCastleCipherFactory.class,
             SunPKCS11CipherFactory.class,
         };
-
-    /**
-     * The number of nanoseconds after which the benchmark which elected
-     * {@link #fastestFactories} is to be considered expired.
-     */
-    public static final long FACTORY_TIMEOUT = TimeUnit.SECONDS.toNanos(60);
 
     /**
      * The class to instantiate as a {@link CipherFactory} implementation
@@ -372,8 +365,6 @@ public class Aes
 
         synchronized (Aes.class)
         {
-            long now = System.nanoTime();
-
             factory = Aes.fastestFactories.getOrDefault(transformation, null);
             boolean warmup = true;
             if (factory == null)
@@ -405,11 +396,7 @@ public class Aes
                     if (factory == null)
                     {
                         factory = Aes.fastestFactories
-                            .getOrDefault(transformation, null);
-                        if (factory == null)
-                        {
-                            factory = DEFAULT_FACTORY;
-                        }
+                            .getOrDefault(transformation, DEFAULT_FACTORY);
                     }
 
                     CipherFactory oldFactory = Aes.fastestFactories
@@ -696,7 +683,7 @@ public class Aes
         Class<?> clazz = factory.getClass();
         String className = clazz.getSimpleName();
 
-        if (className == null || className.length() == 0)
+        if (className.length() == 0)
             className = clazz.getName();
 
         String suffix = CIPHER_FACTORY_SIMPLE_CLASS_NAME;
