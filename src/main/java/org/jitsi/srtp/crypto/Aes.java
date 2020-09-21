@@ -136,7 +136,8 @@ public class Aes
     private static final Random random = new Random();
 
     /** Set the class to use as the factory class for AES cryptography.
-     * @param name the name of the class
+     * @param name the name of the class, or null to let
+     *             the implementation pick the class to use.
      */
     public static synchronized void setFactoryClassName(String name)
     {
