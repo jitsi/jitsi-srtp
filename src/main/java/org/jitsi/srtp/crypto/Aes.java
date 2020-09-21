@@ -899,43 +899,44 @@ public class Aes
             {
                 try
                 {
-                    Class<?> clazz
-                        = Class.forName("sun.security.pkcs11.SunPKCS11");
-
-                    if (Provider.class.isAssignableFrom(clazz))
+                    try
                     {
-                        try
-                        {
-                            /* Java 9+.  PKCS11 configuration is set using the
-                             * configure method.
-                             * Use reflection so we can build with JDK 8. */
-                            Method configureMethod =
-                                Provider.class.getMethod("configure", String.class);
+                        /* Java 9+.  PKCS11 configuration is set using the
+                         * configure method.
+                         * Use reflection so we can build with JDK 8. */
+                        Method configureMethod =
+                            Provider.class.getMethod("configure", String.class);
 
-                            Provider prototype =
-                                Security.getProvider("SunPKCS11");
-                            if (prototype != null)
-                            {
-                                provider
-                                    = (Provider)
-                                    configureMethod.invoke(prototype, getConfiguration());
-                            }
-                        }
-                        catch (Exception e)
+                        Provider prototype =
+                            Security.getProvider("SunPKCS11");
+                        if (prototype != null)
                         {
-                            logger.debug("Unable to construct PKCS11 provider: " + e.getMessage());
+                            provider
+                                = (Provider)
+                                configureMethod.invoke(prototype, getConfiguration());
                         }
-                        finally
+                    }
+                    catch (Exception e)
+                    {
+                        logger.debug("Unable to construct PKCS11 provider: " + e.getMessage());
+                    }
+                    finally
+                    {
+                        /* Java 8. PKCS11 configuration is passed as a constructor parameter. */
+                        if (provider == null)
                         {
-                            /* Java 8. PKCS11 configuration is passed as a constructor parameter. */
-                            if (provider == null)
+                            Class<?> clazz
+                                = Class.forName("sun.security.pkcs11.SunPKCS11");
+
+                            if (Provider.class.isAssignableFrom(clazz))
                             {
                                 Constructor<?> contructor
                                     = clazz.getConstructor(String.class);
 
                                 provider
                                     = (Provider)
-                                    contructor.newInstance(getConfiguration());
+                                    contructor
+                                        .newInstance(getConfiguration());
                             }
                         }
                     }
