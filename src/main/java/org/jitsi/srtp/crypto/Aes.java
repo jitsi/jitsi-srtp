@@ -136,7 +136,8 @@ public class Aes
     private static final Random random = new Random();
 
     /** Set the class to use as the factory class for AES cryptography.
-     * @param name the name of the class
+     * @param name the name of the class, or null to let
+     *             the implementation pick the class to use.
      */
     public static synchronized void setFactoryClassName(String name)
     {
@@ -192,7 +193,7 @@ public class Aes
         public void run(Cipher cipher) throws Exception
         {
             cipher.init(Cipher.ENCRYPT_MODE, keySpec, ivSpec);
-            cipher.update(in, 0, in.length, out, 0);
+            cipher.doFinal(in, 0, in.length, out, 0);
         }
     }
 
@@ -266,8 +267,7 @@ public class Aes
     private static CipherFactory benchmark(
             CipherFactory[] factories,
             int keySize,
-            String transformation,
-            boolean warmup
+            String transformation
         )
     {
         long minTime = Long.MAX_VALUE;
@@ -282,6 +282,14 @@ public class Aes
             if (factory == null)
                 continue;
 
+            // The user may have specified a specific CipherFactory class
+            // (name) through setFactoryClassName(String), Practically, FACTORY_CLASS_NAME may override
+            // minFactory and, consequently, it may appear that the benchmark is
+            // unnecessary. Technically though, the specified CipherFactory may
+            // malfunction. That is why FACTORY_CLASS_NAME is selected after it has
+            // proven itself functional.
+            boolean chosenFactoryClass = factory.getClass().equals(Aes.factoryClass);
+
             try
             {
                 Cipher cipher = factory.createCipher(transformation);
@@ -295,24 +303,35 @@ public class Aes
                 }
                 else
                 {
+                    /* If this is the user-chosen factory class, we don't really
+                     * need to benchmark it; just verify that it's working.
+                     */
+                    int numWarmups = chosenFactoryClass ? 0 : NUM_WARMUPS;
+                    int numBenchmarks = chosenFactoryClass ? 1 : NUM_BENCHMARKS;
+
                     BenchmarkOperation benchmark = BenchmarkOperation.getBenchmark(transformation, keySize);
-                    if (warmup)
+                    if (!chosenFactoryClass)
                     {
                         // Let the JVM "warm up" (do JIT compilation and the like)
-                        for (int i = 0; i < NUM_WARMUPS; i++)
+                        for (int i = 0; i < numWarmups; i++)
                         {
                             benchmark.run(cipher);
                         }
                     }
 
                     long startTime = System.nanoTime();
-                    for (int i = 0; i < NUM_BENCHMARKS; i++)
+                    for (int i = 0; i < numBenchmarks; i++)
                     {
                         benchmark.run(cipher);
                     }
 
                     long endTime = System.nanoTime();
-                    long time = (endTime - startTime) / NUM_BENCHMARKS;
+                    long time = (endTime - startTime) / numBenchmarks;
+
+                    if (chosenFactoryClass)
+                    {
+                        return factory;
+                    }
 
                     if (time < minTime)
                     {
@@ -334,6 +353,12 @@ public class Aes
                     Thread.currentThread().interrupt();
                 else if (t instanceof ThreadDeath)
                     throw (ThreadDeath) t;
+                else
+                {
+                    logger.warn("Chosen factory class \"" + FACTORY_CLASS_NAME +
+                        "\" not working for " + transformation + ": " +
+                        t.getMessage());
+                }
             }
         }
 
@@ -537,26 +562,47 @@ public class Aes
 
         // If FACTORY_CLASS_NAME does not specify a well-known Class, add the
         // new Class to FACTORY_CLASSES.
-        if (add && (factoryClass != null))
+        if (factoryClass != null)
         {
-            for (Class<?> clazz : factoryClasses)
-            {
-                if (factoryClass.equals(clazz))
-                {
-                    add = false;
-                    break;
-                }
-            }
+            Class<?>[] newFactoryClasses;
             if (add)
             {
-                Class<?>[] newFactoryClasses
-                    = new Class<?>[1 + factoryClasses.length];
+                for (Class<?> clazz : factoryClasses)
+                {
+                    if (factoryClass.equals(clazz))
+                    {
+                        add = false;
+                        break;
+                    }
+                }
+                if (add)
+                {
+                    newFactoryClasses
+                        = new Class<?>[1 + factoryClasses.length];
 
-                newFactoryClasses[0] = factoryClass;
-                System.arraycopy(
+                    newFactoryClasses[0] = factoryClass;
+                    System.arraycopy(
                         factoryClasses, 0,
                         newFactoryClasses, 1,
                         factoryClasses.length);
+                }
+            }
+            else
+            {
+                /* Otherwise, move the FACTORY_CLASS to the beginning of the list. */
+                newFactoryClasses
+                    = new Class<?>[factoryClasses.length];
+
+                newFactoryClasses[0] = factoryClass;
+                int i = 1;
+                for (Class<?> clazz : factoryClasses)
+                {
+                    if (!factoryClass.equals(clazz))
+                    {
+                        newFactoryClasses[i] = clazz;
+                        i++;
+                    }
+                }
                 factoryClasses = newFactoryClasses;
             }
         }
@@ -639,30 +685,7 @@ public class Aes
         // Benchmark the StreamCiphers provided by the available
         // StreamCipherFactories in order to select the fastest-performing
         // CipherFactory.
-        CipherFactory minFactory = benchmark(factories, keySize, transformation, warmup);
-
-        // The user may have specified a specific CipherFactory class
-        // (name) through setFactoryClassName(String), Practically, FACTORY_CLASS_NAME may override
-        // minFactory and, consequently, it may appear that the benchmark is
-        // unnecessary. Technically though, the specified CipherFactory may
-        // malfunction. That is why FACTORY_CLASS_NAME is selected after it has
-        // proven itself functional.
-        {
-            Class<? extends CipherFactory> factoryClass = Aes.factoryClass;
-
-            if (factoryClass != null)
-            {
-                for (CipherFactory factory : factories)
-                {
-                    if ((factory != null)
-                            && factory.getClass().equals(factoryClass))
-                    {
-                        minFactory = factory;
-                        break;
-                    }
-                }
-            }
-        }
+        CipherFactory minFactory = benchmark(factories, keySize, transformation);
 
         return minFactory;
     }
