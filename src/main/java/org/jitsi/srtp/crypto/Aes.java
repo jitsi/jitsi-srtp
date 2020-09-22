@@ -326,7 +326,12 @@ public class Aes
                     }
 
                     long endTime = System.nanoTime();
-                    long time = (endTime - startTime) / NUM_BENCHMARKS;
+                    long time = (endTime - startTime) / numBenchmarks;
+
+                    if (chosenFactoryClass)
+                    {
+                        return factory;
+                    }
 
                     if (time < minTime)
                     {
@@ -348,18 +353,11 @@ public class Aes
                     Thread.currentThread().interrupt();
                 else if (t instanceof ThreadDeath)
                     throw (ThreadDeath) t;
-            }
-
-            if (chosenFactoryClass)
-            {
-                if (minFactory != null)
-                {
-                    return minFactory;
-                }
                 else
                 {
                     logger.warn("Chosen factory class \"" + FACTORY_CLASS_NAME +
-                        "\" not working for " + transformation);
+                        "\" not working for " + transformation + ": " +
+                        t.getMessage());
                 }
             }
         }
