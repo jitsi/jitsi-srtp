@@ -288,7 +288,7 @@ public class Aes
             // unnecessary. Technically though, the specified CipherFactory may
             // malfunction. That is why FACTORY_CLASS_NAME is selected after it has
             // proven itself functional.
-            boolean chosenFactoryClass = (factory.getClass().equals(Aes.factoryClass));
+            boolean chosenFactoryClass = factory.getClass().equals(Aes.factoryClass);
 
             try
             {
