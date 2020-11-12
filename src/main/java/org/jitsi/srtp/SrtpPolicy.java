@@ -111,6 +111,13 @@ public class SrtpPolicy
     private boolean receiveReplayEnabled = true;
 
     /**
+     * Whether cryptex (header extension encryption) is enabled
+     * Note that receiving cryptex is always supported; this only configures
+     * whether it will be sent.
+     */
+    private boolean cryptexEnabled = false;
+
+    /**
      * Construct a SrtpPolicy object based on given parameters.
      * This class acts as a storage class, so all the parameters are passed in
      * through this constructor.
@@ -326,5 +333,40 @@ public class SrtpPolicy
     public boolean isReceiveReplayDisabled()
     {
         return !receiveReplayEnabled;
+    }
+
+    /**
+     * Set whether cryptex (header extension encryption) is to be enabled.
+     * <p>
+     * Turn this off if you want to send header extensions in the clear.
+     * Note that decryption of encrypted header extensions (based on the
+     * appropriate values of the "defined by profile" field) is always supported
+     *
+     * @param enabled {@code true} if sending encrypted header extensions is to be
+     *                enabled; {@code false} if not.
+     */
+    public void setCryptexEnabled(boolean enabled)
+    {
+        cryptexEnabled = enabled;
+    }
+
+    /**
+     * Get whether cryptex (header extension encryption) is enabled.
+     *
+     * @see #isCryptexDisabled
+     */
+    public boolean isCryptexEnabled()
+    {
+        return cryptexEnabled;
+    }
+
+    /**
+     * Get whether cryptex (header extension encryption) is disabled.
+     *
+     * @see #isCryptexEnabled
+     */
+    public boolean isCryptexDisabled()
+    {
+        return !cryptexEnabled;
     }
 }
