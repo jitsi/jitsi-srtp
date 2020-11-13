@@ -336,11 +336,12 @@ public class SrtpPolicy
     }
 
     /**
-     * Set whether cryptex (header extension encryption) is to be enabled.
+     * Set whether cryptex (header extension encryption) is to be enabled,
+     * as defined in draft-uberti-avtcore-cryptex-01.
      * <p>
      * Turn this off if you want to send header extensions in the clear.
      * Note that decryption of encrypted header extensions (based on the
-     * appropriate values of the "defined by profile" field) is always supported
+     * appropriate values of the "defined by profile" field) is always supported.
      *
      * @param enabled {@code true} if sending encrypted header extensions is to be
      *                enabled; {@code false} if not.
@@ -351,7 +352,8 @@ public class SrtpPolicy
     }
 
     /**
-     * Get whether cryptex (header extension encryption) is enabled.
+     * Get whether cryptex (header extension encryption) is enabled,
+     * as defined in draft-uberti-avtcore-cryptex-01.
      *
      * @see #isCryptexDisabled
      */
@@ -361,7 +363,8 @@ public class SrtpPolicy
     }
 
     /**
-     * Get whether cryptex (header extension encryption) is disabled.
+     * Get whether cryptex (header extension encryption) is disabled,
+     * as defined in draft-uberti-avtcore-cryptex-01.
      *
      * @see #isCryptexEnabled
      */
