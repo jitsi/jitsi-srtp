@@ -453,7 +453,7 @@ public class SrtpCryptoContext
      *
      * @param pkt the RTP packet to be encrypted/decrypted
      */
-    private void processPacketAesCm(ByteArrayBuffer pkt, boolean encrypting, boolean useCryptex)
+    private void processPacketAesCm(ByteArrayBuffer pkt, boolean useCryptex)
         throws GeneralSecurityException
     {
         int ssrc = SrtpPacketUtils.getSsrc(pkt);
@@ -612,11 +612,10 @@ public class SrtpCryptoContext
 
     /**
      * Performs F8 Mode AES encryption/decryption
+     *  @param pkt the RTP packet to be encrypted/decrypted
      *
-     * @param pkt the RTP packet to be encrypted/decrypted
-     * @param encrypting
      */
-    private void processPacketAesF8(ByteArrayBuffer pkt, boolean encrypting, boolean useCryptex)
+    private void processPacketAesF8(ByteArrayBuffer pkt, boolean useCryptex)
         throws GeneralSecurityException
     {
         // 11 bytes of the RTP header are the 11 bytes of the iv
@@ -725,7 +724,7 @@ public class SrtpCryptoContext
                     // Decrypt the packet using Counter Mode encryption.
                     case SrtpPolicy.AESCM_ENCRYPTION:
                     case SrtpPolicy.TWOFISH_ENCRYPTION:
-                        processPacketAesCm(pkt, false, useCryptex);
+                        processPacketAesCm(pkt, useCryptex);
                         break;
 
                     case SrtpPolicy.AESGCM_ENCRYPTION:
@@ -735,7 +734,7 @@ public class SrtpCryptoContext
                     // Decrypt the packet using F8 Mode encryption.
                     case SrtpPolicy.AESF8_ENCRYPTION:
                     case SrtpPolicy.TWOFISHF8_ENCRYPTION:
-                        processPacketAesF8(pkt, false, useCryptex);
+                        processPacketAesF8(pkt, useCryptex);
                         break;
                     }
                 }
@@ -837,7 +836,7 @@ public class SrtpCryptoContext
         // Encrypt the packet using Counter Mode encryption.
         case SrtpPolicy.AESCM_ENCRYPTION:
         case SrtpPolicy.TWOFISH_ENCRYPTION:
-            processPacketAesCm(pkt, true, useCryptex);
+            processPacketAesCm(pkt, useCryptex);
             break;
 
         case SrtpPolicy.AESGCM_ENCRYPTION:
@@ -847,7 +846,7 @@ public class SrtpCryptoContext
         // Encrypt the packet using F8 Mode encryption.
         case SrtpPolicy.AESF8_ENCRYPTION:
         case SrtpPolicy.TWOFISHF8_ENCRYPTION:   
-            processPacketAesF8(pkt, useCryptex, true);
+            processPacketAesF8(pkt, true);
             break;
         }
 
