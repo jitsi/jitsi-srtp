@@ -6,9 +6,40 @@
 
     <groupId>org.jitsi</groupId>
     <artifactId>jitsi-srtp</artifactId>
-    <name>Jitsi Secure RTP implementation</name>
     <version>1.0-SNAPSHOT</version>
     <packaging>bundle</packaging>
+
+    <name>Jitsi Secure RTP implementation</name>
+    <description>Jitsi SRTP contains classes for encrypting and decrypting SRTP and SRTCP packets</description>
+    <url>https://github.com/jitsi/jitsi-srtp</url>
+
+    <organization>
+        <name>jitsi.org</name>
+        <url>https://jitsi.org</url>
+    </organization>
+
+    <developers>
+        <developer>
+            <id>org.jitsi</id>
+            <name>Jitsi Team</name>
+            <email>dev@jitsi.org</email>
+        </developer>
+    </developers>
+
+    <scm>
+        <url>https://github.com/jitsi/jitsi-srtp</url>
+        <connection>scm:git:https://github.com/jitsi/jitsi-srtp.git</connection>
+        <developerConnection>scm:git:https://github.com/jitsi/jitsi-srtp.git</developerConnection>
+        <tag>HEAD</tag>
+    </scm>
+
+    <licenses>
+        <license>
+            <name>Apache License, Version 2.0</name>
+            <url>https://github.com/jitsi/jitsi-srtp/blob/master/LICENSE</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -240,14 +271,46 @@
             </build>
         </profile>
 
-
+        <profile>
+            <id>release</id>
+            <activation>
+                <property>
+                    <name>release</name>
+                    <value>true</value>
+                </property>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-gpg-plugin</artifactId>
+                        <version>1.6</version>
+                        <executions>
+                            <execution>
+                                <id>sign-artifacts</id>
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>sign</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                        <configuration>
+                            <gpgArguments>
+                                <arg>--pinentry-mode</arg>
+                                <arg>loopback</arg>
+                            </gpgArguments>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
     </profiles>
 
     <dependencies>
         <dependency>
             <groupId>org.jitsi</groupId>
             <artifactId>jitsi-utils</artifactId>
-            <version>1.0-53-g8535a53</version>
+            <version>v1.0-66-g9f2339f</version>
         </dependency>
         <dependency>
             <groupId>org.bouncycastle</groupId>
@@ -392,38 +455,41 @@
                     </execution>
                 </executions>
             </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <version>3.2.0</version>
+                <configuration>
+                    <doclint>-missing</doclint>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-deploy-plugin</artifactId>
+                <version>2.8.2</version>
+            </plugin>
+            <plugin>
+                <groupId>org.sonatype.plugins</groupId>
+                <artifactId>nexus-staging-maven-plugin</artifactId>
+                <version>1.6.8</version>
+                <extensions>true</extensions>
+                <configuration>
+                    <serverId>ossrh</serverId>
+                    <nexusUrl>https://oss.sonatype.org/</nexusUrl>
+                    <autoReleaseAfterClose>true</autoReleaseAfterClose>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
 
-    <repositories>
+    <distributionManagement>
+        <snapshotRepository>
+            <id>ossrh</id>
+            <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+        </snapshotRepository>
         <repository>
-            <id>jitsi-maven-repository-releases</id>
-            <layout>default</layout>
-            <name>Jitsi Maven Repository (Releases)</name>
-            <releases>
-                <enabled>true</enabled>
-            </releases>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-            <url>
-                https://github.com/jitsi/jitsi-maven-repository/raw/master/releases/
-            </url>
+            <id>ossrh</id>
+            <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
         </repository>
-        <repository>
-            <id>jitsi-maven-repository-snapshots</id>
-            <layout>default</layout>
-            <name>Jitsi Maven Repository (Snapshots)</name>
-            <releases>
-                <enabled>false</enabled>
-            </releases>
-            <snapshots>
-                <enabled>true</enabled>
-            </snapshots>
-            <url>
-                https://github.com/jitsi/jitsi-maven-repository/raw/master/snapshots/
-            </url>
-        </repository>
-    </repositories>
-
+    </distributionManagement>
 </project>
