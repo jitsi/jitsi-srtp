@@ -247,7 +247,7 @@
         <dependency>
             <groupId>org.jitsi</groupId>
             <artifactId>jitsi-utils</artifactId>
-            <version>1.0-53-g8535a53</version>
+            <version>v1.0-66-g9f2339f</version>
         </dependency>
         <dependency>
             <groupId>org.bouncycastle</groupId>
@@ -394,36 +394,4 @@
             </plugin>
         </plugins>
     </build>
-
-    <repositories>
-        <repository>
-            <id>jitsi-maven-repository-releases</id>
-            <layout>default</layout>
-            <name>Jitsi Maven Repository (Releases)</name>
-            <releases>
-                <enabled>true</enabled>
-            </releases>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-            <url>
-                https://github.com/jitsi/jitsi-maven-repository/raw/master/releases/
-            </url>
-        </repository>
-        <repository>
-            <id>jitsi-maven-repository-snapshots</id>
-            <layout>default</layout>
-            <name>Jitsi Maven Repository (Snapshots)</name>
-            <releases>
-                <enabled>false</enabled>
-            </releases>
-            <snapshots>
-                <enabled>true</enabled>
-            </snapshots>
-            <url>
-                https://github.com/jitsi/jitsi-maven-repository/raw/master/snapshots/
-            </url>
-        </repository>
-    </repositories>
-
 </project>
