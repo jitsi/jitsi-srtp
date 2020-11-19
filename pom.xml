@@ -6,9 +6,40 @@
 
     <groupId>org.jitsi</groupId>
     <artifactId>jitsi-srtp</artifactId>
-    <name>Jitsi Secure RTP implementation</name>
     <version>1.0-SNAPSHOT</version>
     <packaging>bundle</packaging>
+
+    <name>Jitsi Secure RTP implementation</name>
+    <description>Jitsi SRTP contains classes for encrypting and decrypting SRTP and SRTCP packets</description>
+    <url>https://github.com/jitsi/jitsi-srtp</url>
+
+    <organization>
+        <name>jitsi.org</name>
+        <url>https://jitsi.org</url>
+    </organization>
+
+    <developers>
+        <developer>
+            <id>org.jitsi</id>
+            <name>Jitsi Team</name>
+            <email>dev@jitsi.org</email>
+        </developer>
+    </developers>
+
+    <scm>
+        <url>https://github.com/jitsi/jitsi-srtp</url>
+        <connection>scm:git:https://github.com/jitsi/jitsi-srtp.git</connection>
+        <developerConnection>scm:git:https://github.com/jitsi/jitsi-srtp.git</developerConnection>
+        <tag>HEAD</tag>
+    </scm>
+
+    <licenses>
+        <license>
+            <name>Apache License, Version 2.0</name>
+            <url>https://github.com/jitsi/jitsi-srtp/blob/master/LICENSE</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
