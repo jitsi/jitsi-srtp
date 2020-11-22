@@ -310,7 +310,7 @@
         <dependency>
             <groupId>org.jitsi</groupId>
             <artifactId>jitsi-utils</artifactId>
-            <version>v1.0-66-g9f2339f</version>
+            <version>1.0-67-g4032ab6</version>
         </dependency>
         <dependency>
             <groupId>org.bouncycastle</groupId>
@@ -437,6 +437,8 @@
                         <Bundle-NativeCode>
                             linux-x86-64/libjitsisrtp.so;osname=Linux;processor=x86-64,*
                         </Bundle-NativeCode>
+                        <!-- Prevent importing a specific version. -->
+                        <Import-Package>*;version=!</Import-Package>
                     </instructions>
                 </configuration>
             </plugin>
