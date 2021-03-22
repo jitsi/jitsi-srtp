@@ -5,6 +5,10 @@ name: Java CI with Maven
 
 on: [push, pull_request]
 
+env:
+  # Java version to use for the release
+  RELEASE_JAVA_VERSION: 8
+
 jobs:
   test:
 
@@ -34,7 +38,11 @@ jobs:
             ${{ runner.os }}-maven-
 
       - name: Build and test with Maven
-        run: mvn -B verify -DperformRelease=true
+        run: mvn -B verify -DperformRelease=true -Pcoverage
+
+      - name: Upload coverage report
+        if: matrix.java == env.RELEASE_JAVA_VERSION
+        uses: codecov/codecov-action@v1
 
   release:
     if: github.ref == 'refs/heads/master'
@@ -49,7 +57,7 @@ jobs:
       - name: Set up JDK
         uses: actions/setup-java@v1
         with:
-          java-version: 8
+          java-version: ${{ env.RELEASE_JAVA_VERSION }}
           server-id: ossrh
           server-username: SONATYPE_USER
           server-password: SONATYPE_PW
