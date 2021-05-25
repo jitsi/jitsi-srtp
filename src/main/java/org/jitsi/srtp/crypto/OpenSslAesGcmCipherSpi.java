@@ -30,13 +30,13 @@ public final class OpenSslAesGcmCipherSpi
     private static native long EVP_aes_192_gcm();
     private static native long EVP_aes_256_gcm();
 
-    private static native boolean EVP_CipherFinal(long ctx,
+    private native boolean EVP_CipherFinal(long ctx,
         byte[] out, int offset);
 
-    private static native boolean CipherSetIVLen(long ctx, int ivlen);
-    private static native boolean CipherSetTag(long ctx,
+    private native boolean CipherSetIVLen(long ctx, int ivlen);
+    private native boolean CipherSetTag(long ctx,
         byte[] tag, int offset, int taglen);
-    private static native boolean CipherGetTag(long ctx,
+    private native boolean CipherGetTag(long ctx,
         byte[] tag, int offset, int taglen);
 
     public OpenSslAesGcmCipherSpi()
