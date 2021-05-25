@@ -52,7 +52,7 @@ Java_org_jitsi_srtp_crypto_OpenSslHmacSpi_EVP_1sha1
  */
 JNIEXPORT jlong JNICALL
 Java_org_jitsi_srtp_crypto_OpenSslHmacSpi_HMAC_1CTX_1create
-    (JNIEnv *env, jclass clazz)
+    (JNIEnv *env, jobject thiz)
 {
 /* OpenSSL 1.1.0 made HMAC_CTX an opaque structure, which must be allocated
    using HMAC_CTX_new.  But this function doesn't exist in OpenSSL 1.0.x. */
@@ -77,7 +77,7 @@ Java_org_jitsi_srtp_crypto_OpenSslHmacSpi_HMAC_1CTX_1create
  */
 JNIEXPORT void JNICALL
 Java_org_jitsi_srtp_crypto_OpenSslHmacSpi_HMAC_1CTX_1destroy
-    (JNIEnv *env, jclass clazz, jlong ctx)
+    (JNIEnv *env, jobject thiz, jlong ctx)
 {
     HMAC_CTX *ctx_ = (HMAC_CTX *) (intptr_t) ctx;
 
@@ -98,7 +98,7 @@ Java_org_jitsi_srtp_crypto_OpenSslHmacSpi_HMAC_1CTX_1destroy
  */
 JNIEXPORT jint JNICALL
 Java_org_jitsi_srtp_crypto_OpenSslHmacSpi_HMAC_1Final
-    (JNIEnv *env, jclass clazz, jlong ctx, jbyteArray md, jint mdOff,
+    (JNIEnv *env, jobject thiz, jlong ctx, jbyteArray md, jint mdOff,
         jint mdLen)
 {
     jbyte *md_ = (*env)->GetPrimitiveArrayCritical(env, md, NULL);
@@ -130,7 +130,7 @@ Java_org_jitsi_srtp_crypto_OpenSslHmacSpi_HMAC_1Final
  */
 JNIEXPORT jboolean JNICALL
 Java_org_jitsi_srtp_crypto_OpenSslHmacSpi_HMAC_1Init_1ex
-    (JNIEnv *env, jclass clazz, jlong ctx, jbyteArray key, jint keyLen,
+    (JNIEnv *env, jobject thiz, jlong ctx, jbyteArray key, jint keyLen,
         jlong md, jlong impl)
 {
     jbyte *key_;
@@ -168,7 +168,7 @@ Java_org_jitsi_srtp_crypto_OpenSslHmacSpi_HMAC_1Init_1ex
  */
 JNIEXPORT jboolean JNICALL
 Java_org_jitsi_srtp_crypto_OpenSslHmacSpi_HMAC_1Update
-    (JNIEnv *env, jclass clazz, jlong ctx, jbyteArray data, jint off, jint len)
+    (JNIEnv *env, jobject thiz, jlong ctx, jbyteArray data, jint off, jint len)
 {
     jbyte *data_ = (*env)->GetPrimitiveArrayCritical(env, data, NULL);
     jboolean ok;
