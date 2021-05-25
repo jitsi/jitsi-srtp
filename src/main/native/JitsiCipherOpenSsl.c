@@ -32,7 +32,7 @@
  * Signature: ()J
  */
 JNIEXPORT jlong JNICALL Java_org_jitsi_srtp_crypto_OpenSslAesCipherSpi_EVP_1CIPHER_1CTX_1new
-  (JNIEnv *env, jclass clazz)
+  (JNIEnv *env, jobject thiz)
 {
     EVP_CIPHER_CTX *ctx = EVP_CIPHER_CTX_new();
 
@@ -45,7 +45,7 @@ JNIEXPORT jlong JNICALL Java_org_jitsi_srtp_crypto_OpenSslAesCipherSpi_EVP_1CIPH
  * Signature: (J)V
  */
 JNIEXPORT void JNICALL Java_org_jitsi_srtp_crypto_OpenSslAesCipherSpi_EVP_1CIPHER_1CTX_1free
-  (JNIEnv *env, jclass clazz, jlong ctx)
+  (JNIEnv *env, jobject thiz, jlong ctx)
 {
     if (ctx) {
         EVP_CIPHER_CTX *ctx_ = (EVP_CIPHER_CTX *) (intptr_t) ctx;
@@ -59,7 +59,7 @@ JNIEXPORT void JNICALL Java_org_jitsi_srtp_crypto_OpenSslAesCipherSpi_EVP_1CIPHE
  * Signature: (JJ[B[BI)Z
  */
 JNIEXPORT jboolean JNICALL Java_org_jitsi_srtp_crypto_OpenSslAesCipherSpi_EVP_1CipherInit
-  (JNIEnv *env, jclass clazz, jlong ctx, jlong type, jbyteArray key, jbyteArray iv, jint enc)
+  (JNIEnv *env, jobject thiz, jlong ctx, jlong type, jbyteArray key, jbyteArray iv, jint enc)
 {
     jboolean r = JNI_FALSE;
     unsigned char *key_ = NULL, *iv_ = NULL;
@@ -93,7 +93,7 @@ exit:
  * Signature: (J[BII)Z
  */
 JNIEXPORT jboolean JNICALL Java_org_jitsi_srtp_crypto_OpenSslAesCipherSpi_EVP_1CipherUpdate
-  (JNIEnv *env, jclass clazz, jlong ctx, jbyteArray in, jint inOffset, jint len, jbyteArray out, jint outOffset)
+  (JNIEnv *env, jobject thiz, jlong ctx, jbyteArray in, jint inOffset, jint len, jbyteArray out, jint outOffset)
 {
     int ok = 0;
     unsigned char *in_ = (unsigned char*)(*env)->GetPrimitiveArrayCritical(env, in, NULL);

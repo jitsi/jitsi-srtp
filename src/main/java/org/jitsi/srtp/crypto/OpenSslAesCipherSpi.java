@@ -29,14 +29,14 @@ public abstract class OpenSslAesCipherSpi
 {
     protected static final int BLKLEN = 16;
 
-    private static native long EVP_CIPHER_CTX_new();
+    private native long EVP_CIPHER_CTX_new();
 
-    private static native void EVP_CIPHER_CTX_free(long ctx);
+    private native void EVP_CIPHER_CTX_free(long ctx);
 
-    private static native boolean EVP_CipherInit(long ctx, long type,
+    private native boolean EVP_CipherInit(long ctx, long type,
         byte[] key, byte[] iv, int enc);
 
-    private static native boolean EVP_CipherUpdate(long ctx,
+    private native boolean EVP_CipherUpdate(long ctx,
         byte[] in, int inOffset, int len, byte[] out, int outOffset);
 
     /**

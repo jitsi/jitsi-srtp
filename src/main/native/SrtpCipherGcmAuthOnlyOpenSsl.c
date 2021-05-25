@@ -50,7 +50,7 @@ static void EVP_encrypt(const unsigned char in[16],
  * Signature: ()J
  */
 JNIEXPORT jlong JNICALL Java_org_jitsi_srtp_crypto_OpenSslAesGcmAuthOnlyCipherSpi_CRYPTO_1gcm128_1new
-  (JNIEnv *env, jclass clazz)
+  (JNIEnv *env, jobject thiz)
 {
     AES_GCM_CONTEXT* ctx = malloc(sizeof(AES_GCM_CONTEXT));
     if (ctx == NULL)
@@ -89,7 +89,7 @@ fail:
  * Signature: (J)V
  */
 JNIEXPORT void JNICALL Java_org_jitsi_srtp_crypto_OpenSslAesGcmAuthOnlyCipherSpi_CRYPTO_1gcm128_1release
-  (JNIEnv *env, jclass clazz, jlong ctx)
+  (JNIEnv *env, jobject thiz, jlong ctx)
 {
     if (ctx != 0)
     {
@@ -109,7 +109,7 @@ JNIEXPORT void JNICALL Java_org_jitsi_srtp_crypto_OpenSslAesGcmAuthOnlyCipherSpi
  * Signature: (J[B)Z
  */
 JNIEXPORT jboolean JNICALL Java_org_jitsi_srtp_crypto_OpenSslAesGcmAuthOnlyCipherSpi_CRYPTO_1gcm128_1init
-  (JNIEnv *env, jclass clazz, jlong ctx, jbyteArray key)
+  (JNIEnv *env, jobject thiz, jlong ctx, jbyteArray key)
 {
     jboolean r = JNI_FALSE;
     AES_GCM_CONTEXT* ctx_ = (AES_GCM_CONTEXT*)ctx;
@@ -156,7 +156,7 @@ exit:
  * Signature: (J[BI)Z
  */
 JNIEXPORT jboolean JNICALL Java_org_jitsi_srtp_crypto_OpenSslAesGcmAuthOnlyCipherSpi_CRYPTO_1gcm128_1setiv
-  (JNIEnv *env, jclass clazz, jlong ctx, jbyteArray iv, jint len)
+  (JNIEnv *env, jobject thiz, jlong ctx, jbyteArray iv, jint len)
 {
     jboolean ok = JNI_FALSE;
     AES_GCM_CONTEXT* ctx_ = (AES_GCM_CONTEXT*)ctx;
@@ -179,7 +179,7 @@ JNIEXPORT jboolean JNICALL Java_org_jitsi_srtp_crypto_OpenSslAesGcmAuthOnlyCiphe
  * Signature: (J[BII)Z
  */
 JNIEXPORT jboolean JNICALL Java_org_jitsi_srtp_crypto_OpenSslAesGcmAuthOnlyCipherSpi_CRYPTO_1gcm128_1aad
-  (JNIEnv *env, jclass clazz, jlong ctx, jbyteArray in, jint inOffset, jint len)
+  (JNIEnv *env, jobject thiz, jlong ctx, jbyteArray in, jint inOffset, jint len)
 {
     jboolean ok = 0;
     AES_GCM_CONTEXT* ctx_ = (AES_GCM_CONTEXT*)ctx;
@@ -210,7 +210,7 @@ static void null_cipher(const unsigned char *in, unsigned char *out,
  * Signature: (J[BII)Z
  */
 JNIEXPORT jboolean JNICALL Java_org_jitsi_srtp_crypto_OpenSslAesGcmAuthOnlyCipherSpi_CRYPTO_1gcm128_1decrypt
-  (JNIEnv *env, jclass clazz, jlong ctx, jbyteArray in, jint inOffset, jint len)
+  (JNIEnv *env, jobject thiz, jlong ctx, jbyteArray in, jint inOffset, jint len)
 {
     jboolean ok = 0;
     AES_GCM_CONTEXT* ctx_ = (AES_GCM_CONTEXT*)ctx;
@@ -237,7 +237,7 @@ JNIEXPORT jboolean JNICALL Java_org_jitsi_srtp_crypto_OpenSslAesGcmAuthOnlyCiphe
  * Signature: (J[BII)Z
  */
 JNIEXPORT jboolean JNICALL Java_org_jitsi_srtp_crypto_OpenSslAesGcmAuthOnlyCipherSpi_CRYPTO_1gcm128_1finish
-  (JNIEnv * env, jclass clazz, jlong ctx, jbyteArray tag, jint tagOffset, jint tagLen)
+  (JNIEnv * env, jobject thiz, jlong ctx, jbyteArray tag, jint tagOffset, jint tagLen)
 {
     int ok = 0;
     AES_GCM_CONTEXT* ctx_ = (AES_GCM_CONTEXT*)ctx;
