@@ -15,6 +15,7 @@
  */
 package org.jitsi.srtp;
 
+import static jakarta.xml.bind.DatatypeConverter.parseHexBinary;
 import static org.junit.jupiter.api.Assertions.*;
 
 import java.security.*;
@@ -22,11 +23,9 @@ import org.jitsi.utils.*;
 import org.jitsi.utils.logging2.*;
 import org.junit.jupiter.api.*;
 
-import javax.xml.bind.*;
-
 public class SrtpReplayTest {
     private static final byte[] rtpPacketData =
-            DatatypeConverter.parseHexBinary("800f1234decafbad" +
+            parseHexBinary("800f1234decafbad" +
                     "cafebabeabababab" +
                     "abababababababab" +
                     "abababab");
@@ -90,7 +89,7 @@ public class SrtpReplayTest {
 
 
     private static final byte[] srtcpPacketData =
-            DatatypeConverter.parseHexBinary("81c8000bcafebabe" +
+            parseHexBinary("81c8000bcafebabe" +
                     "abababababababab" +
                     "abababababababab" +
                     "00000000");

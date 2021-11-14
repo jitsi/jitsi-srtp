@@ -15,6 +15,8 @@
  */
 package org.jitsi.srtp;
 
+import static jakarta.xml.bind.DatatypeConverter.parseHexBinary;
+
 import gnu.getopt.*;
 import java.security.*;
 import org.jitsi.srtp.crypto.*;
@@ -22,18 +24,17 @@ import org.jitsi.utils.*;
 import org.jitsi.utils.logging2.*;
 import org.junit.jupiter.api.*;
 
-import javax.xml.bind.*;
 import java.time.*;
 import java.util.*;
 
 public class SrtpPerfTest {
     private static final byte[] test_key =
-            DatatypeConverter.parseHexBinary("e1f97a0d3e018be0d64fa32c06de4139");
+            parseHexBinary("e1f97a0d3e018be0d64fa32c06de4139");
     private static final byte[] test_key_salt =
-            DatatypeConverter.parseHexBinary("0ec675ad498afeebb6960b3aabe6");
+            parseHexBinary("0ec675ad498afeebb6960b3aabe6");
 
     private static final byte[] rtp_header =
-            DatatypeConverter.parseHexBinary("800f1234decafbadcafebabe");
+            parseHexBinary("800f1234decafbadcafebabe");
 
     private ByteArrayBuffer packet = null;
     private int seq = 0x1234;
