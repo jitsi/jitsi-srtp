@@ -15,7 +15,7 @@
  */
 package org.jitsi.srtp;
 
-import static javax.xml.bind.DatatypeConverter.parseHexBinary;
+import static jakarta.xml.bind.DatatypeConverter.parseHexBinary;
 import static org.junit.jupiter.api.Assertions.*;
 
 import java.util.*;

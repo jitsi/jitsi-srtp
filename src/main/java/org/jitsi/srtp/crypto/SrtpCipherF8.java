@@ -44,7 +44,7 @@ import javax.crypto.spec.*;
  *
  *
  * @author Bing SU (nova.su@gmail.com)
- * @author Werner Dittmann <werner.dittmann@t-online.de>
+ * @author Werner Dittmann (werner.dittmann@t-online.de)
  */
 public class SrtpCipherF8 extends SrtpCipher
 {
