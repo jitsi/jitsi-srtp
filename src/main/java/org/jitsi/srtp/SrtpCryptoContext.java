@@ -453,7 +453,7 @@ public class SrtpCryptoContext
         {
             if (encrypting)
             {
-                logger.debug(() -> "Error encrypting SRTP packet: " + e.getMessage());
+                logger.info(() -> "Error encrypting SRTP packet: " + e.getMessage());
                 return SrtpErrorStatus.FAIL;
             }
             else
@@ -464,7 +464,7 @@ public class SrtpCryptoContext
                 }
                 else
                 {
-                    logger.debug(() -> "Error decrypting SRTP packet: " + e.getMessage());
+                    logger.info(() -> "Error decrypting SRTP packet: " + e.getMessage());
                     return SrtpErrorStatus.FAIL;
                 }
             }
