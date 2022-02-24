@@ -260,7 +260,7 @@ public class SrtcpCryptoContext
                 int aadLen = pkt.getLength() - bufferedTagLen;
                 if (aadLen < 0)
                 {
-                    return SrtpErrorStatus.AUTH_FAIL;
+                    return SrtpErrorStatus.INVALID_PACKET;
                 }
                 cipher.processAAD(pkt.getBuffer(), pkt.getOffset(), aadLen);
                 writeRoc(index);
@@ -276,12 +276,20 @@ public class SrtcpCryptoContext
         {
             if (encrypting)
             {
-                logger.debug(() -> "Error encrypting SRTCP packet: " + e.getMessage());
+                logger.info(() -> "Error encrypting SRTCP packet: " + e.getMessage());
                 return SrtpErrorStatus.FAIL;
             }
             else
             {
-                return SrtpErrorStatus.AUTH_FAIL;
+                if (e instanceof AEADBadTagException)
+                {
+                    return SrtpErrorStatus.AUTH_FAIL;
+                }
+                else
+                {
+                    logger.info(() -> "Error decrypting SRTCP packet: " + e.getMessage());
+                    return SrtpErrorStatus.FAIL;
+                }
             }
         }
         return SrtpErrorStatus.OK;

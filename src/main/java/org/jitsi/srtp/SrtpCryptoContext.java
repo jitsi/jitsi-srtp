@@ -453,12 +453,20 @@ public class SrtpCryptoContext
         {
             if (encrypting)
             {
-                logger.debug(() -> "Error encrypting SRTP packet: " + e.getMessage());
+                logger.info(() -> "Error encrypting SRTP packet: " + e.getMessage());
                 return SrtpErrorStatus.FAIL;
             }
             else
             {
-                return SrtpErrorStatus.AUTH_FAIL;
+                if (e instanceof AEADBadTagException)
+                {
+                    return SrtpErrorStatus.AUTH_FAIL;
+                }
+                else
+                {
+                    logger.info(() -> "Error decrypting SRTP packet: " + e.getMessage());
+                    return SrtpErrorStatus.FAIL;
+                }
             }
         }
         return SrtpErrorStatus.OK;
