@@ -458,7 +458,15 @@ public class SrtpCryptoContext
             }
             else
             {
-                return SrtpErrorStatus.AUTH_FAIL;
+                if (e instanceof AEADBadTagException)
+                {
+                    return SrtpErrorStatus.AUTH_FAIL;
+                }
+                else
+                {
+                    logger.debug(() -> "Error decrypting SRTP packet: " + e.getMessage());
+                    return SrtpErrorStatus.FAIL;
+                }
             }
         }
         return SrtpErrorStatus.OK;
