@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "org_jitsi_srtp_crypto_OpenSslAesGcmAuthOnlyCipherSpi.h"
+#include <org_jitsi_srtp_crypto_OpenSslAesGcmAuthOnlyCipherSpi.h>
 
 #include <openssl/modes.h>
 #include <openssl/evp.h>

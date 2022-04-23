@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-#include "org_jitsi_srtp_crypto_OpenSslAesCipherSpi.h"
-#include "org_jitsi_srtp_crypto_OpenSslAesCtrCipherSpi.h"
-#include "org_jitsi_srtp_crypto_OpenSslAesGcmCipherSpi.h"
-#include "org_jitsi_srtp_crypto_OpenSslAesEcbCipherSpi.h"
+#include <org_jitsi_srtp_crypto_OpenSslAesCipherSpi.h>
+#include <org_jitsi_srtp_crypto_OpenSslAesCtrCipherSpi.h>
+#include <org_jitsi_srtp_crypto_OpenSslAesGcmCipherSpi.h>
+#include <org_jitsi_srtp_crypto_OpenSslAesEcbCipherSpi.h>
 
 
 #include <openssl/evp.h>

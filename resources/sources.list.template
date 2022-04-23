@@ -1,0 +1,3 @@
+deb [arch=_ARCH_] _MIRROR_ _DIST_ main universe
+deb [arch=_ARCH_] _MIRROR_ _DIST_-updates main universe
+deb [arch=_ARCH_] _MIRROR_ _DIST_-security main universe

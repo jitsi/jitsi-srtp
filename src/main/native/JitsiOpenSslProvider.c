@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "org_jitsi_srtp_crypto_JitsiOpenSslProvider.h"
+#include <org_jitsi_srtp_crypto_JitsiOpenSslProvider.h>
 #include <openssl/evp.h>
 #include <openssl/err.h>
 
