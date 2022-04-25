@@ -4,7 +4,7 @@ if ! command -v unzip &> /dev/null; then
 fi;
 
 VER=3.3.0
-PROJECT_DIR="$(cd "$(dirname "$0")"; pwd -P)/../"
+PROJECT_DIR="$(cd "$(dirname "$0")/../"; pwd -P)"
 EXTRACT_DEST="$PROJECT_DIR/target/latest-maven"
 
 mkdir -p "$EXTRACT_DEST"
