@@ -213,7 +213,7 @@ jobs:
             -Drelease=true \
             -DskipTests \
             -Dosgi-native=true \
-            release
+            deploy
 
       - name: Attach final jars (after releasing to Maven Central)
         uses: actions/upload-artifact@v3
