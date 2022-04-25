@@ -15,11 +15,10 @@
  */
 package org.jitsi.srtp.crypto;
 
+import java.lang.ref.*;
 import java.security.*;
 import org.jitsi.utils.*;
 import org.jitsi.utils.logging2.*;
-
-import javax.crypto.*;
 
 public class JitsiOpenSslProvider
     extends Provider
@@ -35,26 +34,45 @@ public class JitsiOpenSslProvider
 
     private static native boolean OpenSSL_Init();
 
+    static final Cleaner CLEANER;
+
     static
     {
-        try
+        Cleaner cleaner = null;
+        String[] versions = { "1.1", "3" };
+        for (int i = 0; i < versions.length; i++)
         {
-            JNIUtils.loadLibrary("jitsisrtp",
-                JitsiOpenSslProvider.class.getClassLoader());
-            if (OpenSSL_Init())
+            String version = versions[i];
+            try
             {
-                logger.info(() -> "jitsisrtp successfully loaded");
-                libraryLoaded = true;
+                JNIUtils.loadLibrary("jitsisrtp_" + version,
+                    JitsiOpenSslProvider.class.getClassLoader());
+                if (OpenSSL_Init())
+                {
+                    logger.info(() -> "jitsisrtp successfully loaded for OpenSSL " + version);
+                    libraryLoaded = true;
+                    cleaner = Cleaner.create();
+                    break;
+                }
+                else
+                {
+                    logger.warn("OpenSSL_Init failed");
+                }
             }
-            else
+            catch (UnsatisfiedLinkError t)
             {
-                logger.warn(() -> "OpenSSL_Init failed");
+                if (i == versions.length - 1)
+                {
+                    logger.warn("Unable to load jitsisrtp", t);
+                }
+                else
+                {
+                    logger.debug(() -> "Unable to load jitsisrtp for OpenSSL " + version + ": " + t);
+                }
             }
         }
-        catch (Throwable t)
-        {
-            logger.warn(() -> "Unable to load jitsisrtp: " + t.toString());
-        }
+
+        CLEANER = cleaner;
     }
 
     public static boolean isLoaded()
@@ -64,7 +82,7 @@ public class JitsiOpenSslProvider
 
     public JitsiOpenSslProvider()
     {
-        super("JitsiOpenSslProvider", 1,
+        super("JitsiOpenSslProvider", "1",
             "Jitsi OpenSSL SRTP security provider");
         put("Cipher.AES/CTR/NoPadding", OpenSslAesCtrCipherSpi.class.getName());
         put("Cipher.AES/GCM/NoPadding", OpenSslAesGcmCipherSpi.class.getName());

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "org_jitsi_srtp_crypto_OpenSslHmacSpi.h"
+#include <org_jitsi_srtp_crypto_OpenSslHmacSpi.h>
 
 #include <openssl/evp.h>
 #include <openssl/hmac.h>
@@ -52,7 +52,7 @@ Java_org_jitsi_srtp_crypto_OpenSslHmacSpi_EVP_1sha1
  */
 JNIEXPORT jlong JNICALL
 Java_org_jitsi_srtp_crypto_OpenSslHmacSpi_HMAC_1CTX_1create
-    (JNIEnv *env, jobject thiz)
+    (JNIEnv *env, jclass clazz)
 {
 /* OpenSSL 1.1.0 made HMAC_CTX an opaque structure, which must be allocated
    using HMAC_CTX_new.  But this function doesn't exist in OpenSSL 1.0.x. */
@@ -77,7 +77,7 @@ Java_org_jitsi_srtp_crypto_OpenSslHmacSpi_HMAC_1CTX_1create
  */
 JNIEXPORT void JNICALL
 Java_org_jitsi_srtp_crypto_OpenSslHmacSpi_HMAC_1CTX_1destroy
-    (JNIEnv *env, jobject thiz, jlong ctx)
+    (JNIEnv *env, jclass clazz, jlong ctx)
 {
     HMAC_CTX *ctx_ = (HMAC_CTX *) (intptr_t) ctx;
 

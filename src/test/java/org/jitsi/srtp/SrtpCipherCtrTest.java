@@ -70,7 +70,7 @@ public class SrtpCipherCtrTest
     {
         boolean haveOpenSsl = JitsiOpenSslProvider.isLoaded();
 
-        if (System.getProperty("os.name").toLowerCase().contains("linux"))
+        if (System.getProperty("os.name").toLowerCase().contains("linux") && !Boolean.getBoolean("skipNativeTests"))
         {
             assertTrue(haveOpenSsl, "should always have OpenSSL on Linux");
         }

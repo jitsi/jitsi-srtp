@@ -7,3 +7,5 @@
 /src/main/resources
 .idea/
 *.iml
+cmake-*/
+resources/sources_*.list

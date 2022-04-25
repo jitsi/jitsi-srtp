@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-#include "org_jitsi_srtp_crypto_OpenSslAesCipherSpi.h"
-#include "org_jitsi_srtp_crypto_OpenSslAesCtrCipherSpi.h"
-#include "org_jitsi_srtp_crypto_OpenSslAesGcmCipherSpi.h"
-#include "org_jitsi_srtp_crypto_OpenSslAesEcbCipherSpi.h"
+#include <org_jitsi_srtp_crypto_OpenSslAesCipherSpi.h>
+#include <org_jitsi_srtp_crypto_OpenSslAesCtrCipherSpi.h>
+#include <org_jitsi_srtp_crypto_OpenSslAesGcmCipherSpi.h>
+#include <org_jitsi_srtp_crypto_OpenSslAesEcbCipherSpi.h>
 
 
 #include <openssl/evp.h>
@@ -32,7 +32,7 @@
  * Signature: ()J
  */
 JNIEXPORT jlong JNICALL Java_org_jitsi_srtp_crypto_OpenSslAesCipherSpi_EVP_1CIPHER_1CTX_1new
-  (JNIEnv *env, jobject thiz)
+  (JNIEnv *env, jclass clazz)
 {
     EVP_CIPHER_CTX *ctx = EVP_CIPHER_CTX_new();
 
@@ -45,7 +45,7 @@ JNIEXPORT jlong JNICALL Java_org_jitsi_srtp_crypto_OpenSslAesCipherSpi_EVP_1CIPH
  * Signature: (J)V
  */
 JNIEXPORT void JNICALL Java_org_jitsi_srtp_crypto_OpenSslAesCipherSpi_EVP_1CIPHER_1CTX_1free
-  (JNIEnv *env, jobject thiz, jlong ctx)
+  (JNIEnv *env, jclass clazz, jlong ctx)
 {
     if (ctx) {
         EVP_CIPHER_CTX *ctx_ = (EVP_CIPHER_CTX *) (intptr_t) ctx;
