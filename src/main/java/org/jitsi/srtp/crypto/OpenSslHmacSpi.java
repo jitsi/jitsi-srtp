@@ -49,6 +49,10 @@ public class OpenSslHmacSpi
 
     private static native int EVP_MD_size(long md);
 
+    /* Note: Native methods that take the 'ctx' (other than _free) need to be non-static,
+     * to stop the Java GC from collecting the object (and thus running its Cleanable)
+     * while the native methods are still executing.
+     */
     private static native long EVP_sha1();
 
     private static native long HMAC_CTX_create();

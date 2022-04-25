@@ -30,6 +30,10 @@ public final class OpenSslAesGcmCipherSpi
     private static native long EVP_aes_192_gcm();
     private static native long EVP_aes_256_gcm();
 
+    /* Note: Native methods that take the 'ctx' (other than _free) need to be non-static,
+     * to stop the Java GC from collecting the object (and thus running its Cleanable)
+     * while the native methods are still executing.
+     */
     private native boolean EVP_CipherFinal(long ctx,
         byte[] out, int offset);
 

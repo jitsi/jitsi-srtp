@@ -54,6 +54,10 @@ public class OpenSslAesGcmAuthOnlyCipherSpi
 
     private static native void CRYPTO_gcm128_release(long ctx);
 
+    /* Note: Native methods that take the 'ctx' (other than _release) need to be non-static,
+     * to stop the Java GC from collecting the object (and thus running its Cleanable)
+     * while the native methods are still executing.
+     */
     private native boolean CRYPTO_gcm128_init(long ctx, byte[] key);
 
     private native boolean CRYPTO_gcm128_setiv(long ctx, byte[] iv, int len);

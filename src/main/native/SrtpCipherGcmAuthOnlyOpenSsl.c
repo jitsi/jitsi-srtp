@@ -50,7 +50,7 @@ static void EVP_encrypt(const unsigned char in[16],
  * Signature: ()J
  */
 JNIEXPORT jlong JNICALL Java_org_jitsi_srtp_crypto_OpenSslAesGcmAuthOnlyCipherSpi_CRYPTO_1gcm128_1new
-  (JNIEnv *env, jobject thiz)
+  (JNIEnv *env, jclass clazz)
 {
     AES_GCM_CONTEXT* ctx = malloc(sizeof(AES_GCM_CONTEXT));
     if (ctx == NULL)
@@ -89,7 +89,7 @@ fail:
  * Signature: (J)V
  */
 JNIEXPORT void JNICALL Java_org_jitsi_srtp_crypto_OpenSslAesGcmAuthOnlyCipherSpi_CRYPTO_1gcm128_1release
-  (JNIEnv *env, jobject thiz, jlong ctx)
+  (JNIEnv *env, jclass clazz, jlong ctx)
 {
     if (ctx != 0)
     {

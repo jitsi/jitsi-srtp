@@ -51,6 +51,10 @@ public abstract class OpenSslAesCipherSpi
 
     private static native void EVP_CIPHER_CTX_free(long ctx);
 
+    /* Note: Native methods that take the 'ctx' (other than _free) need to be non-static,
+     * to stop the Java GC from collecting the object (and thus running its Cleanable)
+     * while the native methods are still executing.
+     */
     private native boolean EVP_CipherInit(long ctx, long type,
         byte[] key, byte[] iv, int enc);
 
