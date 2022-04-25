@@ -15,28 +15,46 @@
  */
 package org.jitsi.srtp.crypto;
 
+import java.lang.ref.Cleaner.*;
 import java.security.*;
 import java.security.spec.*;
 import java.util.*;
 import javax.crypto.*;
-import javax.crypto.spec.*;
 
 /**
  * AES Cipher implementations using OpenSSL via JNI.
  */
 public abstract class OpenSslAesCipherSpi
-    extends CipherSpi
+    extends CipherSpi implements AutoCloseable
 {
+    protected static class OpenSslAesCipherSpiCleanable implements Runnable
+    {
+        /**
+         * the OpenSSL EVP_CIPHER_CTX context
+         */
+        long ptr;
+
+        @Override
+        public void run()
+        {
+            if (ptr != 0)
+            {
+                OpenSslAesCipherSpi.EVP_CIPHER_CTX_free(ptr);
+                ptr = 0;
+            }
+        }
+    }
+
     protected static final int BLKLEN = 16;
 
-    private native long EVP_CIPHER_CTX_new();
+    private static native long EVP_CIPHER_CTX_new();
 
-    private native void EVP_CIPHER_CTX_free(long ctx);
+    private static native void EVP_CIPHER_CTX_free(long ctx);
 
-    private native boolean EVP_CipherInit(long ctx, long type,
+    private static native boolean EVP_CipherInit(long ctx, long type,
         byte[] key, byte[] iv, int enc);
 
-    private native boolean EVP_CipherUpdate(long ctx,
+    private static native boolean EVP_CipherUpdate(long ctx,
         byte[] in, int inOffset, int len, byte[] out, int outOffset);
 
     /**
@@ -52,7 +70,12 @@ public abstract class OpenSslAesCipherSpi
     /**
      * the OpenSSL EVP_CIPHER_CTX context
      */
-    protected long ctx;
+    protected final OpenSslAesCipherSpiCleanable ctx;
+
+    /**
+     * Cleanable registration of the EVP_CIPHER_CTX context.
+     */
+    private final Cleanable ctxCleanable;
 
     /**
      * The most recent initialization vector set
@@ -71,12 +94,14 @@ public abstract class OpenSslAesCipherSpi
             throw new RuntimeException("OpenSSL wrapper not loaded");
         }
 
-        ctx = EVP_CIPHER_CTX_new();
-        if (ctx == 0)
+        ctx = new OpenSslAesCipherSpiCleanable();
+        ctx.ptr = EVP_CIPHER_CTX_new();
+        if (ctx.ptr == 0)
         {
             throw new RuntimeException("EVP_CIPHER_CTX_create");
         }
 
+        ctxCleanable = JitsiOpenSslProvider.CLEANER.register(this, ctx);
         this.cipherMode = cipherMode;
     }
 
@@ -186,7 +211,7 @@ public abstract class OpenSslAesCipherSpi
             cipherType = getOpenSSLCipher(key);
         }
 
-        if (!EVP_CipherInit(ctx, cipherType, keyParam, this.iv, openSslEncryptMode))
+        if (!EVP_CipherInit(ctx.ptr, cipherType, keyParam, this.iv, openSslEncryptMode))
         {
             throw new InvalidKeyException("EVP_CipherInit");
         }
@@ -224,7 +249,7 @@ public abstract class OpenSslAesCipherSpi
     protected void doCipherUpdate(byte[] input, int inputOffset, int inputLen,
         byte[] output, int outputOffset)
     {
-        if (!EVP_CipherUpdate(ctx, input, inputOffset, inputLen, output,
+        if (!EVP_CipherUpdate(ctx.ptr, input, inputOffset, inputLen, output,
             outputOffset))
         {
             throw new IllegalStateException("Failure in EVP_CipherUpdate");
@@ -295,23 +320,8 @@ public abstract class OpenSslAesCipherSpi
      * {@inheritDoc}
      */
     @Override
-    protected void finalize() throws Throwable
+    public void close()
     {
-        try
-        {
-            // Well, the destroying in the finalizer should exist as a backup
-            // anyway. There is no way to explicitly invoke the destroying at
-            // the time of this writing but it is a start.
-            if (ctx != 0)
-            {
-                EVP_CIPHER_CTX_free(ctx);
-                ctx = 0;
-            }
-        }
-        finally
-        {
-            super.finalize();
-        }
+        ctxCleanable.clean();
     }
-
 }

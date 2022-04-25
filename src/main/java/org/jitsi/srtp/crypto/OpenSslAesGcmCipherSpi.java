@@ -114,7 +114,7 @@ public final class OpenSslAesGcmCipherSpi
 
         if (newIvLen != 0)
         {
-            if (!CipherSetIVLen(ctx, newIvLen))
+            if (!CipherSetIVLen(ctx.ptr, newIvLen))
             {
                 throw new InvalidAlgorithmParameterException
                     ("Unsupported IV length " + newIvLen);
@@ -195,13 +195,13 @@ public final class OpenSslAesGcmCipherSpi
             outLen = ciphertextLen;
             int tagOffset = inputOffset + ciphertextLen;
 
-            if (!CipherSetTag(ctx, input, tagOffset, tagLen))
+            if (!CipherSetTag(ctx.ptr, input, tagOffset, tagLen))
             {
                 throw new IllegalStateException("Failure in EVP_CipherSetTag");
             }
         }
 
-        if (!EVP_CipherFinal(ctx, output, outputOffset + outLen))
+        if (!EVP_CipherFinal(ctx.ptr, output, outputOffset + outLen))
         {
             if (opmode == Cipher.DECRYPT_MODE)
             {
@@ -215,7 +215,7 @@ public final class OpenSslAesGcmCipherSpi
 
         if (opmode == Cipher.ENCRYPT_MODE)
         {
-            if (!CipherGetTag(ctx, output, outputOffset + outLen, tagLen))
+            if (!CipherGetTag(ctx.ptr, output, outputOffset + outLen, tagLen))
             {
                 throw new IllegalStateException("Failure in EVP_CipherGetTag");
             }

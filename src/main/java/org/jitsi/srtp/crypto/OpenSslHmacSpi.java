@@ -15,7 +15,6 @@
  */
 package org.jitsi.srtp.crypto;
 
-import java.lang.ref.*;
 import java.lang.ref.Cleaner.*;
 import java.security.*;
 import java.security.spec.*;
@@ -38,13 +37,12 @@ public class OpenSslHmacSpi
         long ptr;
 
         @Override
-        public synchronized void run()
+        public void run()
         {
-            long ptrCopy = ptr;
-            if (ptrCopy != 0)
+            if (ptr != 0)
             {
+                OpenSslHmacSpi.HMAC_CTX_destroy(ptr);
                 ptr = 0;
-                OpenSslHmacSpi.HMAC_CTX_destroy(ptrCopy);
             }
         }
     }
@@ -57,17 +55,17 @@ public class OpenSslHmacSpi
 
     private static native void HMAC_CTX_destroy(long ctx);
 
-    private native int HMAC_Final(
+    private static native int HMAC_Final(
             long ctx,
             byte[] md, int mdOff, int mdLen);
 
-    private native boolean HMAC_Init_ex(
+    private static native boolean HMAC_Init_ex(
             long ctx,
             byte[] key, int keyLen,
             long md,
             long impl);
 
-    private native boolean HMAC_Update(
+    private static native boolean HMAC_Update(
             long ctx,
             byte[] data, int off, int len);
 
@@ -80,7 +78,7 @@ public class OpenSslHmacSpi
     /**
      * Cleanable registration of the OpenSSL HMAC context.
      */
-    private final Cleanable cleanable;
+    private final Cleanable ctxCleanable;
 
     /**
      * The key provided for the HMAC.
@@ -118,7 +116,7 @@ public class OpenSslHmacSpi
         if (ctx.ptr == 0)
             throw new RuntimeException("HMAC_CTX_create == 0");
 
-        cleanable = Cleaner.create().register(this, ctx);
+        ctxCleanable = JitsiOpenSslProvider.CLEANER.register(this, ctx);
     }
 
     @Override
@@ -221,6 +219,6 @@ public class OpenSslHmacSpi
     @Override
     public void close()
     {
-        cleanable.clean();
+        ctxCleanable.clean();
     }
 }

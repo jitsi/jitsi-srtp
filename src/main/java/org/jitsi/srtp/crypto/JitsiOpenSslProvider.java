@@ -15,6 +15,7 @@
  */
 package org.jitsi.srtp.crypto;
 
+import java.lang.ref.*;
 import java.security.*;
 import org.jitsi.utils.*;
 import org.jitsi.utils.logging2.*;
@@ -33,8 +34,11 @@ public class JitsiOpenSslProvider
 
     private static native boolean OpenSSL_Init();
 
+    static final Cleaner CLEANER;
+
     static
     {
+        Cleaner cleaner = null;
         String[] versions = { "1.1", "3" };
         for (int i = 0; i < versions.length; i++)
         {
@@ -47,6 +51,7 @@ public class JitsiOpenSslProvider
                 {
                     logger.info(() -> "jitsisrtp successfully loaded for OpenSSL " + version);
                     libraryLoaded = true;
+                    cleaner = Cleaner.create();
                     break;
                 }
                 else
@@ -66,6 +71,8 @@ public class JitsiOpenSslProvider
                 }
             }
         }
+
+        CLEANER = cleaner;
     }
 
     public static boolean isLoaded()

@@ -15,6 +15,7 @@
  */
 package org.jitsi.srtp.crypto;
 
+import java.lang.ref.Cleaner.*;
 import java.security.*;
 import java.security.spec.*;
 import java.util.*;
@@ -26,25 +27,44 @@ import javax.crypto.spec.*;
  * Can only be used for "decryption".
  */
 public class OpenSslAesGcmAuthOnlyCipherSpi
-    extends CipherSpi
+    extends CipherSpi implements AutoCloseable
 {
+    private static final class OpenSslAesGcmAuthOnlyCipherSpiCleanable implements Runnable
+    {
+        /**
+         * The context of the OpenSSL (Crypto) library through which the actual
+         * algorithm implementation is invoked by this instance.
+         */
+        long ptr;
+
+        @Override
+        public void run()
+        {
+            if (ptr != 0)
+            {
+                OpenSslAesGcmAuthOnlyCipherSpi.CRYPTO_gcm128_release(ptr);
+                ptr = 0;
+            }
+        }
+    }
+
     private static final int BLKLEN = 16;
 
-    private native long CRYPTO_gcm128_new();
+    private static native long CRYPTO_gcm128_new();
 
-    private native void CRYPTO_gcm128_release(long ctx);
+    private static native void CRYPTO_gcm128_release(long ctx);
 
-    private native boolean CRYPTO_gcm128_init(long ctx, byte[] key);
+    private static native boolean CRYPTO_gcm128_init(long ctx, byte[] key);
 
-    private native boolean CRYPTO_gcm128_setiv(long ctx, byte[] iv, int len);
+    private static native boolean CRYPTO_gcm128_setiv(long ctx, byte[] iv, int len);
 
-    private native boolean CRYPTO_gcm128_aad(long ctx,
+    private static native boolean CRYPTO_gcm128_aad(long ctx,
         byte[] in, int inOffset, int len);
 
-    private native boolean CRYPTO_gcm128_decrypt(long ctx,
+    private static native boolean CRYPTO_gcm128_decrypt(long ctx,
         byte[] out, int offset, int len);
 
-    private native boolean CRYPTO_gcm128_finish(long ctx,
+    private static native boolean CRYPTO_gcm128_finish(long ctx,
         byte[] tag, int offset, int taglen);
 
     /**
@@ -55,7 +75,12 @@ public class OpenSslAesGcmAuthOnlyCipherSpi
     /**
      * the OpenSSL CRYPTO_gcm128 context and EVP cipher.
      */
-    private long ctx;
+    private final OpenSslAesGcmAuthOnlyCipherSpiCleanable ctx;
+
+    /**
+     * Cleanable registration of the CRYPTO_gcm128 context.
+     */
+    private final Cleanable ctxCleanable;
 
     /**
      * The most recent initialization vector set.
@@ -79,11 +104,14 @@ public class OpenSslAesGcmAuthOnlyCipherSpi
             throw new RuntimeException("OpenSSL wrapper not loaded");
         }
 
-        ctx = CRYPTO_gcm128_new();
-        if (ctx == 0)
+        ctx = new OpenSslAesGcmAuthOnlyCipherSpiCleanable();
+        ctx.ptr = CRYPTO_gcm128_new();
+        if (ctx.ptr == 0)
         {
             throw new IllegalStateException("Error constructing ctx");
         }
+
+        ctxCleanable = JitsiOpenSslProvider.CLEANER.register(this, ctx);
     }
 
     @Override
@@ -200,7 +228,7 @@ public class OpenSslAesGcmAuthOnlyCipherSpi
 
         if (keyParam != null)
         {
-            if (!CRYPTO_gcm128_init(ctx, keyParam))
+            if (!CRYPTO_gcm128_init(ctx.ptr, keyParam))
             {
                 throw new InvalidKeyException("CRYPTO_gcm128_init");
             }
@@ -208,7 +236,7 @@ public class OpenSslAesGcmAuthOnlyCipherSpi
 
         if (iv != null)
         {
-            if (!CRYPTO_gcm128_setiv(ctx, iv, iv.length))
+            if (!CRYPTO_gcm128_setiv(ctx.ptr, iv, iv.length))
             {
                 throw new InvalidAlgorithmParameterException("CRYPTO_gcm128_setiv");
             }
@@ -247,7 +275,7 @@ public class OpenSslAesGcmAuthOnlyCipherSpi
      */
     private void doDecrypt(byte[] input, int inputOffset, int inputLen)
     {
-        if (!CRYPTO_gcm128_decrypt(ctx, input, inputOffset, inputLen))
+        if (!CRYPTO_gcm128_decrypt(ctx.ptr, input, inputOffset, inputLen))
         {
             throw new IllegalStateException("Failure in CRYPTO_gcm128_decrypt");
         }
@@ -273,7 +301,7 @@ public class OpenSslAesGcmAuthOnlyCipherSpi
             throw new IllegalArgumentException("Input buffer length " + input.length +
                 " is too short for offset " + inputOffset + " plus length " + inputLen);
         }
-        if (!CRYPTO_gcm128_aad(ctx, input, inputOffset, inputLen))
+        if (!CRYPTO_gcm128_aad(ctx.ptr, input, inputOffset, inputLen))
         {
             throw new IllegalStateException("Failure in CRYPTO_gcm128_aad");
         }
@@ -307,7 +335,7 @@ public class OpenSslAesGcmAuthOnlyCipherSpi
         doDecrypt(input, inputOffset, ciphertextLen);
         int tagOffset = inputOffset + ciphertextLen;
 
-        if (!CRYPTO_gcm128_finish(ctx, input, tagOffset, tagLen))
+        if (!CRYPTO_gcm128_finish(ctx.ptr, input, tagOffset, tagLen))
         {
             throw new AEADBadTagException("Bad AEAD tag");
         }
@@ -319,22 +347,8 @@ public class OpenSslAesGcmAuthOnlyCipherSpi
      * {@inheritDoc}
      */
     @Override
-    protected void finalize() throws Throwable
+    public void close()
     {
-        try
-        {
-            // Well, the destroying in the finalizer should exist as a backup
-            // anyway. There is no way to explicitly invoke the destroying at
-            // the time of this writing but it is a start.
-            if (ctx != 0)
-            {
-                CRYPTO_gcm128_release(ctx);
-                ctx = 0;
-            }
-        }
-        finally
-        {
-            super.finalize();
-        }
+        ctxCleanable.clean();
     }
 }
