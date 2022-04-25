@@ -150,7 +150,7 @@
         <dependency>
             <groupId>org.jitsi</groupId>
             <artifactId>jitsi-utils</artifactId>
-            <version>1.0-112-gd92472a</version>
+            <version>1.0-113-g8b75d53</version>
         </dependency>
         <dependency>
             <groupId>org.bouncycastle</groupId>
