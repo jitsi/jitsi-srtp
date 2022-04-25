@@ -55,17 +55,17 @@ public class OpenSslHmacSpi
 
     private static native void HMAC_CTX_destroy(long ctx);
 
-    private static native int HMAC_Final(
+    private native int HMAC_Final(
             long ctx,
             byte[] md, int mdOff, int mdLen);
 
-    private static native boolean HMAC_Init_ex(
+    private native boolean HMAC_Init_ex(
             long ctx,
             byte[] key, int keyLen,
             long md,
             long impl);
 
-    private static native boolean HMAC_Update(
+    private native boolean HMAC_Update(
             long ctx,
             byte[] data, int off, int len);
 

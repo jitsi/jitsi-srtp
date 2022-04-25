@@ -54,17 +54,17 @@ public class OpenSslAesGcmAuthOnlyCipherSpi
 
     private static native void CRYPTO_gcm128_release(long ctx);
 
-    private static native boolean CRYPTO_gcm128_init(long ctx, byte[] key);
+    private native boolean CRYPTO_gcm128_init(long ctx, byte[] key);
 
-    private static native boolean CRYPTO_gcm128_setiv(long ctx, byte[] iv, int len);
+    private native boolean CRYPTO_gcm128_setiv(long ctx, byte[] iv, int len);
 
-    private static native boolean CRYPTO_gcm128_aad(long ctx,
+    private native boolean CRYPTO_gcm128_aad(long ctx,
         byte[] in, int inOffset, int len);
 
-    private static native boolean CRYPTO_gcm128_decrypt(long ctx,
+    private native boolean CRYPTO_gcm128_decrypt(long ctx,
         byte[] out, int offset, int len);
 
-    private static native boolean CRYPTO_gcm128_finish(long ctx,
+    private native boolean CRYPTO_gcm128_finish(long ctx,
         byte[] tag, int offset, int taglen);
 
     /**
