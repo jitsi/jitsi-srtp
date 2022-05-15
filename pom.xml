@@ -73,10 +73,9 @@
                                     linux-ppc64el/libjitsisrtp_1.1.so;
                                     linux-ppc64el/libjitsisrtp_3.so;osname=Linux;processor=PowerPC-64-LE,
                                     darwin-x86-64/libjitsisrtp_1.1.dylib;
-                                    darwin-x86-64/libjitsisrtp_3.dylib;osname=Mac OS X;processor=x86-64
+                                    darwin-x86-64/libjitsisrtp_3.dylib;osname=Mac OS X;processor=x86-64,
                                     darwin-aarch64/libjitsisrtp_1.1.dylib;
                                     darwin-aarch64/libjitsisrtp_3.dylib;osname=Mac OS X;processor=AArch64
-                                    *
                                 </Bundle-NativeCode>
                             </instructions>
                         </configuration>
@@ -221,7 +220,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.8.1</version>
+                <version>3.10.1</version>
                 <configuration>
                     <release>11</release>
                     <compilerArgs combine.children="append">
