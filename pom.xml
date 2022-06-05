@@ -75,7 +75,8 @@
                                     darwin-x86-64/libjitsisrtp_1.1.dylib;
                                     darwin-x86-64/libjitsisrtp_3.dylib;osname=Mac OS X;processor=x86-64,
                                     darwin-aarch64/libjitsisrtp_1.1.dylib;
-                                    darwin-aarch64/libjitsisrtp_3.dylib;osname=Mac OS X;processor=AArch64
+                                    darwin-aarch64/libjitsisrtp_3.dylib;osname=Mac OS X;processor=AArch64,
+                                    *
                                 </Bundle-NativeCode>
                             </instructions>
                         </configuration>
