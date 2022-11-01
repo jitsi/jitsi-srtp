@@ -68,6 +68,7 @@ public class SrtpPerfTest {
     }
 
     private byte[] encryptedPacket = null;
+    private int encryptedPacketLength = 0;
 
     private void setupEncryptedPacket(int payloadSize, SrtpPolicy policy)
         throws GeneralSecurityException
@@ -77,6 +78,7 @@ public class SrtpPerfTest {
         createContext(policy, true);
         doEncrypt(1, payloadSize);
         encryptedPacket = packet.getBuffer().clone();
+        encryptedPacketLength = packet.getLength();
     }
 
     private void resetEncryptedPacket()
@@ -87,7 +89,7 @@ public class SrtpPerfTest {
         }
 
         System.arraycopy(encryptedPacket, 0, packet.getBuffer(), 0, encryptedPacket.length);
-        packet.setLength(encryptedPacket.length);
+        packet.setLength(encryptedPacketLength);
     }
 
     private SrtpContextFactory factory;
@@ -110,7 +112,10 @@ public class SrtpPerfTest {
         for (int i = 0; i < num; i++)
         {
             resetPacket(payloadSize);
-            context.transformPacket(packet);
+            SrtpErrorStatus status = context.transformPacket(packet);
+            if (status != SrtpErrorStatus.OK) {
+                throw new GeneralSecurityException(status.desc);
+            }
         }
     }
 
@@ -120,7 +125,10 @@ public class SrtpPerfTest {
         for (int i = 0; i < num; i++)
         {
             resetEncryptedPacket();
-            context.reverseTransformPacket(packet, skipDecryption);
+            SrtpErrorStatus status = context.reverseTransformPacket(packet, skipDecryption);
+            if (status != SrtpErrorStatus.OK) {
+                throw new GeneralSecurityException(status.desc);
+            }
         }
     }
 
