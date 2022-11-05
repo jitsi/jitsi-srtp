@@ -15,6 +15,7 @@
  */
 package org.jitsi.srtp.crypto;
 
+import java.lang.ref.Cleaner.*;
 import java.security.*;
 import java.security.spec.*;
 import javax.crypto.*;
@@ -25,35 +26,63 @@ import javax.crypto.*;
  * @author Lyubomir Marinov
  */
 public class OpenSslHmacSpi
-    extends MacSpi
+    extends MacSpi implements AutoCloseable
 {
+    private static class OpenSslHmacSpiCleanable implements Runnable
+    {
+        /**
+         * The context of the OpenSSL (Crypto) library through which the actual
+         * algorithm implementation is invoked by this instance.
+         */
+        long ptr;
+
+        @Override
+        public void run()
+        {
+            if (ptr != 0)
+            {
+                OpenSslHmacSpi.HMAC_CTX_destroy(ptr);
+                ptr = 0;
+            }
+        }
+    }
+
     private static native int EVP_MD_size(long md);
 
+    /* Note: Native methods that take the 'ctx' (other than _free) need to be non-static,
+     * to stop the Java GC from collecting the object (and thus running its Cleanable)
+     * while the native methods are still executing.
+     */
     private static native long EVP_sha1();
 
     private static native long HMAC_CTX_create();
 
     private static native void HMAC_CTX_destroy(long ctx);
 
-    private static native int HMAC_Final(
+    private native int HMAC_Final(
             long ctx,
             byte[] md, int mdOff, int mdLen);
 
-    private static native boolean HMAC_Init_ex(
+    private native boolean HMAC_Init_ex(
             long ctx,
             byte[] key, int keyLen,
             long md,
             long impl);
 
-    private static native boolean HMAC_Update(
+    private native boolean HMAC_Update(
             long ctx,
             byte[] data, int off, int len);
 
     /**
-     * The context of the OpenSSL (Crypto) library through which the actual
+     * Cleanable-wrapped context of the OpenSSL (Crypto) library through which the actual
      * algorithm implementation is invoked by this instance.
      */
-    private long ctx;
+    private final OpenSslHmacSpiCleanable ctx = new OpenSslHmacSpiCleanable();
+
+    /**
+     * Cleanable registration of the OpenSSL HMAC context.
+     */
+    private final Cleanable ctxCleanable;
 
     /**
      * The key provided for the HMAC.
@@ -87,9 +116,11 @@ public class OpenSslHmacSpi
         if (macSize == 0)
             throw new IllegalStateException("EVP_MD_size == 0");
 
-        ctx = HMAC_CTX_create();
-        if (ctx == 0)
+        ctx.ptr = HMAC_CTX_create();
+        if (ctx.ptr == 0)
             throw new RuntimeException("HMAC_CTX_create == 0");
+
+        ctxCleanable = JitsiOpenSslProvider.CLEANER.register(this, ctx);
     }
 
     @Override
@@ -101,7 +132,7 @@ public class OpenSslHmacSpi
     @Override
     protected byte[] engineDoFinal()
     {
-        long ctx = this.ctx;
+        long ctx = this.ctx.ptr;
 
         if (ctx == 0)
         {
@@ -126,29 +157,6 @@ public class OpenSslHmacSpi
     }
 
     @Override
-    protected void finalize()
-        throws Throwable
-    {
-        try
-        {
-            // Well, the destroying in the finalizer should exist as a backup
-            // anyway. There is no way to explicitly invoke the destroying at
-            // the time of this writing but it is a start.
-            long ctx = this.ctx;
-
-            if (ctx != 0)
-            {
-                this.ctx = 0;
-                HMAC_CTX_destroy(ctx);
-            }
-        }
-        finally
-        {
-            super.finalize();
-        }
-    }
-
-    @Override
     protected void engineInit(Key key, AlgorithmParameterSpec params)
         throws InvalidKeyException
     {
@@ -156,6 +164,8 @@ public class OpenSslHmacSpi
 
         if (key == null)
             throw new InvalidKeyException("key == null");
+
+        long ctx = this.ctx.ptr;
         if (ctx == 0)
             throw new IllegalStateException("ctx == 0");
 
@@ -169,6 +179,8 @@ public class OpenSslHmacSpi
     {
         if (key == null)
             throw new IllegalStateException("key == null");
+
+        long ctx = this.ctx.ptr;
         if (ctx == 0)
             throw new IllegalStateException("ctx == 0");
 
@@ -181,7 +193,7 @@ public class OpenSslHmacSpi
     protected void engineUpdate(byte in)
         throws IllegalStateException
     {
-        long ctx = this.ctx;
+        long ctx = this.ctx.ptr;
         if (ctx == 0)
             throw new IllegalStateException("ctx");
         else if (!HMAC_Update(ctx, new byte[]{in}, 0, 1))
@@ -200,12 +212,17 @@ public class OpenSslHmacSpi
             if ((len < 0) || (in.length < off + len))
                 throw new IllegalArgumentException("len " + len);
 
-            long ctx = this.ctx;
-
+            long ctx = this.ctx.ptr;
             if (ctx == 0)
                 throw new IllegalStateException("ctx");
             else if (!HMAC_Update(ctx, in, off, len))
                 throw new RuntimeException("HMAC_Update");
         }
+    }
+
+    @Override
+    public void close()
+    {
+        ctxCleanable.clean();
     }
 }

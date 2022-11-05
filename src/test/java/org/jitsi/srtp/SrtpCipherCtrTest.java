@@ -15,7 +15,7 @@
  */
 package org.jitsi.srtp;
 
-import static javax.xml.bind.DatatypeConverter.parseHexBinary;
+import static jakarta.xml.bind.DatatypeConverter.parseHexBinary;
 import static org.junit.jupiter.api.Assertions.*;
 
 import java.util.*;
@@ -70,7 +70,7 @@ public class SrtpCipherCtrTest
     {
         boolean haveOpenSsl = JitsiOpenSslProvider.isLoaded();
 
-        if (System.getProperty("os.name").toLowerCase().contains("linux"))
+        if (System.getProperty("os.name").toLowerCase().contains("linux") && !Boolean.getBoolean("skipNativeTests"))
         {
             assertTrue(haveOpenSsl, "should always have OpenSSL on Linux");
         }

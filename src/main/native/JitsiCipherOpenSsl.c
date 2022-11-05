@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-#include "org_jitsi_srtp_crypto_OpenSslAesCipherSpi.h"
-#include "org_jitsi_srtp_crypto_OpenSslAesCtrCipherSpi.h"
-#include "org_jitsi_srtp_crypto_OpenSslAesGcmCipherSpi.h"
-#include "org_jitsi_srtp_crypto_OpenSslAesEcbCipherSpi.h"
+#include <org_jitsi_srtp_crypto_OpenSslAesCipherSpi.h>
+#include <org_jitsi_srtp_crypto_OpenSslAesCtrCipherSpi.h>
+#include <org_jitsi_srtp_crypto_OpenSslAesGcmCipherSpi.h>
+#include <org_jitsi_srtp_crypto_OpenSslAesEcbCipherSpi.h>
 
 
 #include <openssl/evp.h>
@@ -59,7 +59,7 @@ JNIEXPORT void JNICALL Java_org_jitsi_srtp_crypto_OpenSslAesCipherSpi_EVP_1CIPHE
  * Signature: (JJ[B[BI)Z
  */
 JNIEXPORT jboolean JNICALL Java_org_jitsi_srtp_crypto_OpenSslAesCipherSpi_EVP_1CipherInit
-  (JNIEnv *env, jclass clazz, jlong ctx, jlong type, jbyteArray key, jbyteArray iv, jint enc)
+  (JNIEnv *env, jobject thiz, jlong ctx, jlong type, jbyteArray key, jbyteArray iv, jint enc)
 {
     jboolean r = JNI_FALSE;
     unsigned char *key_ = NULL, *iv_ = NULL;
@@ -93,7 +93,7 @@ exit:
  * Signature: (J[BII)Z
  */
 JNIEXPORT jboolean JNICALL Java_org_jitsi_srtp_crypto_OpenSslAesCipherSpi_EVP_1CipherUpdate
-  (JNIEnv *env, jclass clazz, jlong ctx, jbyteArray in, jint inOffset, jint len, jbyteArray out, jint outOffset)
+  (JNIEnv *env, jobject thiz, jlong ctx, jbyteArray in, jint inOffset, jint len, jbyteArray out, jint outOffset)
 {
     int ok = 0;
     unsigned char *in_ = (unsigned char*)(*env)->GetPrimitiveArrayCritical(env, in, NULL);

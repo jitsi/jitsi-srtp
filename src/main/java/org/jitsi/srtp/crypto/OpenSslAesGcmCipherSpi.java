@@ -30,13 +30,17 @@ public final class OpenSslAesGcmCipherSpi
     private static native long EVP_aes_192_gcm();
     private static native long EVP_aes_256_gcm();
 
-    private static native boolean EVP_CipherFinal(long ctx,
+    /* Note: Native methods that take the 'ctx' (other than _free) need to be non-static,
+     * to stop the Java GC from collecting the object (and thus running its Cleanable)
+     * while the native methods are still executing.
+     */
+    private native boolean EVP_CipherFinal(long ctx,
         byte[] out, int offset);
 
-    private static native boolean CipherSetIVLen(long ctx, int ivlen);
-    private static native boolean CipherSetTag(long ctx,
+    private native boolean CipherSetIVLen(long ctx, int ivlen);
+    private native boolean CipherSetTag(long ctx,
         byte[] tag, int offset, int taglen);
-    private static native boolean CipherGetTag(long ctx,
+    private native boolean CipherGetTag(long ctx,
         byte[] tag, int offset, int taglen);
 
     public OpenSslAesGcmCipherSpi()
@@ -114,7 +118,7 @@ public final class OpenSslAesGcmCipherSpi
 
         if (newIvLen != 0)
         {
-            if (!CipherSetIVLen(ctx, newIvLen))
+            if (!CipherSetIVLen(ctx.ptr, newIvLen))
             {
                 throw new InvalidAlgorithmParameterException
                     ("Unsupported IV length " + newIvLen);
@@ -195,13 +199,13 @@ public final class OpenSslAesGcmCipherSpi
             outLen = ciphertextLen;
             int tagOffset = inputOffset + ciphertextLen;
 
-            if (!CipherSetTag(ctx, input, tagOffset, tagLen))
+            if (!CipherSetTag(ctx.ptr, input, tagOffset, tagLen))
             {
                 throw new IllegalStateException("Failure in EVP_CipherSetTag");
             }
         }
 
-        if (!EVP_CipherFinal(ctx, output, outputOffset + outLen))
+        if (!EVP_CipherFinal(ctx.ptr, output, outputOffset + outLen))
         {
             if (opmode == Cipher.DECRYPT_MODE)
             {
@@ -215,7 +219,7 @@ public final class OpenSslAesGcmCipherSpi
 
         if (opmode == Cipher.ENCRYPT_MODE)
         {
-            if (!CipherGetTag(ctx, output, outputOffset + outLen, tagLen))
+            if (!CipherGetTag(ctx.ptr, output, outputOffset + outLen, tagLen))
             {
                 throw new IllegalStateException("Failure in EVP_CipherGetTag");
             }

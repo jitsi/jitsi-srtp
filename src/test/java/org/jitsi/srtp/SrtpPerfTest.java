@@ -15,6 +15,8 @@
  */
 package org.jitsi.srtp;
 
+import static jakarta.xml.bind.DatatypeConverter.parseHexBinary;
+
 import gnu.getopt.*;
 import java.security.*;
 import org.jitsi.srtp.crypto.*;
@@ -22,18 +24,17 @@ import org.jitsi.utils.*;
 import org.jitsi.utils.logging2.*;
 import org.junit.jupiter.api.*;
 
-import javax.xml.bind.*;
 import java.time.*;
 import java.util.*;
 
 public class SrtpPerfTest {
     private static final byte[] test_key =
-            DatatypeConverter.parseHexBinary("e1f97a0d3e018be0d64fa32c06de4139");
+            parseHexBinary("e1f97a0d3e018be0d64fa32c06de4139");
     private static final byte[] test_key_salt =
-            DatatypeConverter.parseHexBinary("0ec675ad498afeebb6960b3aabe6");
+            parseHexBinary("0ec675ad498afeebb6960b3aabe6");
 
     private static final byte[] rtp_header =
-            DatatypeConverter.parseHexBinary("800f1234decafbadcafebabe");
+            parseHexBinary("800f1234decafbadcafebabe");
 
     private ByteArrayBuffer packet = null;
     private int seq = 0x1234;
@@ -67,6 +68,7 @@ public class SrtpPerfTest {
     }
 
     private byte[] encryptedPacket = null;
+    private int encryptedPacketLength = 0;
 
     private void setupEncryptedPacket(int payloadSize, SrtpPolicy policy)
         throws GeneralSecurityException
@@ -76,6 +78,7 @@ public class SrtpPerfTest {
         createContext(policy, true);
         doEncrypt(1, payloadSize);
         encryptedPacket = packet.getBuffer().clone();
+        encryptedPacketLength = packet.getLength();
     }
 
     private void resetEncryptedPacket()
@@ -86,7 +89,7 @@ public class SrtpPerfTest {
         }
 
         System.arraycopy(encryptedPacket, 0, packet.getBuffer(), 0, encryptedPacket.length);
-        packet.setLength(encryptedPacket.length);
+        packet.setLength(encryptedPacketLength);
     }
 
     private SrtpContextFactory factory;
@@ -109,7 +112,10 @@ public class SrtpPerfTest {
         for (int i = 0; i < num; i++)
         {
             resetPacket(payloadSize);
-            context.transformPacket(packet);
+            SrtpErrorStatus status = context.transformPacket(packet);
+            if (status != SrtpErrorStatus.OK) {
+                throw new GeneralSecurityException(status.desc);
+            }
         }
     }
 
@@ -119,7 +125,10 @@ public class SrtpPerfTest {
         for (int i = 0; i < num; i++)
         {
             resetEncryptedPacket();
-            context.reverseTransformPacket(packet, skipDecryption);
+            SrtpErrorStatus status = context.reverseTransformPacket(packet, skipDecryption);
+            if (status != SrtpErrorStatus.OK) {
+                throw new GeneralSecurityException(status.desc);
+            }
         }
     }
 
