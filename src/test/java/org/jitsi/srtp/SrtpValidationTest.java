@@ -21,8 +21,6 @@ import org.jitsi.utils.*;
 import org.jitsi.utils.logging2.*;
 import org.junit.jupiter.api.*;
 
-import javax.xml.bind.*;
-
 import static jakarta.xml.bind.DatatypeConverter.parseHexBinary;
 import java.util.*;
 
