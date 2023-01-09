@@ -83,11 +83,10 @@ public class SrtpPacketUtils
     {
         int cc = getCsrcCount(buf);
 
-        // The extension length comes after the RTP header, the CSRC list, and
-        // two bytes in the extension header called "defined by profile".
-        int extLenIndex = FIXED_HEADER_SIZE + cc * 4;
+        // The "defined by profile" extension type comes after the RTP header and the CSRC list
+        int extTypeIndex = FIXED_HEADER_SIZE + cc * 4;
 
-        int type = readUint16(buf, extLenIndex);
+        int type = readUint16(buf, extTypeIndex);
 
         return type;
     }
@@ -105,11 +104,10 @@ public class SrtpPacketUtils
     {
         int cc = getCsrcCount(buf);
 
-        // The extension length comes after the RTP header, the CSRC list, and
-        // two bytes in the extension header called "defined by profile".
-        int extLenIndex = FIXED_HEADER_SIZE + cc * 4;
+        // The "defined by profile" extension type comes after the RTP header and the CSRC list
+        int extTypeIndex = FIXED_HEADER_SIZE + cc * 4;
 
-        writeUint16(buf, extLenIndex, type);
+        writeUint16(buf, extTypeIndex, type);
     }
 
     /**

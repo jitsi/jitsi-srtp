@@ -395,7 +395,7 @@ public class SrtpCryptoContext
 
     /**
      * Transform a packet's "defined by profile" header extension field for cryptex.
-     * This should be a packet for which useCryptex() has returned trye.
+     * This should be a packet for which useCryptex() has returned true.
      */
     private void transformCryptexType(ByteArrayBuffer pkt)
     {
@@ -405,7 +405,7 @@ public class SrtpCryptoContext
     }
 
     /**
-     * Pre-process a packet so it is ready for cryptex encryption.
+     * Pre-process a packet so it is ready for cryptex encryption/decryption.
      * Assumes useCryptex() returned true for this packet.
      */
     private void cryptexPreprocess(ByteArrayBuffer pkt)
@@ -427,7 +427,7 @@ public class SrtpCryptoContext
     }
 
     /**
-     * Post-process a packet after cryptex encryption, to restore it to wire format.
+     * Post-process a packet after cryptex encryption/decryption, to restore it to wire format.
      * Assumes cryptexPreprocess() was called on this packet.
      */
     private void cryptexPostprocess(ByteArrayBuffer pkt)
