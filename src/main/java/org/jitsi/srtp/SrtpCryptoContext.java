@@ -245,7 +245,7 @@ public class SrtpCryptoContext
                             + ", SSRC " + (0xFFFFFFFFL & ssrc)
                             + " because it is outside the replay window! (roc "
                             + roc + ", s_l " + s_l + ", guessedROC "
-                            + guessedROC);
+                            + guessedROC + ")");
             }
             return SrtpErrorStatus.REPLAY_OLD; // Packet too old.
         }
@@ -258,7 +258,7 @@ public class SrtpCryptoContext
                             + ", SSRC " + (0xFFFFFFFFL & ssrc)
                             + " because it has been received already! (roc "
                             + roc + ", s_l " + s_l + ", guessedROC "
-                            + guessedROC);
+                            + guessedROC + ")");
             }
             return SrtpErrorStatus.REPLAY_FAIL; // Packet received already!
         }
