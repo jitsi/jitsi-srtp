@@ -16,6 +16,7 @@
 package org.jitsi.srtp;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.jitsi.srtp.Assertions.*;
 
 import org.jitsi.utils.*;
 import org.jitsi.utils.logging2.*;
@@ -619,24 +620,53 @@ public class SrtpValidationTest {
 
 
     /* Test a single packet, verifying it encrypts to the given ciphertext and decrypts back to its plaintext. */
+    private static void testPacketOnce(SrtpCryptoContext rtpSend, SrtpCryptoContext rtpRecv,
+        byte[] plaintext, byte[] ciphertext,
+        int authTagLen, int offset)
+        throws Exception
+    {
+        byte[] data = new byte[offset + plaintext.length + authTagLen];
+        System.arraycopy(plaintext, 0, data, offset, plaintext.length);
+        ByteArrayBuffer pkt = new ByteArrayBufferImpl(data, offset, plaintext.length);
+
+        assertEquals(SrtpErrorStatus.OK, rtpSend.transformPacket(pkt));
+        // Uncomment this to generate or debug ciphertext
+        // System.out.println(DatatypeConverter.printHexBinary(pkt.getBuffer()).toLowerCase());
+        assertByteArrayBufferEquals(ciphertext, pkt);
+
+        assertEquals(SrtpErrorStatus.OK, rtpRecv.reverseTransformPacket(pkt, false));
+        assertByteArrayBufferEquals(plaintext, pkt);
+    }
+
+    /* Test a single packet, with it placed at various offsets in the ByteArrayBuffer. */
     private static void testPacket(SrtpCryptoContext rtpSend, SrtpCryptoContext rtpRecv,
         byte[] plaintext, byte[] ciphertext,
         int authTagLen)
         throws Exception
     {
-        ByteArrayBuffer pkt = new ByteArrayBufferImpl(Arrays.copyOf(plaintext,
-            plaintext.length + authTagLen),
-            0, plaintext.length);
+        for (int offset = 0; offset < 16; offset++) {
+            testPacketOnce(rtpSend, rtpRecv, plaintext, ciphertext, authTagLen, offset);
+        }
+    }
+
+
+    /* Test a single packet, when the reconstructed plaintext is not identical to the original encrypted plaintext. */
+    private static void testPacketAsymmetric(SrtpCryptoContext rtpSend, SrtpCryptoContext rtpRecv,
+        byte[] plaintextOrig, byte[] ciphertext, byte[] plainTextDecrypted,
+        int extraBufSpace)
+        throws Exception
+    {
+        ByteArrayBuffer pkt = new ByteArrayBufferImpl(Arrays.copyOf(plaintextOrig,
+            plaintextOrig.length + extraBufSpace),
+            0, plaintextOrig.length);
 
         assertEquals(SrtpErrorStatus.OK, rtpSend.transformPacket(pkt));
         // Uncomment this to generate or debug ciphertext
         // System.out.println(DatatypeConverter.printHexBinary(pkt.getBuffer()).toLowerCase());
-        assertEquals(ciphertext.length, pkt.getLength());
-        assertArrayEquals(ciphertext, pkt.getBuffer());
+        assertByteArrayBufferEquals(ciphertext, pkt);
 
         assertEquals(SrtpErrorStatus.OK, rtpRecv.reverseTransformPacket(pkt, false));
-        assertEquals(plaintext.length, pkt.getLength());
-        assertArrayEquals(plaintext, Arrays.copyOf(pkt.getBuffer(), plaintext.length));
+        assertByteArrayBufferEquals(plainTextDecrypted, pkt);
     }
 
     /* Test that a packet authenticates and decrypts when unmodified, and
@@ -684,6 +714,10 @@ public class SrtpValidationTest {
                 SrtpPolicy.HMACSHA1_AUTHENTICATION, 160/8,
                 80/8, 112/8 );
         policy.setCryptexEnabled(true);
+
+        policy.setSendReplayEnabled(false);
+        policy.setReceiveReplayEnabled(false);
+        // So we can encrypt and decrypt packets multiple times, with different offsets.
 
         SrtpContextFactory senderFactory = new SrtpContextFactory(true, test_key, test_key_salt, policy, policy, logger);
         SrtpContextFactory receiverFactory = new SrtpContextFactory(false, test_key, test_key_salt, policy, policy, logger);
@@ -821,6 +855,10 @@ public class SrtpValidationTest {
                 SrtpPolicy.NULL_AUTHENTICATION, 0,
                 128/8, 96/8 );
         policy.setCryptexEnabled(true);
+
+        policy.setSendReplayEnabled(false);
+        policy.setReceiveReplayEnabled(false);
+        // So we can encrypt and decrypt packets multiple times, with different offsets.
 
         SrtpContextFactory senderFactory = new SrtpContextFactory(true, test_key_gcm, test_key_salt_gcm, policy, policy, logger);
         SrtpContextFactory receiverFactory = new SrtpContextFactory(false, test_key_gcm, test_key_salt_gcm, policy, policy, logger);

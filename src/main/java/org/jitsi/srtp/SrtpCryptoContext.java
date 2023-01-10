@@ -420,8 +420,8 @@ public class SrtpCryptoContext
         int headerTypeAndLen = ByteArrayUtils.readInt(pkt, headerOffset);
 
         /* Move CSRCs to be contiguous with the payload. */
-        System.arraycopy(pkt.getBuffer(), SrtpPacketUtils.FIXED_HEADER_SIZE,
-            pkt.getBuffer(), SrtpPacketUtils.FIXED_HEADER_SIZE + 4, cc * 4);
+        System.arraycopy(pkt.getBuffer(), pkt.getOffset() + SrtpPacketUtils.FIXED_HEADER_SIZE,
+            pkt.getBuffer(), pkt.getOffset() + SrtpPacketUtils.FIXED_HEADER_SIZE + 4, cc * 4);
 
         ByteArrayUtils.writeInt(pkt, SrtpPacketUtils.FIXED_HEADER_SIZE, headerTypeAndLen);
     }
@@ -442,8 +442,8 @@ public class SrtpCryptoContext
         int headerTypeAndLen = ByteArrayUtils.readInt(pkt, SrtpPacketUtils.FIXED_HEADER_SIZE);
 
         /* Move CSRCs to be after the fixed header. */
-        System.arraycopy(pkt.getBuffer(), SrtpPacketUtils.FIXED_HEADER_SIZE + 4,
-            pkt.getBuffer(), SrtpPacketUtils.FIXED_HEADER_SIZE, cc * 4);
+        System.arraycopy(pkt.getBuffer(), pkt.getOffset() + SrtpPacketUtils.FIXED_HEADER_SIZE + 4,
+            pkt.getBuffer(), pkt.getOffset() + SrtpPacketUtils.FIXED_HEADER_SIZE, cc * 4);
 
         ByteArrayUtils.writeInt(pkt, headerOffset, headerTypeAndLen);
     }
