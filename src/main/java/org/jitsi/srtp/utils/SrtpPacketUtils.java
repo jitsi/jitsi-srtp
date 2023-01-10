@@ -54,6 +54,18 @@ public class SrtpPacketUtils
     }
 
     /**
+     * Sets the extension bit of an SRTP packet.
+     * @param buf The SRTP packet.
+     */
+    public static void setExtensionBit(ByteArrayBuffer buf)
+    {
+        byte[] buffer = buf.getBuffer();
+        int offset = buf.getOffset();
+
+        buffer[offset] |= 0x10;
+    }
+
+    /**
      * Returns the number of CSRC identifiers included in an SRTP packet.
      *
      * Note: this does not verify that the packet is indeed long enough for the claimed number of CSRCs.

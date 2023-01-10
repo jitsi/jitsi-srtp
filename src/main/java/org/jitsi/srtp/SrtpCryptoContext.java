@@ -448,6 +448,46 @@ public class SrtpCryptoContext
         ByteArrayUtils.writeInt(pkt, headerOffset, headerTypeAndLen);
     }
 
+    /** Query whether this packet needs a zero-length header inserted.  This is used for packets that have
+     *  CSRCs but no header extensions of their own, when we are using cryptex.
+     */
+    private boolean needZeroLengthHeader(ByteArrayBuffer pkt)
+    {
+        return policy.isCryptexEnabled() && !SrtpPacketUtils.getExtensionBit(pkt) &&
+            SrtpPacketUtils.getCsrcCount(pkt) > 0;
+    }
+
+    /** A packet that has CSRCs but no header extension, when we are using cryptex.
+     * Insert a zero-length header extension so we can correctly signal that cryptex was used.
+     * Assumes needZeroLengthHeader returned true.
+     */
+    private void insertZeroLengthHeader(ByteArrayBuffer pkt)
+    {
+        int cc = SrtpPacketUtils.getCsrcCount(pkt);
+        int headerOffset = SrtpPacketUtils.FIXED_HEADER_SIZE + cc * 4;
+
+        if (pkt.getOffset() >= 4)
+        {
+            /* Move fixed header and CSRCs back. */
+            System.arraycopy(pkt.getBuffer(), pkt.getOffset(), pkt.getBuffer(), pkt.getOffset() - 4,
+                headerOffset);
+            pkt.setOffset(pkt.getOffset() - 4);
+        }
+        else
+        {
+            /* Move payload forward. */
+            if (pkt.getBuffer().length < pkt.getOffset() + pkt.getLength() + 4) {
+                /* Need more buffer. */
+                pkt.grow(4);
+            }
+            System.arraycopy(pkt.getBuffer(), pkt.getOffset() + headerOffset, pkt.getBuffer(),
+                pkt.getOffset() + headerOffset + 4, pkt.getLength() - headerOffset);
+        }
+        pkt.setLength(pkt.getLength() + 4);
+        ByteArrayUtils.writeInt(pkt, headerOffset, 0xBEDE0000);
+        SrtpPacketUtils.setExtensionBit(pkt);
+    }
+
     /**
      * Performs Counter Mode AES encryption/decryption
      *
@@ -831,6 +871,10 @@ public class SrtpCryptoContext
          */
         if (policy.isSendReplayEnabled() && (err = checkReplay(seqNo, guessedIndex)) != SrtpErrorStatus.OK)
             return err;
+
+        if (needZeroLengthHeader(pkt)) {
+            insertZeroLengthHeader(pkt);
+        }
 
         boolean useCryptex = useCryptex(pkt, true);
 

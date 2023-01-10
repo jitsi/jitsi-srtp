@@ -18,6 +18,7 @@ package org.jitsi.srtp;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.jitsi.srtp.Assertions.*;
 
+import jakarta.xml.bind.*;
 import org.jitsi.utils.*;
 import org.jitsi.utils.logging2.*;
 import org.junit.jupiter.api.*;
@@ -301,6 +302,7 @@ public class SrtpValidationTest {
         ByteArrayBuffer rtpPkt = new ByteArrayBufferImpl(rtp_plaintext_gcm, 0, rtp_plaintext_ref.length);
 
         assertEquals(SrtpErrorStatus.OK, rtpSend.transformPacket(rtpPkt));
+        assertByteArrayBufferEquals(srtp_ciphertext_gcm, rtpPkt);
         assertEquals(srtp_ciphertext_gcm.length, rtpPkt.getLength());
         assertArrayEquals(srtp_ciphertext_gcm, rtpPkt.getBuffer());
 
@@ -574,6 +576,17 @@ public class SrtpValidationTest {
             + "f4d0ae92"
             + "3c6f479b95a0f7b53133");
 
+    /* Plaintext packet with no header extension and CSRC fields. */
+    private static final byte[] rtp_nohdr_cc =
+        parseHexBinary("820f123adecafbad" +
+            "cafebabe" +
+            "0001e240" +
+            "0000b26e" +
+            "abababab" +
+            "abababababababab" +
+            "abababab");
+
+
     /* Plaintext packet with empty 1-byte header extension and CSRC fields. */
     private static final byte[] rtp_1byte_empty_hdrext_cc =
         parseHexBinary("920f123adecafbad" +
@@ -651,14 +664,14 @@ public class SrtpValidationTest {
 
 
     /* Test a single packet, when the reconstructed plaintext is not identical to the original encrypted plaintext. */
-    private static void testPacketAsymmetric(SrtpCryptoContext rtpSend, SrtpCryptoContext rtpRecv,
+    private static void testPacketAsymmetricOnce(SrtpCryptoContext rtpSend, SrtpCryptoContext rtpRecv,
         byte[] plaintextOrig, byte[] ciphertext, byte[] plainTextDecrypted,
-        int extraBufSpace)
+        int extraBufSpace, int offset)
         throws Exception
     {
-        ByteArrayBuffer pkt = new ByteArrayBufferImpl(Arrays.copyOf(plaintextOrig,
-            plaintextOrig.length + extraBufSpace),
-            0, plaintextOrig.length);
+        byte[] data = new byte[offset + plaintextOrig.length + extraBufSpace];
+        System.arraycopy(plaintextOrig, 0, data, offset, plaintextOrig.length);
+        ByteArrayBuffer pkt = new ByteArrayBufferImpl(data, offset, plaintextOrig.length);
 
         assertEquals(SrtpErrorStatus.OK, rtpSend.transformPacket(pkt));
         // Uncomment this to generate or debug ciphertext
@@ -668,6 +681,20 @@ public class SrtpValidationTest {
         assertEquals(SrtpErrorStatus.OK, rtpRecv.reverseTransformPacket(pkt, false));
         assertByteArrayBufferEquals(plainTextDecrypted, pkt);
     }
+
+    private static void testPacketAsymmetric(SrtpCryptoContext rtpSend, SrtpCryptoContext rtpRecv,
+        byte[] plaintextOrig, byte[] ciphertext, byte[] plainTextDecrypted,
+        int authTagLen)
+        throws Exception
+    {
+        for (int offset = 0; offset < 16; offset++) {
+            testPacketAsymmetricOnce(rtpSend, rtpRecv, plaintextOrig, ciphertext, plainTextDecrypted, authTagLen, offset);
+        }
+        for (int offset = 0; offset < 16; offset++) {
+            testPacketAsymmetricOnce(rtpSend, rtpRecv, plaintextOrig, ciphertext, plainTextDecrypted, authTagLen, offset + 4);
+        }
+    }
+
 
     /* Test that a packet authenticates and decrypts when unmodified, and
      * fails to decrypt when truncated or bit-flipped.
@@ -736,6 +763,8 @@ public class SrtpValidationTest {
 
         testPacket(rtpSend, rtpRecv, rtp_1byte_empty_hdrext_cc, srtp_1byte_empty_hdrext_cc_cryptex, policy.getAuthTagLength());
         testPacket(rtpSend, rtpRecv, rtp_2byte_empty_hdrext_cc, srtp_2byte_empty_hdrext_cc_cryptex, policy.getAuthTagLength());
+
+        testPacketAsymmetric(rtpSend, rtpRecv, rtp_nohdr_cc, srtp_1byte_empty_hdrext_cc_cryptex, rtp_1byte_empty_hdrext_cc, policy.getAuthTagLength() + 4);
     }
 
     @Test
@@ -877,6 +906,8 @@ public class SrtpValidationTest {
 
         testPacket(rtpSend, rtpRecv, rtp_1byte_empty_hdrext_cc, srtp_1byte_empty_hdrext_cc_cryptex_gcm, policy.getAuthTagLength());
         testPacket(rtpSend, rtpRecv, rtp_2byte_empty_hdrext_cc, srtp_2byte_empty_hdrext_cc_cryptex_gcm, policy.getAuthTagLength());
+
+        testPacketAsymmetric(rtpSend, rtpRecv, rtp_nohdr_cc, srtp_1byte_empty_hdrext_cc_cryptex_gcm, rtp_1byte_empty_hdrext_cc, policy.getAuthTagLength() + 4);
     }
 
     @Test
