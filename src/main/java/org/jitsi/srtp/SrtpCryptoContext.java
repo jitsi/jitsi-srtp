@@ -476,7 +476,8 @@ public class SrtpCryptoContext
         else
         {
             /* Move payload forward. */
-            if (pkt.getBuffer().length < pkt.getOffset() + pkt.getLength() + 4) {
+            if (pkt.getBuffer().length < pkt.getOffset() + pkt.getLength() + 4)
+            {
                 /* Need more buffer. */
                 pkt.grow(4);
             }
@@ -872,7 +873,8 @@ public class SrtpCryptoContext
         if (policy.isSendReplayEnabled() && (err = checkReplay(seqNo, guessedIndex)) != SrtpErrorStatus.OK)
             return err;
 
-        if (needZeroLengthHeader(pkt)) {
+        if (needZeroLengthHeader(pkt))
+        {
             insertZeroLengthHeader(pkt);
         }
 
