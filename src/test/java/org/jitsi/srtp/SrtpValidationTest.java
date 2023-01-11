@@ -633,11 +633,14 @@ public class SrtpValidationTest {
 
 
     /* Test a single packet, verifying it encrypts to the given ciphertext and decrypts back to its plaintext. */
-    private static void testPacketOnce(SrtpCryptoContext rtpSend, SrtpCryptoContext rtpRecv,
+    private static void testPacketOnce(SrtpContextFactory senderFactory, SrtpContextFactory receiverFactory,
         byte[] plaintext, byte[] ciphertext,
         int authTagLen, int offset)
         throws Exception
     {
+        SrtpCryptoContext rtpSend = senderFactory.deriveContext(0xcafebabe, 0);
+        SrtpCryptoContext rtpRecv = receiverFactory.deriveContext(0xcafebabe, 0);
+
         byte[] data = new byte[offset + plaintext.length + authTagLen];
         System.arraycopy(plaintext, 0, data, offset, plaintext.length);
         ByteArrayBuffer pkt = new ByteArrayBufferImpl(data, offset, plaintext.length);
@@ -652,23 +655,25 @@ public class SrtpValidationTest {
     }
 
     /* Test a single packet, with it placed at various offsets in the ByteArrayBuffer. */
-    private static void testPacket(SrtpCryptoContext rtpSend, SrtpCryptoContext rtpRecv,
+    private static void testPacket(SrtpContextFactory senderFactory, SrtpContextFactory receiverFactory,
         byte[] plaintext, byte[] ciphertext,
         int authTagLen)
         throws Exception
     {
         for (int offset = 0; offset < 16; offset++) {
-            testPacketOnce(rtpSend, rtpRecv, plaintext, ciphertext, authTagLen, offset);
+            testPacketOnce(senderFactory, receiverFactory, plaintext, ciphertext, authTagLen, offset);
         }
     }
 
-
     /* Test a single packet, when the reconstructed plaintext is not identical to the original encrypted plaintext. */
-    private static void testPacketAsymmetricOnce(SrtpCryptoContext rtpSend, SrtpCryptoContext rtpRecv,
+    private static void testPacketAsymmetricOnce(SrtpContextFactory senderFactory, SrtpContextFactory receiverFactory,
         byte[] plaintextOrig, byte[] ciphertext, byte[] plainTextDecrypted,
         int extraBufSpace, int offset)
         throws Exception
     {
+        SrtpCryptoContext rtpSend = senderFactory.deriveContext(0xcafebabe, 0);
+        SrtpCryptoContext rtpRecv = receiverFactory.deriveContext(0xcafebabe, 0);
+
         byte[] data = new byte[offset + plaintextOrig.length + extraBufSpace];
         System.arraycopy(plaintextOrig, 0, data, offset, plaintextOrig.length);
         ByteArrayBuffer pkt = new ByteArrayBufferImpl(data, offset, plaintextOrig.length);
@@ -682,16 +687,18 @@ public class SrtpValidationTest {
         assertByteArrayBufferEquals(plainTextDecrypted, pkt);
     }
 
-    private static void testPacketAsymmetric(SrtpCryptoContext rtpSend, SrtpCryptoContext rtpRecv,
+    private static void testPacketAsymmetric(SrtpContextFactory senderFactory, SrtpContextFactory receiverFactory,
         byte[] plaintextOrig, byte[] ciphertext, byte[] plainTextDecrypted,
         int authTagLen)
         throws Exception
     {
+        // When grow is needed
         for (int offset = 0; offset < 16; offset++) {
-            testPacketAsymmetricOnce(rtpSend, rtpRecv, plaintextOrig, ciphertext, plainTextDecrypted, authTagLen, offset);
+            testPacketAsymmetricOnce(senderFactory, receiverFactory, plaintextOrig, ciphertext, plainTextDecrypted, authTagLen, offset);
         }
+        // When grow is not needed
         for (int offset = 0; offset < 16; offset++) {
-            testPacketAsymmetricOnce(rtpSend, rtpRecv, plaintextOrig, ciphertext, plainTextDecrypted, authTagLen, offset + 4);
+            testPacketAsymmetricOnce(senderFactory, receiverFactory, plaintextOrig, ciphertext, plainTextDecrypted, authTagLen, offset + 4);
         }
     }
 
@@ -742,29 +749,23 @@ public class SrtpValidationTest {
                 80/8, 112/8 );
         policy.setCryptexEnabled(true);
 
-        policy.setSendReplayEnabled(false);
-        policy.setReceiveReplayEnabled(false);
-        // So we can encrypt and decrypt packets multiple times, with different offsets.
-
         SrtpContextFactory senderFactory = new SrtpContextFactory(true, test_key, test_key_salt, policy, policy, logger);
         SrtpContextFactory receiverFactory = new SrtpContextFactory(false, test_key, test_key_salt, policy, policy, logger);
 
-        SrtpCryptoContext rtpSend = senderFactory.deriveContext(0xcafebabe, 0);
-        SrtpCryptoContext rtpRecv = receiverFactory.deriveContext(0xcafebabe, 0);
+        testPacket(senderFactory, receiverFactory, rtp_plaintext_ref, srtp_ciphertext, policy.getAuthTagLength());
 
-        testPacket(rtpSend, rtpRecv, rtp_plaintext_ref, srtp_ciphertext, policy.getAuthTagLength());
+        testPacket(senderFactory, receiverFactory, rtp_1bytehdrext, srtp_1bytehdrext_cryptex, policy.getAuthTagLength());
+        testPacket(senderFactory, receiverFactory, rtp_2bytehdrext, srtp_2bytehdrext_cryptex, policy.getAuthTagLength());
+        testPacket(senderFactory, receiverFactory, rtp_unkhdrext, srtp_unkhdrext_cryptex, policy.getAuthTagLength());
 
-        testPacket(rtpSend, rtpRecv, rtp_1bytehdrext, srtp_1bytehdrext_cryptex, policy.getAuthTagLength());
-        testPacket(rtpSend, rtpRecv, rtp_2bytehdrext, srtp_2bytehdrext_cryptex, policy.getAuthTagLength());
-        testPacket(rtpSend, rtpRecv, rtp_unkhdrext, srtp_unkhdrext_cryptex, policy.getAuthTagLength());
+        testPacket(senderFactory, receiverFactory, rtp_1bytehdrext_cc, srtp_1bytehdrext_cc_cryptex, policy.getAuthTagLength());
+        testPacket(senderFactory, receiverFactory, rtp_2bytehdrext_cc, srtp_2bytehdrext_cc_cryptex, policy.getAuthTagLength());
 
-        testPacket(rtpSend, rtpRecv, rtp_1bytehdrext_cc, srtp_1bytehdrext_cc_cryptex, policy.getAuthTagLength());
-        testPacket(rtpSend, rtpRecv, rtp_2bytehdrext_cc, srtp_2bytehdrext_cc_cryptex, policy.getAuthTagLength());
+        testPacket(senderFactory, receiverFactory, rtp_1byte_empty_hdrext_cc, srtp_1byte_empty_hdrext_cc_cryptex, policy.getAuthTagLength());
+        testPacket(senderFactory, receiverFactory, rtp_2byte_empty_hdrext_cc, srtp_2byte_empty_hdrext_cc_cryptex, policy.getAuthTagLength());
 
-        testPacket(rtpSend, rtpRecv, rtp_1byte_empty_hdrext_cc, srtp_1byte_empty_hdrext_cc_cryptex, policy.getAuthTagLength());
-        testPacket(rtpSend, rtpRecv, rtp_2byte_empty_hdrext_cc, srtp_2byte_empty_hdrext_cc_cryptex, policy.getAuthTagLength());
-
-        testPacketAsymmetric(rtpSend, rtpRecv, rtp_nohdr_cc, srtp_1byte_empty_hdrext_cc_cryptex, rtp_1byte_empty_hdrext_cc, policy.getAuthTagLength() + 4);
+        testPacketAsymmetric(senderFactory, receiverFactory, rtp_nohdr_cc, srtp_1byte_empty_hdrext_cc_cryptex, rtp_1byte_empty_hdrext_cc,
+            policy.getAuthTagLength() + 4);
     }
 
     @Test
@@ -892,22 +893,20 @@ public class SrtpValidationTest {
         SrtpContextFactory senderFactory = new SrtpContextFactory(true, test_key_gcm, test_key_salt_gcm, policy, policy, logger);
         SrtpContextFactory receiverFactory = new SrtpContextFactory(false, test_key_gcm, test_key_salt_gcm, policy, policy, logger);
 
-        SrtpCryptoContext rtpSend = senderFactory.deriveContext(0xcafebabe, 0);
-        SrtpCryptoContext rtpRecv = receiverFactory.deriveContext(0xcafebabe, 0);
+        testPacket(senderFactory, receiverFactory, rtp_plaintext_ref, srtp_ciphertext_gcm, policy.getAuthTagLength());
 
-        testPacket(rtpSend, rtpRecv, rtp_plaintext_ref, srtp_ciphertext_gcm, policy.getAuthTagLength());
+        testPacket(senderFactory, receiverFactory, rtp_1bytehdrext, srtp_1bytehdrext_cryptex_gcm, policy.getAuthTagLength());
+        testPacket(senderFactory, receiverFactory, rtp_2bytehdrext, srtp_2bytehdrext_cryptex_gcm, policy.getAuthTagLength());
+        testPacket(senderFactory, receiverFactory, rtp_unkhdrext, srtp_unkhdrext_cryptex_gcm, policy.getAuthTagLength());
 
-        testPacket(rtpSend, rtpRecv, rtp_1bytehdrext, srtp_1bytehdrext_cryptex_gcm, policy.getAuthTagLength());
-        testPacket(rtpSend, rtpRecv, rtp_2bytehdrext, srtp_2bytehdrext_cryptex_gcm, policy.getAuthTagLength());
-        testPacket(rtpSend, rtpRecv, rtp_unkhdrext, srtp_unkhdrext_cryptex_gcm, policy.getAuthTagLength());
+        testPacket(senderFactory, receiverFactory, rtp_1bytehdrext_cc, srtp_1bytehdrext_cc_cryptex_gcm, policy.getAuthTagLength());
+        testPacket(senderFactory, receiverFactory, rtp_2bytehdrext_cc, srtp_2bytehdrext_cc_cryptex_gcm, policy.getAuthTagLength());
 
-        testPacket(rtpSend, rtpRecv, rtp_1bytehdrext_cc, srtp_1bytehdrext_cc_cryptex_gcm, policy.getAuthTagLength());
-        testPacket(rtpSend, rtpRecv, rtp_2bytehdrext_cc, srtp_2bytehdrext_cc_cryptex_gcm, policy.getAuthTagLength());
+        testPacket(senderFactory, receiverFactory, rtp_1byte_empty_hdrext_cc, srtp_1byte_empty_hdrext_cc_cryptex_gcm, policy.getAuthTagLength());
+        testPacket(senderFactory, receiverFactory, rtp_2byte_empty_hdrext_cc, srtp_2byte_empty_hdrext_cc_cryptex_gcm, policy.getAuthTagLength());
 
-        testPacket(rtpSend, rtpRecv, rtp_1byte_empty_hdrext_cc, srtp_1byte_empty_hdrext_cc_cryptex_gcm, policy.getAuthTagLength());
-        testPacket(rtpSend, rtpRecv, rtp_2byte_empty_hdrext_cc, srtp_2byte_empty_hdrext_cc_cryptex_gcm, policy.getAuthTagLength());
-
-        testPacketAsymmetric(rtpSend, rtpRecv, rtp_nohdr_cc, srtp_1byte_empty_hdrext_cc_cryptex_gcm, rtp_1byte_empty_hdrext_cc, policy.getAuthTagLength() + 4);
+        testPacketAsymmetric(senderFactory, receiverFactory, rtp_nohdr_cc, srtp_1byte_empty_hdrext_cc_cryptex_gcm, rtp_1byte_empty_hdrext_cc,
+            policy.getAuthTagLength() + 4);
     }
 
     @Test
