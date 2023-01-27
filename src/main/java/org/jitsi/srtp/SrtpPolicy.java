@@ -337,7 +337,7 @@ public class SrtpPolicy
 
     /**
      * Set whether cryptex (header extension encryption) is to be enabled,
-     * as defined in draft-ietf-avtcore-cryptex-08.
+     * as defined in RFC 9335
      * <p>
      * Turn this off if you want to send header extensions in the clear.
      * Note that decryption of encrypted header extensions (based on the
@@ -353,7 +353,7 @@ public class SrtpPolicy
 
     /**
      * Get whether cryptex (header extension encryption) is enabled,
-     * as defined in draft-ietf-avtcore-cryptex-08.
+     * as defined in RFC 9335.
      *
      * @see #isCryptexDisabled
      */
@@ -364,7 +364,7 @@ public class SrtpPolicy
 
     /**
      * Get whether cryptex (header extension encryption) is disabled,
-     * as defined in draft-ietf-avtcore-cryptex-08.
+     * as defined in RFC 9335.
      *
      * @see #isCryptexEnabled
      */
