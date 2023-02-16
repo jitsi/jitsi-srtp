@@ -29,7 +29,7 @@ public class SrtpPacketUtils
     /**
      * The size of the fixed part of the RTP header as defined by RFC 3550.
      */
-    private static final int FIXED_HEADER_SIZE = 12;
+    public static final int FIXED_HEADER_SIZE = 12;
 
     /**
      * The size of the fixed part of the extension header as defined by RFC 3550.
@@ -45,12 +45,24 @@ public class SrtpPacketUtils
      * @return  {@code true} if the extension bit of this packet has been set
      * and {@code false} otherwise.
      */
-    static boolean getExtensionBit(ByteArrayBuffer buf)
+    public static boolean getExtensionBit(ByteArrayBuffer buf)
     {
         byte[] buffer = buf.getBuffer();
         int offset = buf.getOffset();
 
         return (buffer[offset] & 0x10) == 0x10;
+    }
+
+    /**
+     * Sets the extension bit of an SRTP packet.
+     * @param buf The SRTP packet.
+     */
+    public static void setExtensionBit(ByteArrayBuffer buf)
+    {
+        byte[] buffer = buf.getBuffer();
+        int offset = buf.getOffset();
+
+        buffer[offset] |= 0x10;
     }
 
     /**
@@ -62,12 +74,52 @@ public class SrtpPacketUtils
      *
      * @return the CSRC count for this packet.
      */
-    static int getCsrcCount(ByteArrayBuffer buf)
+    public static int getCsrcCount(ByteArrayBuffer buf)
     {
         byte[] buffer = buf.getBuffer();
         int offset = buf.getOffset();
 
         return buffer[offset] & 0x0f;
+    }
+
+    /**
+     * Reads the "defined by profile" header extension type field of an SRTP packet.
+     *
+     * Note: this does not verify that the header extension bit is indeed set, nor that the packet is long
+     * enough for the header extension specified.
+     *
+     * @param buf The SRTP packet.
+     * @return the length of the extensions present in this packet.
+     */
+    public static int getExtensionType(ByteArrayBuffer buf)
+    {
+        int cc = getCsrcCount(buf);
+
+        // The "defined by profile" extension type comes after the RTP header and the CSRC list
+        int extTypeIndex = FIXED_HEADER_SIZE + cc * 4;
+
+        int type = readUint16(buf, extTypeIndex);
+
+        return type;
+    }
+
+    /**
+     * Writes the "defined by profile" header extension type field of an SRTP packet.
+     *
+     * Note: this does not verify that the header extension bit is indeed set, nor that the packet is long
+     * enough for the header extension specified.
+     *
+     * @param buf The SRTP packet.
+     * @param type The type value to set.
+     */
+    public static void setExtensionType(ByteArrayBuffer buf, int type)
+    {
+        int cc = getCsrcCount(buf);
+
+        // The "defined by profile" extension type comes after the RTP header and the CSRC list
+        int extTypeIndex = FIXED_HEADER_SIZE + cc * 4;
+
+        writeUint16(buf, extTypeIndex, type);
     }
 
     /**

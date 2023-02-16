@@ -245,7 +245,7 @@ public class SrtpCryptoContext
                             + ", SSRC " + (0xFFFFFFFFL & ssrc)
                             + " because it is outside the replay window! (roc "
                             + roc + ", s_l " + s_l + ", guessedROC "
-                            + guessedROC);
+                            + guessedROC + ")");
             }
             return SrtpErrorStatus.REPLAY_OLD; // Packet too old.
         }
@@ -258,7 +258,7 @@ public class SrtpCryptoContext
                             + ", SSRC " + (0xFFFFFFFFL & ssrc)
                             + " because it has been received already! (roc "
                             + roc + ", s_l " + s_l + ", guessedROC "
-                            + guessedROC);
+                            + guessedROC + ")");
             }
             return SrtpErrorStatus.REPLAY_FAIL; // Packet received already!
         }
@@ -331,11 +331,170 @@ public class SrtpCryptoContext
     }
 
     /**
+     * Determine if this packet should be processed with "cryptex"
+     * (header extension encryption)
+     */
+    private boolean useCryptex(ByteArrayBuffer pkt, boolean encrypting)
+    {
+        if (!SrtpPacketUtils.getExtensionBit(pkt))
+        {
+            return false;
+        }
+
+        int type = SrtpPacketUtils.getExtensionType(pkt);
+        if (encrypting)
+        {
+            if (!policy.isCryptexEnabled())
+            {
+                return false;
+            }
+
+            switch (type)
+            {
+            case 0xBEDE:
+            case 0x1000:
+                return true;
+            default:
+                return false;
+            }
+        }
+        else
+        {
+            switch (type)
+            {
+            case 0xC0DE:
+            case 0xC2DE:
+                return true;
+            default:
+                return false;
+            }
+        }
+    }
+
+    /**
+     * Given an input header type, return the value as transformed
+     * by cryptex processing.  Assumes useCryptex() returns true for this packet.
+     */
+    private int getTransformedHeaderType(int type)
+    {
+        switch (type)
+        {
+        case 0xBEDE:
+            return 0xC0DE;
+        case 0x1000:
+            return 0xC2DE;
+        case 0xC0DE:
+            return 0xBEDE;
+        case 0xC2DE:
+            return 0x1000;
+        default:
+            /* Can't happen if useCryptex returned true */
+            throw new IllegalStateException(String.format("Invalid header type 0x%4X", type));
+        }
+    }
+
+    /**
+     * Transform a packet's "defined by profile" header extension field for cryptex.
+     * This should be a packet for which useCryptex() has returned true.
+     */
+    private void transformCryptexType(ByteArrayBuffer pkt)
+    {
+        int type = SrtpPacketUtils.getExtensionType(pkt);
+        int newType = getTransformedHeaderType(type);
+        SrtpPacketUtils.setExtensionType(pkt, newType);
+    }
+
+    /**
+     * Pre-process a packet so it is ready for cryptex encryption/decryption.
+     * Assumes useCryptex() returned true for this packet.
+     */
+    private void cryptexPreprocess(ByteArrayBuffer pkt)
+    {
+        int cc = SrtpPacketUtils.getCsrcCount(pkt);
+        if (cc == 0)
+        {
+            return;
+        }
+        int headerOffset = SrtpPacketUtils.FIXED_HEADER_SIZE + cc * 4;
+
+        int headerTypeAndLen = ByteArrayUtils.readInt(pkt, headerOffset);
+
+        /* Move CSRCs to be contiguous with the payload. */
+        System.arraycopy(pkt.getBuffer(), pkt.getOffset() + SrtpPacketUtils.FIXED_HEADER_SIZE,
+            pkt.getBuffer(), pkt.getOffset() + SrtpPacketUtils.FIXED_HEADER_SIZE + 4, cc * 4);
+
+        ByteArrayUtils.writeInt(pkt, SrtpPacketUtils.FIXED_HEADER_SIZE, headerTypeAndLen);
+    }
+
+    /**
+     * Post-process a packet after cryptex encryption/decryption, to restore it to wire format.
+     * Assumes cryptexPreprocess() was called on this packet.
+     */
+    private void cryptexPostprocess(ByteArrayBuffer pkt)
+    {
+        int cc = SrtpPacketUtils.getCsrcCount(pkt);
+        if (cc == 0)
+        {
+            return;
+        }
+        int headerOffset = SrtpPacketUtils.FIXED_HEADER_SIZE + cc * 4;
+
+        int headerTypeAndLen = ByteArrayUtils.readInt(pkt, SrtpPacketUtils.FIXED_HEADER_SIZE);
+
+        /* Move CSRCs to be after the fixed header. */
+        System.arraycopy(pkt.getBuffer(), pkt.getOffset() + SrtpPacketUtils.FIXED_HEADER_SIZE + 4,
+            pkt.getBuffer(), pkt.getOffset() + SrtpPacketUtils.FIXED_HEADER_SIZE, cc * 4);
+
+        ByteArrayUtils.writeInt(pkt, headerOffset, headerTypeAndLen);
+    }
+
+    /** Query whether this packet needs a zero-length header inserted.  This is used for packets that have
+     *  CSRCs but no header extensions of their own, when we are using cryptex.
+     */
+    private boolean needZeroLengthHeader(ByteArrayBuffer pkt)
+    {
+        return policy.isCryptexEnabled() && !SrtpPacketUtils.getExtensionBit(pkt) &&
+            SrtpPacketUtils.getCsrcCount(pkt) > 0;
+    }
+
+    /** A packet that has CSRCs but no header extension, when we are using cryptex.
+     * Insert a zero-length header extension so we can correctly signal that cryptex was used.
+     * Assumes needZeroLengthHeader returned true.
+     */
+    private void insertZeroLengthHeader(ByteArrayBuffer pkt)
+    {
+        int cc = SrtpPacketUtils.getCsrcCount(pkt);
+        int headerOffset = SrtpPacketUtils.FIXED_HEADER_SIZE + cc * 4;
+
+        if (pkt.getOffset() >= 4)
+        {
+            /* Move fixed header and CSRCs back. */
+            System.arraycopy(pkt.getBuffer(), pkt.getOffset(), pkt.getBuffer(), pkt.getOffset() - 4,
+                headerOffset);
+            pkt.setOffset(pkt.getOffset() - 4);
+        }
+        else
+        {
+            /* Move payload forward. */
+            if (pkt.getBuffer().length < pkt.getOffset() + pkt.getLength() + 4)
+            {
+                /* Need more buffer. */
+                pkt.grow(4);
+            }
+            System.arraycopy(pkt.getBuffer(), pkt.getOffset() + headerOffset, pkt.getBuffer(),
+                pkt.getOffset() + headerOffset + 4, pkt.getLength() - headerOffset);
+        }
+        pkt.setLength(pkt.getLength() + 4);
+        ByteArrayUtils.writeInt(pkt, headerOffset, 0xBEDE0000);
+        SrtpPacketUtils.setExtensionBit(pkt);
+    }
+
+    /**
      * Performs Counter Mode AES encryption/decryption
      *
      * @param pkt the RTP packet to be encrypted/decrypted
      */
-    private void processPacketAesCm(ByteArrayBuffer pkt)
+    private void processPacketAesCm(ByteArrayBuffer pkt, boolean useCryptex)
         throws GeneralSecurityException
     {
         int ssrc = SrtpPacketUtils.getSsrc(pkt);
@@ -372,18 +531,32 @@ public class SrtpCryptoContext
 
         ivStore[14] = ivStore[15] = 0;
 
-        int rtpHeaderLength = SrtpPacketUtils.getTotalHeaderLength(pkt);
-
         cipher.setIV(ivStore, Cipher.ENCRYPT_MODE);
+
+        int encOffset;
+        if (useCryptex)
+        {
+            cryptexPreprocess(pkt);
+            encOffset = SrtpPacketUtils.FIXED_HEADER_SIZE + 4;
+        }
+        else
+        {
+            encOffset = SrtpPacketUtils.getTotalHeaderLength(pkt);
+        }
 
         cipher.process(
                 pkt.getBuffer(),
-                pkt.getOffset() + rtpHeaderLength,
-                pkt.getLength() - rtpHeaderLength);
+                pkt.getOffset() + encOffset,
+                pkt.getLength() - encOffset);
+
+        if (useCryptex)
+        {
+            cryptexPostprocess(pkt);
+        }
     }
 
     private SrtpErrorStatus processPacketAesGcm(ByteArrayBuffer pkt, boolean encrypting,
-        boolean skipDecryption)
+        boolean useCryptex, boolean skipDecryption)
     {
         int ssrc = SrtpPacketUtils.getSsrc(pkt);
         int seqNo = SrtpPacketUtils.getSequenceNumber(pkt);
@@ -431,8 +604,6 @@ public class SrtpCryptoContext
                 );
         }
 
-        int rtpHeaderLength = SrtpPacketUtils.getTotalHeaderLength(pkt);
-
         try
         {
             SrtpCipher cipher = skipDecryption ? cipherAuthOnly : this.cipher;
@@ -440,14 +611,30 @@ public class SrtpCryptoContext
             cipher.setIV(ivStore, encrypting ? Cipher.ENCRYPT_MODE :
                 Cipher.DECRYPT_MODE);
 
-            cipher.processAAD(pkt.getBuffer(), pkt.getOffset(), rtpHeaderLength);
+            int encOffset;
+            if (useCryptex)
+            {
+                cryptexPreprocess(pkt);
+                encOffset = SrtpPacketUtils.FIXED_HEADER_SIZE + 4;
+            }
+            else
+            {
+                encOffset = SrtpPacketUtils.getTotalHeaderLength(pkt);
+            }
+
+            cipher.processAAD(pkt.getBuffer(), pkt.getOffset(), encOffset);
 
             int processLen = cipher.process(
                 pkt.getBuffer(),
-                pkt.getOffset() + rtpHeaderLength,
-                pkt.getLength() - rtpHeaderLength);
+                pkt.getOffset() + encOffset,
+                pkt.getLength() - encOffset);
 
-            pkt.setLength(processLen + rtpHeaderLength);
+            pkt.setLength(processLen + encOffset);
+
+            if (useCryptex)
+            {
+                cryptexPostprocess(pkt);
+            }
         }
         catch (GeneralSecurityException e)
         {
@@ -474,10 +661,10 @@ public class SrtpCryptoContext
 
     /**
      * Performs F8 Mode AES encryption/decryption
+     *  @param pkt the RTP packet to be encrypted/decrypted
      *
-     * @param pkt the RTP packet to be encrypted/decrypted
      */
-    private void processPacketAesF8(ByteArrayBuffer pkt)
+    private void processPacketAesF8(ByteArrayBuffer pkt, boolean useCryptex)
         throws GeneralSecurityException
     {
         // 11 bytes of the RTP header are the 11 bytes of the iv
@@ -493,14 +680,28 @@ public class SrtpCryptoContext
         ivStore[14] = (byte) (roc >> 8);
         ivStore[15] = (byte) roc;
 
-        int rtpHeaderLength = SrtpPacketUtils.getTotalHeaderLength(pkt);
-
         cipher.setIV(ivStore, Cipher.ENCRYPT_MODE);
 
+        int encOffset;
+        if (useCryptex)
+        {
+            cryptexPreprocess(pkt);
+            encOffset = SrtpPacketUtils.FIXED_HEADER_SIZE + 4;
+        }
+        else
+        {
+            encOffset = SrtpPacketUtils.getTotalHeaderLength(pkt);
+        }
+
         cipher.process(
-                pkt.getBuffer(),
-                pkt.getOffset() + rtpHeaderLength,
-                pkt.getLength() - rtpHeaderLength);
+            pkt.getBuffer(),
+            pkt.getOffset() + encOffset,
+            pkt.getLength() - encOffset);
+
+        if (useCryptex)
+        {
+            cryptexPostprocess(pkt);
+        }
     }
 
     /**
@@ -557,6 +758,8 @@ public class SrtpCryptoContext
         long guessedIndex = guessIndex(seqNo);
         SrtpErrorStatus ret, err;
 
+        boolean useCryptex = useCryptex(pkt, false);
+
         // Replay control
         if (policy.isReceiveReplayDisabled() || ((err = checkReplay(seqNo, guessedIndex)) == SrtpErrorStatus.OK))
         {
@@ -570,17 +773,17 @@ public class SrtpCryptoContext
                     // Decrypt the packet using Counter Mode encryption.
                     case SrtpPolicy.AESCM_ENCRYPTION:
                     case SrtpPolicy.TWOFISH_ENCRYPTION:
-                        processPacketAesCm(pkt);
+                        processPacketAesCm(pkt, useCryptex);
                         break;
 
                     case SrtpPolicy.AESGCM_ENCRYPTION:
-                        err = processPacketAesGcm(pkt, false, skipDecryption);
+                        err = processPacketAesGcm(pkt, false, useCryptex, skipDecryption);
                         break;
 
                     // Decrypt the packet using F8 Mode encryption.
                     case SrtpPolicy.AESF8_ENCRYPTION:
                     case SrtpPolicy.TWOFISHF8_ENCRYPTION:
-                        processPacketAesF8(pkt);
+                        processPacketAesF8(pkt, useCryptex);
                         break;
                     }
                 }
@@ -607,6 +810,11 @@ public class SrtpCryptoContext
         else
         {
             ret = err;
+        }
+
+        if (ret == SrtpErrorStatus.OK && useCryptex)
+        {
+            transformCryptexType(pkt);
         }
 
         if (ret != SrtpErrorStatus.OK && seqNumWasJustSet)
@@ -665,22 +873,34 @@ public class SrtpCryptoContext
         if (policy.isSendReplayEnabled() && (err = checkReplay(seqNo, guessedIndex)) != SrtpErrorStatus.OK)
             return err;
 
+        if (needZeroLengthHeader(pkt))
+        {
+            insertZeroLengthHeader(pkt);
+        }
+
+        boolean useCryptex = useCryptex(pkt, true);
+
+        if (useCryptex)
+        {
+            transformCryptexType(pkt);
+        }
+
         switch (policy.getEncType())
         {
         // Encrypt the packet using Counter Mode encryption.
         case SrtpPolicy.AESCM_ENCRYPTION:
         case SrtpPolicy.TWOFISH_ENCRYPTION:
-            processPacketAesCm(pkt);
+            processPacketAesCm(pkt, useCryptex);
             break;
 
         case SrtpPolicy.AESGCM_ENCRYPTION:
-            processPacketAesGcm(pkt, true, false);
+            processPacketAesGcm(pkt, true, useCryptex, false);
             break;
 
         // Encrypt the packet using F8 Mode encryption.
         case SrtpPolicy.AESF8_ENCRYPTION:
         case SrtpPolicy.TWOFISHF8_ENCRYPTION:   
-            processPacketAesF8(pkt);
+            processPacketAesF8(pkt, true);
             break;
         }
 
