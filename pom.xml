@@ -44,7 +44,7 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <junit.version>5.8.2</junit.version>
-        <bouncycastle.version>1.75</bouncycastle.version>
+        <bouncycastle.version>1.76</bouncycastle.version>
     </properties>
 
     <profiles>
