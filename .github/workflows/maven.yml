@@ -125,7 +125,7 @@ jobs:
         if: matrix.arch == 'arm64'
         run: |
           brew uninstall --ignore-dependencies openssl@${{ matrix.libssl }} || true
-          brew fetch --force --bottle-tag=arm64_big_sur openssl@${{ matrix.libssl }} | grep "Downloaded to:" | awk '{ print $3 }' | xargs -n 1 brew install
+          brew fetch --force --bottle-tag=arm64_monterey openssl@${{ matrix.libssl }} | grep "Downloaded to:" | awk '{ print $3 }' | xargs -n 1 brew install
 
       - name: Build natives with CMake
         run: resources/mac-cmake.sh "${{ steps.install_java.outputs.path }}" "${{ matrix.arch }}" "${{ matrix.libssl }}"
