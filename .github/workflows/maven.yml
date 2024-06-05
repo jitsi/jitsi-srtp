@@ -119,13 +119,11 @@ jobs:
 
       - name: Install OpenSSL ${{ matrix.libssl }}
         if: matrix.arch == 'x86_64'
-        run: brew install openssl@${{ matrix.libssl }}
+        run: /usr/local/bin/brew install openssl@${{ matrix.libssl }}
 
       - name: Install OpenSSL ${{ matrix.libssl }}
         if: matrix.arch == 'arm64'
-        run: |
-          brew uninstall --ignore-dependencies openssl@${{ matrix.libssl }} || true
-          brew fetch --force --bottle-tag=arm64_monterey openssl@${{ matrix.libssl }} | grep "Downloaded to:" | awk '{ print $3 }' | xargs -n 1 brew install
+        run: /opt/homebrew/bin/brew install openssl@${{ matrix.libssl }}
 
       - name: Build natives with CMake
         run: resources/mac-cmake.sh "${{ steps.install_java.outputs.path }}" "${{ matrix.arch }}" "${{ matrix.libssl }}"
