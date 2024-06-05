@@ -87,7 +87,6 @@ jobs:
 
   mac_natives:
     needs: test
-    runs-on: macos-latest
     name: Mac Natives (${{ matrix.arch }}, OpenSSL ${{ matrix.libssl }})
     strategy:
       fail-fast: false
@@ -96,8 +95,9 @@ jobs:
           - "1.1"
           - "3"
         arch:
-          - x86_64
-          - arm64
+          - { arch: x86_64, runner: macos-latest-large }
+          - { arch: arm64, runner: macos-latest-xlarge }
+    runs-on: ${{ matrix.runner }}
 
     steps:
       - name: Checkout
@@ -118,12 +118,7 @@ jobs:
           architecture: ${{ matrix.arch }}
 
       - name: Install OpenSSL ${{ matrix.libssl }}
-        if: matrix.arch == 'x86_64'
-        run: /usr/local/bin/brew install openssl@${{ matrix.libssl }}
-
-      - name: Install OpenSSL ${{ matrix.libssl }}
-        if: matrix.arch == 'arm64'
-        run: /opt/homebrew/bin/brew install openssl@${{ matrix.libssl }}
+        run: brew install openssl@${{ matrix.libssl }}
 
       - name: Build natives with CMake
         run: resources/mac-cmake.sh "${{ steps.install_java.outputs.path }}" "${{ matrix.arch }}" "${{ matrix.libssl }}"
