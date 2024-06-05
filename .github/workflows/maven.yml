@@ -97,7 +97,7 @@ jobs:
         arch:
           - { arch: x86_64, runner: macos-latest-large }
           - { arch: arm64, runner: macos-latest-xlarge }
-    runs-on: ${{ matrix.runner }}
+    runs-on: ${{ matrix.arch.runner }}
 
     steps:
       - name: Checkout
@@ -115,13 +115,13 @@ jobs:
         with:
           distribution: zulu
           java-version: ${{ env.RELEASE_JAVA_VERSION }}
-          architecture: ${{ matrix.arch }}
+          architecture: ${{ matrix.arch.arch }}
 
       - name: Install OpenSSL ${{ matrix.libssl }}
         run: brew install openssl@${{ matrix.libssl }}
 
       - name: Build natives with CMake
-        run: resources/mac-cmake.sh "${{ steps.install_java.outputs.path }}" "${{ matrix.arch }}" "${{ matrix.libssl }}"
+        run: resources/mac-cmake.sh "${{ steps.install_java.outputs.path }}" "${{ matrix.arch.arch }}" "${{ matrix.libssl }}"
 
       - name: Upload lib as artifact
         uses: actions/upload-artifact@v3
