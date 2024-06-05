@@ -87,7 +87,7 @@ jobs:
 
   mac_natives:
     needs: test
-    name: Mac Natives (${{ matrix.arch }}, OpenSSL ${{ matrix.libssl }})
+    name: Mac Natives (${{ matrix.arch.arch }}, OpenSSL ${{ matrix.libssl }})
     strategy:
       fail-fast: false
       matrix:
