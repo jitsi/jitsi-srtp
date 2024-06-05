@@ -87,8 +87,7 @@ jobs:
 
   mac_natives:
     needs: test
-    runs-on: macos-latest
-    name: Mac Natives (${{ matrix.arch }}, OpenSSL ${{ matrix.libssl }})
+    name: Mac Natives (${{ matrix.arch.arch }}, OpenSSL ${{ matrix.libssl }})
     strategy:
       fail-fast: false
       matrix:
@@ -96,8 +95,9 @@ jobs:
           - "1.1"
           - "3"
         arch:
-          - x86_64
-          - arm64
+          - { arch: x86_64, runner: macos-13 }
+          - { arch: arm64, runner: macos-14 }
+    runs-on: ${{ matrix.arch.runner }}
 
     steps:
       - name: Checkout
@@ -115,20 +115,13 @@ jobs:
         with:
           distribution: zulu
           java-version: ${{ env.RELEASE_JAVA_VERSION }}
-          architecture: ${{ matrix.arch }}
+          architecture: ${{ matrix.arch.arch }}
 
       - name: Install OpenSSL ${{ matrix.libssl }}
-        if: matrix.arch == 'x86_64'
         run: brew install openssl@${{ matrix.libssl }}
 
-      - name: Install OpenSSL ${{ matrix.libssl }}
-        if: matrix.arch == 'arm64'
-        run: |
-          brew uninstall --ignore-dependencies openssl@${{ matrix.libssl }} || true
-          brew fetch --force --bottle-tag=arm64_monterey openssl@${{ matrix.libssl }} | grep "Downloaded to:" | awk '{ print $3 }' | xargs -n 1 brew install
-
       - name: Build natives with CMake
-        run: resources/mac-cmake.sh "${{ steps.install_java.outputs.path }}" "${{ matrix.arch }}" "${{ matrix.libssl }}"
+        run: resources/mac-cmake.sh "${{ steps.install_java.outputs.path }}" "${{ matrix.arch.arch }}" "${{ matrix.libssl }}"
 
       - name: Upload lib as artifact
         uses: actions/upload-artifact@v3
