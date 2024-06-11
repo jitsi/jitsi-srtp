@@ -211,7 +211,7 @@ public class SrtpPerfTest {
 
     private static final int DEFAULT_NUM_TESTS = 100000;
     private static final int DEFAULT_PAYLOAD_SIZE = 1250;
-    /* 10000 is is the threshold for full (C2) JIT optimization. */
+    /* 10000 is the threshold for full (C2) JIT optimization. */
     private static final int DEFAULT_NUM_WARMUPS = 20000;
 
     @Test
@@ -273,13 +273,13 @@ public class SrtpPerfTest {
                 case 'w':
                     arg = g.getOptarg();
                     try {
-                        numTests = Integer.parseInt(arg);
+                        numWarmups = Integer.parseInt(arg);
                     }
                     catch (NumberFormatException e) {
                         System.err.println("Invalid number of warmups " + arg + ": " + e.getMessage());
                         usage();
                     }
-                    if (payloadSize < 0) {
+                    if (numWarmups < 0) {
                         System.err.println("Invalid number of warmups " + arg);
                         usage();
                     }
