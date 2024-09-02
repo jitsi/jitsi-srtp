@@ -564,7 +564,6 @@ public class Aes
         // new Class to FACTORY_CLASSES.
         if (factoryClass != null)
         {
-            Class<?>[] newFactoryClasses;
             if (add)
             {
                 for (Class<?> clazz : factoryClasses)
@@ -577,7 +576,7 @@ public class Aes
                 }
                 if (add)
                 {
-                    newFactoryClasses
+                    Class<?>[] newFactoryClasses
                         = new Class<?>[1 + factoryClasses.length];
 
                     newFactoryClasses[0] = factoryClass;
@@ -585,12 +584,13 @@ public class Aes
                         factoryClasses, 0,
                         newFactoryClasses, 1,
                         factoryClasses.length);
+                    factoryClasses = newFactoryClasses;
                 }
             }
             else
             {
                 /* Otherwise, move the FACTORY_CLASS to the beginning of the list. */
-                newFactoryClasses
+                Class<?>[] newFactoryClasses
                     = new Class<?>[factoryClasses.length];
 
                 newFactoryClasses[0] = factoryClass;
