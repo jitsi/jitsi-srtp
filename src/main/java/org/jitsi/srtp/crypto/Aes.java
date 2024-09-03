@@ -143,9 +143,8 @@ public class Aes
     {
         FACTORY_CLASS_NAME = name;
         factoryClass = null;
-        synchronized (Aes.class) {
-            fastestFactories.clear();
-        }
+        fastestFactories.clear();
+        factories = null;
     }
 
     private static abstract class BenchmarkOperation
