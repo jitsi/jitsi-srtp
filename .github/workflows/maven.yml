@@ -71,7 +71,7 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Get JNI headers
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4.1.7
         with:
           name: javah
           path: target/native
@@ -104,7 +104,7 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Get JNI headers
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4.1.7
         with:
           name: javah
           path: target/native
@@ -153,7 +153,7 @@ jobs:
           server-password: SONATYPE_PW
 
       - name: Download natives
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4.1.7
         with:
           path: target
 
