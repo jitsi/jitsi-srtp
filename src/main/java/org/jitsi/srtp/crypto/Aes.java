@@ -20,7 +20,8 @@ import java.security.*;
 import java.util.*;
 
 import javax.crypto.spec.*;
-import org.bouncycastle.jce.provider.*;
+
+import org.bouncycastle.jcajce.provider.BouncyCastleFipsProvider;
 import org.jitsi.utils.logging2.*;
 
 import javax.crypto.*;
@@ -820,7 +821,7 @@ public class Aes
     {
         public BouncyCastleCipherFactory()
         {
-            super(new BouncyCastleProvider());
+            super(new BouncyCastleFipsProvider());
         }
     }
 

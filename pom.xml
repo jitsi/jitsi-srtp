@@ -4,25 +4,26 @@
     xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>org.jitsi</groupId>
-    <artifactId>jitsi-srtp</artifactId>
-    <version>1.1-SNAPSHOT</version>
+    <groupId>com.nice</groupId>
+    <artifactId>jitsi-srtp-bc-fips</artifactId>
+<!--    To update version use: mvn versions:set "-DnewVersion=1.0.0"-->
+    <version>1.0.0</version>
     <packaging>bundle</packaging>
 
     <name>Jitsi Secure RTP implementation</name>
     <description>Jitsi SRTP contains classes for encrypting and decrypting SRTP and SRTCP packets</description>
-    <url>https://github.com/jitsi/jitsi-srtp</url>
+    <url>https://github.com/shaharid/jitsi-srtp-bc-fips</url>
 
-    <organization>
-        <name>jitsi.org</name>
-        <url>https://jitsi.org</url>
-    </organization>
+<!--    <organization>-->
+<!--        <name>nice.com</name>-->
+<!--        <url>https://jitsi.org</url>-->
+<!--    </organization>-->
 
     <developers>
         <developer>
-            <id>org.jitsi</id>
-            <name>Jitsi Team</name>
-            <email>dev@jitsi.org</email>
+            <id>com.nice</id>
+            <name>Shahar Israel Daniel</name>
+            <email>shahar.daniel@nice.com</email>
         </developer>
     </developers>
 
@@ -152,10 +153,15 @@
             <artifactId>jitsi-utils</artifactId>
             <version>1.0-114-g43815ed</version>
         </dependency>
+<!--        <dependency>-->
+<!--            <groupId>org.bouncycastle</groupId>-->
+<!--            <artifactId>bcprov-jdk18on</artifactId>-->
+<!--            <version>${bouncycastle.version}</version>-->
+<!--        </dependency>-->
         <dependency>
             <groupId>org.bouncycastle</groupId>
-            <artifactId>bcprov-jdk18on</artifactId>
-            <version>${bouncycastle.version}</version>
+            <artifactId>bc-fips</artifactId>
+            <version>2.0.0</version>
         </dependency>
         <dependency>
             <groupId>org.jetbrains</groupId>
@@ -181,6 +187,18 @@
             <artifactId>jakarta.xml.bind-api</artifactId>
             <version>4.0.0</version>
             <scope>test</scope>
+        </dependency>
+        <!-- https://mvnrepository.com/artifact/org.jitsi/libjitsi -->
+        <dependency>
+            <groupId>org.jitsi</groupId>
+            <artifactId>libjitsi</artifactId>
+            <version>1.1-34-gb93ce2ee</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.nice</groupId>
+            <artifactId>jitsi-srtp-bc-fips</artifactId>
+            <version>1.0.0</version>
         </dependency>
     </dependencies>
 
@@ -318,14 +336,29 @@
         </plugins>
     </build>
 
+<!--    <distributionManagement>-->
+<!--        <snapshotRepository>-->
+<!--            <id>ossrh</id>-->
+<!--            <url>https://oss.sonatype.org/content/repositories/snapshots</url>-->
+<!--        </snapshotRepository>-->
+<!--        <repository>-->
+<!--            <id>ossrh</id>-->
+<!--            <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>-->
+<!--        </repository>-->
+<!--    </distributionManagement>-->
+
     <distributionManagement>
-        <snapshotRepository>
-            <id>ossrh</id>
-            <url>https://oss.sonatype.org/content/repositories/snapshots</url>
-        </snapshotRepository>
         <repository>
-            <id>ossrh</id>
-            <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+            <id>github</id>
+            <url>https://maven.pkg.github.com/shaharid/jitsi-srtp-bc-fips</url>
         </repository>
     </distributionManagement>
+    <repositories>
+        <repository>
+            <id>github</id>
+            <url>https://maven.pkg.github.com/shaharid/jitsi-srtp-bc-fips</url>
+        </repository>
+    </repositories>
+
+
 </project>

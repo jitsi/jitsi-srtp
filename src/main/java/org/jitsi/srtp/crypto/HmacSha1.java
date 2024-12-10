@@ -19,7 +19,7 @@ import java.security.*;
 import java.util.*;
 import javax.crypto.*;
 
-import org.bouncycastle.jce.provider.*;
+import org.bouncycastle.jcajce.provider.*;
 import org.jitsi.srtp.crypto.Aes.*;
 import org.jitsi.utils.logging2.*;
 
@@ -57,7 +57,7 @@ public class HmacSha1
             {
                 logger.debug(() -> "PKCS#11 provider not available for HMAC: " + e.getMessage());
             }
-            providers.add(new BouncyCastleProvider());
+            providers.add(new BouncyCastleFipsProvider());
         }
 
         return providers;

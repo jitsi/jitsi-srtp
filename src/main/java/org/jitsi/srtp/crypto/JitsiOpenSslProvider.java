@@ -39,39 +39,38 @@ public class JitsiOpenSslProvider
     static
     {
         Cleaner cleaner = null;
-        String[] versions = { "1.1", "3" };
-        for (int i = 0; i < versions.length; i++)
-        {
-            String version = versions[i];
-            try
-            {
-                JNIUtils.loadLibrary("jitsisrtp_" + version,
-                    JitsiOpenSslProvider.class.getClassLoader());
-                if (OpenSSL_Init())
-                {
-                    logger.info(() -> "jitsisrtp successfully loaded for OpenSSL " + version);
-                    libraryLoaded = true;
-                    cleaner = Cleaner.create();
-                    break;
-                }
-                else
-                {
-                    logger.warn("OpenSSL_Init failed");
-                }
-            }
-            catch (UnsatisfiedLinkError t)
-            {
-                if (i == versions.length - 1)
-                {
-                    logger.warn("Unable to load jitsisrtp", t);
-                }
-                else
-                {
-                    logger.debug(() -> "Unable to load jitsisrtp for OpenSSL " + version + ": " + t);
-                }
-            }
-        }
-
+//        String[] versions = { "1.1", "3" };
+//        for (int i = 0; i < versions.length; i++)
+//        {
+//            String version = versions[i];
+//            try
+//            {
+//                JNIUtils.loadLibrary("jitsisrtp_" + version,
+//                    JitsiOpenSslProvider.class.getClassLoader());
+//                if (OpenSSL_Init())
+//                {
+//                    logger.info(() -> "jitsisrtp successfully loaded for OpenSSL " + version);
+//                    libraryLoaded = true;
+//                    cleaner = Cleaner.create();
+//                    break;
+//                }
+//                else
+//                {
+//                    logger.warn("OpenSSL_Init failed");
+//                }
+//            }
+//            catch (UnsatisfiedLinkError t)
+//            {
+//                if (i == versions.length - 1)
+//                {
+//                    logger.warn("Unable to load jitsisrtp", t);
+//                }
+//                else
+//                {
+//                    logger.debug(() -> "Unable to load jitsisrtp for OpenSSL " + version + ": " + t);
+//                }
+//            }
+//        }
         CLEANER = cleaner;
     }
 
