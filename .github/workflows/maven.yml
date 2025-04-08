@@ -128,7 +128,7 @@ jobs:
       - name: Upload lib as artifact
         uses: actions/upload-artifact@v4
         with:
-          name: native-darwin-${{ matrix.arch }}-${{ matrix.libssl }}
+          name: native-darwin-${{ matrix.arch.arch }}-${{ matrix.libssl }}
           path: src/main/resources/*
 
   release:
