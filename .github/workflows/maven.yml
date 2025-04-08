@@ -159,7 +159,6 @@ jobs:
         with:
           path: target
           pattern: native-*
-          merge-multiple: true
 
       - name: Copy natives for Maven
         run: |
