@@ -169,8 +169,8 @@ jobs:
           for dist in */*/ ; do
             last_dir=$(basename $dist)
             if [[ "$last_dir" =~ ^(linux|darwin) ]]; then
-              mkdir -p "$BASEDIR/$last_dir" || true
-              cp "$dist"/*.{so,dylib} "$BASEDIR/$last_dir" || true
+              mkdir -pv "$BASEDIR/$last_dir" || true
+              cp -v "$dist"/*.{so,dylib} "$BASEDIR/$last_dir" || true
             fi;
           done;
 
