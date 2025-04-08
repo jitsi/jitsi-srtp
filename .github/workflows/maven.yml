@@ -165,18 +165,13 @@ jobs:
           BASEDIR=$(pwd)/src/main/resources
           mkdir -p $BASEDIR
           cd target
-          ls -lR
-          echo
           for dist in */*/ ; do
             last_dir=$(basename $dist)
             if [[ "$last_dir" =~ ^(linux|darwin) ]]; then
-              mkdir -pv "$BASEDIR/$last_dir" || true
-              cp -v "$dist"/*.{so,dylib} "$BASEDIR/$last_dir" || true
+              mkdir -p "$BASEDIR/$last_dir" || true
+              cp "$dist"/*.{so,dylib} "$BASEDIR/$last_dir" || true
             fi;
           done;
-          echo
-          echo $BASEDIR:
-          ls -lR $BASEDIR
 
       - name: Set version
         run: |
