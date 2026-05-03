@@ -876,33 +876,28 @@ public class Aes
             if ((provider == null) && useProvider)
             {
                 try
-                {
-                    Class<?> clazz
-                        = Class.forName("sun.security.pkcs11.SunPKCS11");
+{
+    Provider prototype = Security.getProvider("SunPKCS11");
+    if (prototype != null)
+    {
+        String name = null;
+        Package pkg = Aes.class.getPackage();
 
-                    if (Provider.class.isAssignableFrom(clazz))
-                    {
-                        Constructor<?> contructor
-                            = clazz.getConstructor(String.class);
+        if (pkg != null)
+            name = pkg.getName();
+        if (name == null || name.length() == 0)
+            name = "org.jitsi.srtp";
 
-                        // The SunPKCS11 Config name should be unique in order
-                        // to avoid repeated initialization exceptions.
-                        String name = null;
-                        Package pkg = Aes.class.getPackage();
+        String config = "--name=" + name + "\nnssDbMode=noDb\nattributes=compatibility";
 
-                        if (pkg != null)
-                            name = pkg.getName();
-                        if (name == null || name.length() == 0)
-                            name = "org.jitsi.srtp";
+        Method configureMethod = prototype.getClass()
+            .getMethod("configure", String.class);
+        provider = (Provider) configureMethod.invoke(prototype, config);
 
-                        provider
-                            = (Provider)
-                                contructor.newInstance(
-                                        "--name=" + name + "\\n"
-                                            + "nssDbMode=noDb\\n"
-                                            + "attributes=compatibility");
-                    }
-                }
+        if (provider != null)
+            Security.addProvider(provider);
+    }
+}
                 finally
                 {
                     if (provider == null)
