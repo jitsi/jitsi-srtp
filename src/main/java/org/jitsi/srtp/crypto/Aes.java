@@ -769,12 +769,17 @@ public class Aes
                         Cipher.class.getDeclaredField("provider");
                     cipherProviderField.setAccessible(true);
                 }
-                catch (NoSuchMethodException | NoSuchFieldException e)
+                catch (NoSuchMethodException | NoSuchFieldException
+                    | InaccessibleObjectException e)
                 {
+                    /* InaccessibleObjectException is thrown by setAccessible
+                     * when java.base is not opened to us (JVM 16+ with strong
+                     * encapsulation). Treat it like the other reflective
+                     * failures so callers fall back to another factory. */
                     cipherConstructor = null;
                     cipherProviderField = null;
                     throw new NoSuchAlgorithmException(
-                        "Cannot instantiate OpenSSL Cipher");
+                        "Cannot instantiate OpenSSL Cipher", e);
                 }
             }
         }
