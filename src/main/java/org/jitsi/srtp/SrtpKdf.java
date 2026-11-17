@@ -91,9 +91,10 @@ class SrtpKdf
             break;
 
         case SrtpPolicy.NULL_ENCRYPTION:
-        default:
             cipherCtr = null;
             break;
+        default:
+            throw new IllegalArgumentException("Unknown encryption type " + policy.getEncType());
         }
 
         if (cipherCtr != null)
@@ -122,6 +123,10 @@ class SrtpKdf
         if (sessKey == null || sessKey.length == 0)
         {
             return;
+        }
+        if (cipherCtr == null)
+        {
+            throw new GeneralSecurityException("Key derivation is not supported with the null encryption type");
         }
 
         assert(masterSalt.length < ivStore.length);

@@ -92,6 +92,10 @@ public final class OpenSslAesGcmCipherSpi
                 }
                 tagLen = ((GCMParameterSpec) params).getTLen() / 8;
                 byte[] newIv = ((GCMParameterSpec) params).getIV();
+                if (newIv.length == 0)
+                {
+                    throw new InvalidAlgorithmParameterException("Unsupported IV length 0");
+                }
                 /* We only want to call EVP_CipherSetIVLen if the iv length
                  * has changed.  The default IV length is 12. */
                 if ((iv == null && newIv.length != 12) ||

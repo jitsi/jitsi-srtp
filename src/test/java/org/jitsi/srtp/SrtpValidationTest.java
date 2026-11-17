@@ -24,7 +24,10 @@ import org.jitsi.utils.logging2.*;
 import org.junit.jupiter.api.*;
 
 import static jakarta.xml.bind.DatatypeConverter.parseHexBinary;
+import java.security.*;
 import java.util.*;
+import javax.crypto.*;
+import org.jitsi.srtp.crypto.*;
 
 
 public class SrtpValidationTest {
@@ -415,6 +418,257 @@ public class SrtpValidationTest {
 
         checkBufferIsGrown(policy, test_key_gcm, test_key_salt_gcm, srtp_ciphertext_gcm, srtcp_ciphertext_gcm,
             4 + 128/8);
+    }
+
+    private static final SrtpPolicy F8_POLICY =
+        new SrtpPolicy(SrtpPolicy.AESF8_ENCRYPTION, 128/8,
+            SrtpPolicy.HMACSHA1_AUTHENTICATION, 160/8,
+            80/8, 112/8 );
+
+    /**
+     * Protects the reference RTP packet with F8, and checks that all of the payload is encrypted and that a receiver
+     * gets the packet back.
+     */
+    @Test
+    public void srtpF8RoundTrip() throws Exception
+    {
+        Logger logger = new LoggerImpl(getClass().getName());
+
+        SrtpContextFactory senderFactory =
+            new SrtpContextFactory(true, test_key, test_key_salt, F8_POLICY, F8_POLICY, logger);
+        SrtpContextFactory receiverFactory =
+            new SrtpContextFactory(false, test_key, test_key_salt, F8_POLICY, F8_POLICY, logger);
+
+        for (int offset : new int[] { 0, 7 })
+        {
+            ByteArrayBuffer rtpPkt = packetInBuffer(rtp_plaintext_ref, offset, 0);
+
+            assertEquals(SrtpErrorStatus.OK, senderFactory.deriveContext(0xcafebabe, 0).transformPacket(rtpPkt));
+            assertEquals(rtp_plaintext_ref.length + 80/8, rtpPkt.getLength());
+            /* The RTP header is 12 bytes, and everything after it is encrypted. */
+            assertEncrypted(rtp_plaintext_ref, rtpPkt, 12, rtp_plaintext_ref.length);
+
+            assertEquals(SrtpErrorStatus.OK,
+                receiverFactory.deriveContext(0xcafebabe, 0).reverseTransformPacket(rtpPkt, false));
+            assertByteArrayBufferEquals(rtp_plaintext_ref, rtpPkt);
+        }
+
+        senderFactory.close();
+        receiverFactory.close();
+    }
+
+    /**
+     * Checks that {@code pkt} starts with the first {@code from} bytes of {@code plaintext}, and that no run of 4
+     * bytes from {@code from} to {@code to} is the same as in {@code plaintext}.
+     */
+    private static void assertEncrypted(byte[] plaintext, ByteArrayBuffer pkt, int from, int to)
+    {
+        byte[] data = Arrays.copyOfRange(pkt.getBuffer(), pkt.getOffset(), pkt.getOffset() + pkt.getLength());
+
+        assertArrayEquals(Arrays.copyOf(plaintext, from), Arrays.copyOf(data, from));
+        for (int i = from; i + 4 <= to; i++)
+        {
+            assertFalse(
+                Arrays.equals(Arrays.copyOfRange(plaintext, i, i + 4), Arrays.copyOfRange(data, i, i + 4)),
+                "bytes " + i + " to " + (i + 3) + " are not encrypted");
+        }
+    }
+
+    /**
+     * Protects the reference RTCP packet with F8, and checks that all of it after the first 8 bytes is encrypted and
+     * that a receiver gets the packet back.
+     */
+    @Test
+    public void srtcpF8RoundTrip() throws Exception
+    {
+        Logger logger = new LoggerImpl(getClass().getName());
+
+        SrtpContextFactory senderFactory =
+            new SrtpContextFactory(true, test_key, test_key_salt, F8_POLICY, F8_POLICY, logger);
+        SrtpContextFactory receiverFactory =
+            new SrtpContextFactory(false, test_key, test_key_salt, F8_POLICY, F8_POLICY, logger);
+
+        for (int offset : new int[] { 0, 7 })
+        {
+            ByteArrayBuffer rtcpPkt = packetInBuffer(rtcp_plaintext_ref, offset, 0);
+
+            assertEquals(SrtpErrorStatus.OK, senderFactory.deriveControlContext(0xcafebabe).transformPacket(rtcpPkt));
+            assertEquals(rtcp_plaintext_ref.length + 4 + 80/8, rtcpPkt.getLength());
+            assertEncrypted(rtcp_plaintext_ref, rtcpPkt, 8, rtcp_plaintext_ref.length);
+
+            assertEquals(SrtpErrorStatus.OK,
+                receiverFactory.deriveControlContext(0xcafebabe).reverseTransformPacket(rtcpPkt));
+            assertByteArrayBufferEquals(rtcp_plaintext_ref, rtcpPkt);
+        }
+
+        senderFactory.close();
+        receiverFactory.close();
+    }
+
+    /**
+     * Encrypts {@code packet} from {@code encryptFrom} with AES-F8, with the session keys for {@code encLabel} and
+     * {@code saltLabel} and the IV {@code iv}. This does not use the crypto contexts: the keys come from the key
+     * derivation function and the encryption from the cipher, which have their own tests against the vectors of
+     * RFC 3711, and the caller builds the IV as RFC 3711 describes it.
+     */
+    private static byte[] f8Reference(byte[] packet, int encryptFrom, byte[] iv, byte encLabel, byte saltLabel)
+        throws Exception
+    {
+        SrtpKdf kdf = new SrtpKdf(test_key, test_key_salt, F8_POLICY);
+        byte[] encKey = new byte[F8_POLICY.getEncKeyLength()];
+        byte[] saltKey = new byte[F8_POLICY.getSaltKeyLength()];
+        kdf.deriveSessionKey(encKey, encLabel);
+        kdf.deriveSessionKey(saltKey, saltLabel);
+
+        SrtpCipherF8 cipher = new SrtpCipherF8(Aes.createCipher("AES/ECB/NoPadding"));
+        cipher.init(encKey, saltKey);
+        cipher.setIV(iv, Cipher.ENCRYPT_MODE);
+
+        byte[] data = packet.clone();
+        cipher.process(data, encryptFrom, data.length - encryptFrom);
+        return data;
+    }
+
+    /**
+     * The F8 round trip tests use this library on both sides. These check the packets on the wire against RFC 3711:
+     * which bytes are encrypted, and the layout of the IV.
+     */
+    @Test
+    public void srtpF8WireFormat() throws Exception
+    {
+        Logger logger = new LoggerImpl(getClass().getName());
+
+        /* RFC 3711, section 4.1.2.2: IV = 0x00 || M || PT || SEQ || TS || SSRC || ROC. */
+        byte[] iv = new byte[16];
+        System.arraycopy(rtp_plaintext_ref, 1, iv, 1, 11);
+        /* The ROC is 0, in bytes 12 to 15. */
+
+        byte[] expected =
+            f8Reference(rtp_plaintext_ref, 12, iv, SrtpKdf.LABEL_RTP_ENCRYPTION, SrtpKdf.LABEL_RTP_SALT);
+
+        SrtpContextFactory senderFactory =
+            new SrtpContextFactory(true, test_key, test_key_salt, F8_POLICY, F8_POLICY, logger);
+        ByteArrayBuffer rtpPkt = packetInBuffer(rtp_plaintext_ref, 0, 0);
+
+        assertEquals(SrtpErrorStatus.OK, senderFactory.deriveContext(0xcafebabe, 0).transformPacket(rtpPkt));
+        /* The authentication tag follows the encrypted packet. */
+        assertArrayEquals(expected, Arrays.copyOf(rtpPkt.getBuffer(), expected.length));
+
+        senderFactory.close();
+    }
+
+    @Test
+    public void srtcpF8WireFormat() throws Exception
+    {
+        Logger logger = new LoggerImpl(getClass().getName());
+
+        /* RFC 3711, section 4.1.2.3: IV = 0..0 || E || SRTCP index || V || P || RC || PT || length || SSRC.
+         * The first packet of a context has the index 0, and E is the highest bit of the index word. */
+        byte[] iv = new byte[16];
+        iv[4] = (byte) 0x80;
+        System.arraycopy(rtcp_plaintext_ref, 0, iv, 8, 8);
+
+        byte[] expected =
+            f8Reference(rtcp_plaintext_ref, 8, iv, SrtpKdf.LABEL_RTCP_ENCRYPTION, SrtpKdf.LABEL_RTCP_SALT);
+
+        SrtpContextFactory senderFactory =
+            new SrtpContextFactory(true, test_key, test_key_salt, F8_POLICY, F8_POLICY, logger);
+        ByteArrayBuffer rtcpPkt = packetInBuffer(rtcp_plaintext_ref, 0, 0);
+
+        assertEquals(SrtpErrorStatus.OK, senderFactory.deriveControlContext(0xcafebabe).transformPacket(rtcpPkt));
+        assertArrayEquals(expected, Arrays.copyOf(rtcpPkt.getBuffer(), expected.length));
+        /* The E flag and the index follow the encrypted packet, and the authentication tag follows them. */
+        assertArrayEquals(new byte[] { (byte) 0x80, 0, 0, 0 },
+            Arrays.copyOfRange(rtcpPkt.getBuffer(), expected.length, expected.length + 4));
+
+        senderFactory.close();
+    }
+
+    /**
+     * A receiver accepts an SRTCP packet which is authenticated with AES-GCM and not encrypted, wherever the packet
+     * is in its buffer.
+     */
+    @Test
+    public void srtcpGcmWithoutEncryption() throws Exception
+    {
+        Logger logger = new LoggerImpl(getClass().getName());
+
+        SrtpPolicy policy =
+            new SrtpPolicy(SrtpPolicy.AESGCM_ENCRYPTION, 128/8,
+                SrtpPolicy.NULL_AUTHENTICATION, 0,
+                128/8, 96/8 );
+
+        SrtpContextFactory senderFactory =
+            new SrtpContextFactory(true, test_key_gcm, test_key_salt_gcm, policy, policy, logger);
+        SrtpContextFactory receiverFactory =
+            new SrtpContextFactory(false, test_key_gcm, test_key_salt_gcm, policy, policy, logger);
+
+        for (int offset : new int[] { 0, 7 })
+        {
+            ByteArrayBuffer rtcpPkt = packetInBuffer(rtcp_plaintext_ref, offset, 16 + 4);
+
+            /* transformPacket always encrypts. Call processPacketAesGcm directly to authenticate without encrypting. */
+            SrtcpCryptoContext rtcpSend = senderFactory.deriveControlContext(0xcafebabe);
+            assertEquals(SrtpErrorStatus.OK, rtcpSend.processPacketAesGcm(rtcpPkt, 0, true, true));
+            /* The index 0, with the flag which says that the packet is encrypted not set. */
+            rtcpPkt.append(new byte[4], 4);
+
+            assertEquals(rtcp_plaintext_ref.length + 16 + 4, rtcpPkt.getLength());
+            assertArrayEquals(rtcp_plaintext_ref,
+                Arrays.copyOfRange(rtcpPkt.getBuffer(), offset, offset + rtcp_plaintext_ref.length));
+
+            /* A changed packet is refused. */
+            ByteArrayBuffer changed = new ByteArrayBufferImpl(rtcpPkt.getBuffer().clone(), offset, rtcpPkt.getLength());
+            changed.getBuffer()[offset + 9] ^= 1;
+            assertEquals(SrtpErrorStatus.AUTH_FAIL,
+                receiverFactory.deriveControlContext(0xcafebabe).reverseTransformPacket(changed));
+
+            assertEquals(SrtpErrorStatus.OK,
+                receiverFactory.deriveControlContext(0xcafebabe).reverseTransformPacket(rtcpPkt));
+            assertByteArrayBufferEquals(rtcp_plaintext_ref, rtcpPkt);
+        }
+
+        senderFactory.close();
+        receiverFactory.close();
+    }
+
+    @Test
+    public void unknownTypesAreRefused() throws Exception
+    {
+        Logger logger = new LoggerImpl(getClass().getName());
+
+        SrtpPolicy unknownEncryption =
+            new SrtpPolicy(99, 128/8, SrtpPolicy.HMACSHA1_AUTHENTICATION, 160/8, 80/8, 112/8);
+        SrtpContextFactory factory =
+            new SrtpContextFactory(true, test_key, test_key_salt, unknownEncryption, unknownEncryption, logger);
+        assertThrows(IllegalArgumentException.class, () -> factory.deriveContext(0xcafebabe, 0));
+        assertThrows(IllegalArgumentException.class, () -> factory.deriveControlContext(0xcafebabe));
+        factory.close();
+
+        SrtpPolicy unknownAuthentication =
+            new SrtpPolicy(SrtpPolicy.AESCM_ENCRYPTION, 128/8, 99, 160/8, 80/8, 112/8);
+        SrtpContextFactory factory2 = new SrtpContextFactory(
+            true, test_key, test_key_salt, unknownAuthentication, unknownAuthentication, logger);
+        assertThrows(IllegalArgumentException.class, () -> factory2.deriveContext(0xcafebabe, 0));
+        assertThrows(IllegalArgumentException.class, () -> factory2.deriveControlContext(0xcafebabe));
+        factory2.close();
+    }
+
+    /**
+     * The keys of a context are derived with the cipher of its encryption type. Without one, an authentication key
+     * cannot be derived.
+     */
+    @Test
+    public void authenticationWithoutEncryptionIsRefused() throws Exception
+    {
+        Logger logger = new LoggerImpl(getClass().getName());
+
+        SrtpPolicy policy =
+            new SrtpPolicy(SrtpPolicy.NULL_ENCRYPTION, 0, SrtpPolicy.HMACSHA1_AUTHENTICATION, 160/8, 80/8, 0);
+        SrtpContextFactory factory = new SrtpContextFactory(true, null, null, policy, policy, logger);
+        assertThrows(GeneralSecurityException.class, () -> factory.deriveContext(0xcafebabe, 0));
+        assertThrows(GeneralSecurityException.class, () -> factory.deriveControlContext(0xcafebabe));
+        factory.close();
     }
 
     @Test

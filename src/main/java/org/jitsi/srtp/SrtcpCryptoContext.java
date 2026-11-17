@@ -192,7 +192,8 @@ public class SrtcpCryptoContext
                 pkt.getBuffer(), pkt.getOffset() + payloadOffset, payloadLength);
     }
 
-    private SrtpErrorStatus processPacketAesGcm(ByteArrayBuffer pkt, int index,
+    /* Package-private for tests. */
+    SrtpErrorStatus processPacketAesGcm(ByteArrayBuffer pkt, int index,
         boolean authenticationOnly, boolean encrypting)
     {
         int ssrc = SrtcpPacketUtils.getSenderSsrc(pkt);
@@ -267,7 +268,7 @@ public class SrtcpCryptoContext
                 cipher.processAAD(rbStore, 0, 4);
 
                 int processLen = cipher.process(
-                    pkt.getBuffer(), aadLen, bufferedTagLen);
+                    pkt.getBuffer(), pkt.getOffset() + aadLen, bufferedTagLen);
 
                 pkt.setLength(aadLen + processLen);
             }
@@ -303,8 +304,8 @@ public class SrtcpCryptoContext
     private void processPacketAesF8(ByteArrayBuffer pkt, int index)
         throws GeneralSecurityException
     {
-        // 4 bytes of the iv are zero
-        // the first byte of the RTP header is not used.
+        // The IV is 4 bytes of zero, the E flag and the SRTCP index, and the first 8 bytes of the RTCP header
+        // (RFC 3711, section 4.1.2.3).
         ivStore[0] = 0;
         ivStore[1] = 0;
         ivStore[2] = 0;
@@ -322,10 +323,10 @@ public class SrtcpCryptoContext
         // The fixed header follows and fills the rest of the IV
         System.arraycopy(pkt.getBuffer(), pkt.getOffset(), ivStore, 8, 8);
 
-        // Encrypted part excludes fixed header (8 bytes), index (4 bytes), and
-        // authentication tag (variable according to policy)
+        // Encrypted part excludes fixed header (8 bytes). The index and the
+        // authentication tag are not part of the packet here.
         int payloadOffset = 8;
-        int payloadLength = pkt.getLength() - (4 + policy.getAuthTagLength());
+        int payloadLength = pkt.getLength() - payloadOffset;
 
         cipher.setIV(ivStore, Cipher.ENCRYPT_MODE);
         cipher.process(
@@ -432,6 +433,7 @@ public class SrtcpCryptoContext
         }
         else if (policy.getEncType() == SrtpPolicy.AESGCM_ENCRYPTION)
         {
+            pkt.shrink(4); /* Index is processed separately as part of AAD. */
             err = processPacketAesGcm(pkt, index, true, false);
             if (err != SrtpErrorStatus.OK)
             {

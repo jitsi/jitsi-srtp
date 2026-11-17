@@ -910,7 +910,7 @@ public class SrtpCryptoContext
         // Encrypt the packet using F8 Mode encryption.
         case SrtpPolicy.AESF8_ENCRYPTION:
         case SrtpPolicy.TWOFISHF8_ENCRYPTION:   
-            processPacketAesF8(pkt, true);
+            processPacketAesF8(pkt, useCryptex);
             break;
         }
 
